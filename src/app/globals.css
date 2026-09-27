@@ -203,23 +203,36 @@ body {
   background-size: calc(100% + var(--gutter-inner)) 100%;
 }
 
-/* Wordmark line draw animation */
+/* Wordmark line draw animation (authentic from mindrobotics.com with extended graceful load time) */
 @keyframes wordmark-stroke-dashoffset {
-  to {
-    stroke-dashoffset: 0;
+  0% {
+    stroke-dashoffset: 1.01px;
+  }
+  100% {
+    stroke-dashoffset: 0px;
   }
 }
 
 @keyframes wordmark-fill-opacity {
-  to {
+  0% {
+    fill-opacity: 0;
+  }
+  100% {
     fill-opacity: 1;
   }
 }
 
 @keyframes wordmark-stroke-fade {
-  to {
+  0% {
+    opacity: 1;
+  }
+  100% {
     opacity: 0;
   }
+}
+
+.wordmark-reveal {
+  overflow: visible;
 }
 
 .wordmark-reveal g {
@@ -228,16 +241,18 @@ body {
 
 .wordmark-reveal g > :first-child {
   fill-opacity: 0;
-  animation: wordmark-fill-opacity 0.8s var(--ease-out) calc(0.8s + var(--letter-index) * 60ms) forwards;
+  animation: wordmark-fill-opacity 1.2s var(--ease-out) calc(1.3s + var(--letter-index) * 85ms) both;
 }
 
 .wordmark-reveal g > :not(:first-child) {
+  fill: none;
   stroke: currentColor;
-  stroke-dasharray: 1.01;
+  stroke-width: calc(1.2px / var(--wordmark-scale, 1));
+  stroke-dasharray: 1.01px;
   stroke-dashoffset: 1.01px;
   animation: 
-    wordmark-stroke-dashoffset 0.8s var(--ease-in-out) calc(var(--letter-index) * 60ms) forwards,
-    wordmark-stroke-fade 0.8s var(--ease-out) calc(0.8s + var(--letter-index) * 60ms) forwards;
+    wordmark-stroke-dashoffset 1.4s var(--ease-in-out) calc(0.25s + var(--letter-index) * 85ms) both,
+    wordmark-stroke-fade 0.9s var(--ease-out) calc(1.3s + var(--letter-index) * 85ms) both;
 }
 
 /* Tag Fan Layer Animation matching mindrobotics.com */
