@@ -17,18 +17,18 @@ const CONFIG = {
   },
   tracks: {
     tabletPlus: {
-      moveX: { start: 0.02, startAt: 0, middle: 0, middleAt: 0.5, end: 0, endAt: 1 },
-      moveY: { start: 0.01, startAt: 0, middle: -0.03, middleAt: 0.5, end: 0.12, endAt: 1 },
+      moveX: { start: 0.085, startAt: 0, middle: 0.03, middleAt: 0.5, end: 0, endAt: 1 },
+      moveY: { start: -0.02, startAt: 0, middle: -0.04, middleAt: 0.5, end: 0.12, endAt: 1 },
       twist: { start: -1.51, startAt: 0, middle: -0.21, middleAt: 0.5, end: 1.08, endAt: 1 },
       tip: { start: 0, startAt: 0, middle: 0, middleAt: 0.5, end: 0.56, endAt: 1 },
-      zoom: { start: 0.48, startAt: 0, middle: 0.53, middleAt: 0.5, end: 0.62, endAt: 1 },
+      zoom: { start: 0.68, startAt: 0, middle: 0.72, middleAt: 0.5, end: 0.85, endAt: 1 },
     },
     mobile: {
-      moveX: { start: -0.02, startAt: 0, middle: 0, middleAt: 0.5, end: 0, endAt: 1 },
-      moveY: { start: -0.05, startAt: 0, middle: -0.06, middleAt: 0.446, end: -0.03, endAt: 0.946 },
+      moveX: { start: 0.03, startAt: 0, middle: 0.02, middleAt: 0.5, end: 0, endAt: 1 },
+      moveY: { start: -0.04, startAt: 0, middle: -0.05, middleAt: 0.446, end: -0.02, endAt: 0.946 },
       twist: { start: -1.51, startAt: 0, middle: -0.01, middleAt: 0.5, end: 0.84, endAt: 1 },
       tip: { start: 0, startAt: 0, middle: 0, middleAt: 0.5, end: -0.01, endAt: 1 },
-      zoom: { start: 0.58, startAt: 0, middle: 0.53, middleAt: 0.5, end: 0.62, endAt: 1 },
+      zoom: { start: 0.76, startAt: 0, middle: 0.72, middleAt: 0.5, end: 0.84, endAt: 1 },
     },
   },
   pointer: { yaw: 0.235, pitch: 0.145, ease: 4 },
@@ -87,7 +87,7 @@ export default function HeroRobotArm3D() {
     scene.add(outerGroup);
 
     const outlineUniforms = {
-      uWidth: { value: width < 768 ? 1.8 : 3.2 },
+      uWidth: { value: width < 768 ? 2.5 : 4.0 },
       uResolution: { value: new THREE.Vector2(width, height) },
     };
 
@@ -173,6 +173,8 @@ export default function HeroRobotArm3D() {
           const model = gltf.scene;
 
           model.position.set(-CONFIG.pivot.x, CONFIG.pivot.y, -CONFIG.pivot.z);
+          // Scale cross-section radially (X and Z) to make the arm noticeably thicker and bulkier
+          model.scale.set(1.22, 1.0, 1.22);
 
           const meshList: THREE.Mesh[] = [];
           model.traverse((child) => {
@@ -207,6 +209,15 @@ export default function HeroRobotArm3D() {
           }
 
           poseGroup.add(model);
+          if (typeof window !== "undefined") {
+            (window as any).__heroArm = {
+              model,
+              poseGroup,
+              outerGroup,
+              camera,
+              scene,
+            };
+          }
           setLoaded(true);
         },
         undefined,
@@ -252,7 +263,7 @@ export default function HeroRobotArm3D() {
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
       outlineUniforms.uResolution.value.set(width, height);
-      outlineUniforms.uWidth.value = width < 768 ? 1.8 : 3.2;
+      outlineUniforms.uWidth.value = width < 768 ? 2.5 : 4.0;
     };
 
     window.addEventListener("pointermove", handlePointerMove);
