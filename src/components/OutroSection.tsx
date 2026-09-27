@@ -8,12 +8,28 @@ export default function OutroSection() {
   const [gameOpen, setGameOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Pong Game State
+  // Active Game Mode
+  type GameMode = "breakout" | "pong" | "snake";
+  const [activeGame, setActiveGame] = useState<GameMode>("breakout");
+  const [gameStatus, setGameStatus] = useState<"ready" | "playing" | "gameover" | "victory">("playing");
+  const [resetTrigger, setResetTrigger] = useState(0);
+
+  // Pong State
   const [playerScore, setPlayerScore] = useState(0);
   const [aiScore, setAiScore] = useState(0);
-  const [gameStatus, setGameStatus] = useState<"ready" | "playing" | "gameover">("ready");
 
-  // Playable Pong Canvas Logic
+  // Breakout State
+  const [breakoutScore, setBreakoutScore] = useState(0);
+  const [breakoutLives, setBreakoutLives] = useState(3);
+  const [breakoutHigh, setBreakoutHigh] = useState(0);
+  const [breakoutBricksLeft, setBreakoutBricksLeft] = useState(32);
+
+  // Snake State
+  const [snakeScore, setSnakeScore] = useState(0);
+  const [snakeLength, setSnakeLength] = useState(3);
+  const [snakeHigh, setSnakeHigh] = useState(0);
+
+  // Playable Games Canvas Engine
   useEffect(() => {
     if (!gameOpen) return;
     const canvas = canvasRef.current;
@@ -22,166 +38,582 @@ export default function OutroSection() {
     if (!ctx) return;
 
     let animId: number;
-    let width = (canvas.width = canvas.clientWidth || 800);
-    let height = (canvas.height = canvas.clientHeight || 500);
+    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    const clientW = canvas.clientWidth || 800;
+    const clientH = canvas.clientHeight || 480;
+    canvas.width = Math.floor(clientW * dpr);
+    canvas.height = Math.floor(clientH * dpr);
+    ctx.scale(dpr, dpr);
 
-    const paddleWidth = 14;
-    const paddleHeight = 90;
+    const width = clientW;
+    const height = clientH;
 
-    let playerY = height / 2 - paddleHeight / 2;
-    let aiY = height / 2 - paddleHeight / 2;
+    // Common Particle Pool for sparks & collisions
+    const particles: {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      color: string;
+      alpha: number;
+      size: number;
+    }[] = [];
 
-    let ballX = width / 2;
-    let ballY = height / 2;
-    let ballSpeedX = 6;
-    let ballSpeedY = 4;
-    const ballRadius = 8;
+    const spawnParticles = (x: number, y: number, color: string, count = 8) => {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 4;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color,
+          alpha: 1,
+          size: 2 + Math.random() * 2.5,
+        });
+      }
+    };
 
-    const trails: { x: number; y: number; alpha: number }[] = [];
+    // ==========================================
+    // 1. ROBO BREAKOUT ENGINE
+    // ==========================================
+    const paddleW = 110;
+    const paddleH = 14;
+    let bPaddleX = width / 2 - paddleW / 2;
+    let bBallX = width / 2;
+    let bBallY = height - 60;
+    let bBallVx = 4.5 * (Math.random() > 0.5 ? 1 : -1);
+    let bBallVy = -5.5;
+    const bBallRadius = 7;
+    const bTrails: { x: number; y: number; alpha: number }[] = [];
 
+    interface Brick {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      color: string;
+      points: number;
+      alive: boolean;
+    }
+
+    const brickCols = 8;
+    const brickRows = 4;
+    const brickPadding = 8;
+    const brickOffsetTop = 40;
+    const brickOffsetLeft = 24;
+    const brickW = (width - brickOffsetLeft * 2 - (brickCols - 1) * brickPadding) / brickCols;
+    const brickH = 20;
+
+    const rowColors = ["#ef6156", "#ffbd00", "#299093", "#f6f4f0"];
+    const rowPoints = [40, 30, 20, 10];
+    const bricks: Brick[] = [];
+
+    for (let r = 0; r < brickRows; r++) {
+      for (let c = 0; c < brickCols; c++) {
+        bricks.push({
+          x: brickOffsetLeft + c * (brickW + brickPadding),
+          y: brickOffsetTop + r * (brickH + brickPadding),
+          w: brickW,
+          h: brickH,
+          color: rowColors[r % rowColors.length],
+          points: rowPoints[r % rowPoints.length],
+          alive: true,
+        });
+      }
+    }
+
+    // ==========================================
+    // 2. MIND PONG ENGINE
+    // ==========================================
+    const pPaddleW = 14;
+    const pPaddleH = 88;
+    let pPlayerY = height / 2 - pPaddleH / 2;
+    let pAiY = height / 2 - pPaddleH / 2;
+    let pBallX = width / 2;
+    let pBallY = height / 2;
+    let pBallVx = 6 * (Math.random() > 0.5 ? 1 : -1);
+    let pBallVy = (Math.random() - 0.5) * 6;
+    const pBallRadius = 8;
+    const pTrails: { x: number; y: number; alpha: number }[] = [];
+
+    // ==========================================
+    // 3. ASSEMBLY SNAKE ENGINE
+    // ==========================================
+    const gridSize = 20;
+    const sCols = Math.floor(width / gridSize);
+    const sRows = Math.floor(height / gridSize);
+    let snake = [
+      { x: Math.floor(sCols / 2), y: Math.floor(sRows / 2) },
+      { x: Math.floor(sCols / 2) - 1, y: Math.floor(sRows / 2) },
+      { x: Math.floor(sCols / 2) - 2, y: Math.floor(sRows / 2) },
+    ];
+    let sDir = { x: 1, y: 0 };
+    let sNextDir = { x: 1, y: 0 };
+    const foodTypes = [
+      { color: "#ef6156", points: 10, label: "SENSOR" },
+      { color: "#ffbd00", points: 25, label: "ACTUATOR" },
+      { color: "#299093", points: 50, label: "NEURAL CORE" },
+    ];
+    let sFood = {
+      x: Math.floor(Math.random() * sCols),
+      y: Math.floor(Math.random() * sRows),
+      type: foodTypes[0],
+    };
+    let sLastTick = 0;
+    const sTickRate = 100; // ms per step
+
+    // ==========================================
+    // EVENT LISTENERS
+    // ==========================================
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      playerY = Math.max(0, Math.min(height - paddleHeight, mouseY - paddleHeight / 2));
+
+      if (activeGame === "breakout") {
+        bPaddleX = Math.max(0, Math.min(width - paddleW, mouseX - paddleW / 2));
+      } else if (activeGame === "pong") {
+        pPlayerY = Math.max(0, Math.min(height - pPaddleH, mouseY - pPaddleH / 2));
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!e.touches[0]) return;
       const rect = canvas.getBoundingClientRect();
+      const touchX = e.touches[0].clientX - rect.left;
       const touchY = e.touches[0].clientY - rect.top;
-      playerY = Math.max(0, Math.min(height - paddleHeight, touchY - paddleHeight / 2));
+
+      if (activeGame === "breakout") {
+        bPaddleX = Math.max(0, Math.min(width - paddleW, touchX - paddleW / 2));
+      } else if (activeGame === "pong") {
+        pPlayerY = Math.max(0, Math.min(height - pPaddleH, touchY - pPaddleH / 2));
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeGame === "breakout") {
+        if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+          bPaddleX = Math.max(0, bPaddleX - 35);
+        } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+          bPaddleX = Math.min(width - paddleW, bPaddleX + 35);
+        }
+      } else if (activeGame === "snake") {
+        if ((e.key === "ArrowUp" || e.key === "w" || e.key === "W") && sDir.y === 0) {
+          sNextDir = { x: 0, y: -1 };
+        } else if ((e.key === "ArrowDown" || e.key === "s" || e.key === "S") && sDir.y === 0) {
+          sNextDir = { x: 0, y: 1 };
+        } else if ((e.key === "ArrowLeft" || e.key === "a" || e.key === "A") && sDir.x === 0) {
+          sNextDir = { x: -1, y: 0 };
+        } else if ((e.key === "ArrowRight" || e.key === "d" || e.key === "D") && sDir.x === 0) {
+          sNextDir = { x: 1, y: 0 };
+        }
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
 
-    const resetBall = () => {
-      ballX = width / 2;
-      ballY = height / 2;
-      ballSpeedX = -ballSpeedX;
-      ballSpeedY = (Math.random() - 0.5) * 8;
-    };
+    // Main Animation Loop
+    let lastTime = performance.now();
 
-    const update = () => {
-      // AI tracking with realistic delay
-      const aiCenter = aiY + paddleHeight / 2;
-      if (aiCenter < ballY - 15) {
-        aiY += 4.5;
-      } else if (aiCenter > ballY + 15) {
-        aiY -= 4.5;
-      }
-      aiY = Math.max(0, Math.min(height - paddleHeight, aiY));
-
-      // Move ball
-      ballX += ballSpeedX;
-      ballY += ballSpeedY;
-
-      // Ball trail
-      trails.push({ x: ballX, y: ballY, alpha: 0.6 });
-      if (trails.length > 12) trails.shift();
-
-      // Top/Bottom bounces
-      if (ballY - ballRadius <= 0 || ballY + ballRadius >= height) {
-        ballSpeedY = -ballSpeedY;
-      }
-
-      // Player Paddle Collision (Left)
-      if (
-        ballX - ballRadius <= paddleWidth + 24 &&
-        ballY >= playerY &&
-        ballY <= playerY + paddleHeight
-      ) {
-        ballSpeedX = Math.abs(ballSpeedX) * 1.05;
-        const deltaY = ballY - (playerY + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.25;
-      }
-
-      // AI Paddle Collision (Right)
-      if (
-        ballX + ballRadius >= width - (paddleWidth + 24) &&
-        ballY >= aiY &&
-        ballY <= aiY + paddleHeight
-      ) {
-        ballSpeedX = -Math.abs(ballSpeedX) * 1.05;
-        const deltaY = ballY - (aiY + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.25;
-      }
-
-      // Score detection
-      if (ballX < 0) {
-        setAiScore((prev) => {
-          const next = prev + 1;
-          if (next >= 5) setGameStatus("gameover");
-          return next;
-        });
-        resetBall();
-      } else if (ballX > width) {
-        setPlayerScore((prev) => {
-          const next = prev + 1;
-          if (next >= 5) setGameStatus("gameover");
-          return next;
-        });
-        resetBall();
-      }
-    };
-
-    const render = () => {
+    const loop = (currentTime: number) => {
       ctx.clearRect(0, 0, width, height);
 
-      // Court dividing dashed line
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 8]);
-      ctx.beginPath();
-      ctx.moveTo(width / 2, 0);
-      ctx.lineTo(width / 2, height);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Ball trails
-      for (const t of trails) {
-        t.alpha -= 0.04;
-        if (t.alpha > 0) {
-          ctx.fillStyle = `rgba(41, 144, 147, ${t.alpha})`;
+      // Draw Background Matrix Grid
+      ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+      for (let x = 16; x < width; x += 32) {
+        for (let y = 16; y < height; y += 32) {
           ctx.beginPath();
-          ctx.arc(t.x, t.y, ballRadius * 0.8, 0, Math.PI * 2);
+          ctx.arc(x, y, 1, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // Ball
-      ctx.fillStyle = "#ffbd00";
-      ctx.beginPath();
-      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-      ctx.fill();
+      // Update & Render Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08; // subtle gravity
+        p.alpha -= 0.025;
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        } else {
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
 
-      // Player Paddle (Left - Teal)
-      ctx.fillStyle = "#299093";
-      ctx.roundRect(24, playerY, paddleWidth, paddleHeight, 8);
-      ctx.fill();
+      // ----------------------------------------------------
+      // MODE A: ROBO BREAKOUT
+      // ----------------------------------------------------
+      if (activeGame === "breakout") {
+        // Move Ball
+        bBallX += bBallVx;
+        bBallY += bBallVy;
 
-      // AI Paddle (Right - Terracotta)
-      ctx.fillStyle = "#ef6156";
-      ctx.roundRect(width - paddleWidth - 24, aiY, paddleWidth, paddleHeight, 8);
-      ctx.fill();
+        // Ball Trail
+        bTrails.push({ x: bBallX, y: bBallY, alpha: 0.6 });
+        if (bTrails.length > 8) bTrails.shift();
 
-      update();
-      animId = requestAnimationFrame(render);
+        // Wall collisions
+        if (bBallX - bBallRadius <= 0) {
+          bBallX = bBallRadius;
+          bBallVx = -bBallVx;
+          spawnParticles(bBallX, bBallY, "#ffbd00", 4);
+        } else if (bBallX + bBallRadius >= width) {
+          bBallX = width - bBallRadius;
+          bBallVx = -bBallVx;
+          spawnParticles(bBallX, bBallY, "#ffbd00", 4);
+        }
+
+        if (bBallY - bBallRadius <= 0) {
+          bBallY = bBallRadius;
+          bBallVy = -bBallVy;
+          spawnParticles(bBallX, bBallY, "#ffbd00", 4);
+        }
+
+        // Paddle Collision
+        const paddleY = height - 32;
+        if (
+          bBallY + bBallRadius >= paddleY &&
+          bBallY - bBallRadius <= paddleY + paddleH &&
+          bBallX >= bPaddleX - 4 &&
+          bBallX <= bPaddleX + paddleW + 4
+        ) {
+          bBallVy = -Math.abs(bBallVy);
+          const hitOffset = (bBallX - (bPaddleX + paddleW / 2)) / (paddleW / 2);
+          bBallVx = hitOffset * 7;
+          spawnParticles(bBallX, paddleY, "#299093", 6);
+        }
+
+        // Brick Collisions
+        let remaining = 0;
+        for (const brick of bricks) {
+          if (!brick.alive) continue;
+          remaining++;
+
+          if (
+            bBallX + bBallRadius >= brick.x &&
+            bBallX - bBallRadius <= brick.x + brick.w &&
+            bBallY + bBallRadius >= brick.y &&
+            bBallY - bBallRadius <= brick.y + brick.h
+          ) {
+            brick.alive = false;
+            bBallVy = -bBallVy;
+            spawnParticles(brick.x + brick.w / 2, brick.y + brick.h / 2, brick.color, 12);
+            setBreakoutScore((s) => {
+              const next = s + brick.points;
+              setBreakoutHigh((h) => Math.max(h, next));
+              return next;
+            });
+            remaining--;
+            break;
+          }
+        }
+        setBreakoutBricksLeft(remaining);
+
+        if (remaining === 0) {
+          setGameStatus("victory");
+        }
+
+        // Bottom Fall / Loss of life
+        if (bBallY - bBallRadius > height) {
+          setBreakoutLives((lives) => {
+            const next = lives - 1;
+            if (next <= 0) {
+              setGameStatus("gameover");
+            } else {
+              bBallX = bPaddleX + paddleW / 2;
+              bBallY = height - 60;
+              bBallVx = 4.5 * (Math.random() > 0.5 ? 1 : -1);
+              bBallVy = -5.5;
+            }
+            return next;
+          });
+        }
+
+        // Render Bricks
+        for (const brick of bricks) {
+          if (!brick.alive) continue;
+          ctx.fillStyle = brick.color;
+          ctx.beginPath();
+          ctx.roundRect(brick.x, brick.y, brick.w, brick.h, 6);
+          ctx.fill();
+
+          // Subtle inner gloss
+          ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+          ctx.beginPath();
+          ctx.roundRect(brick.x + 2, brick.y + 2, brick.w - 4, 3, 2);
+          ctx.fill();
+        }
+
+        // Render Ball Trails
+        for (const t of bTrails) {
+          t.alpha -= 0.06;
+          if (t.alpha > 0) {
+            ctx.fillStyle = `rgba(255, 189, 0, ${t.alpha})`;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, bBallRadius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Render Ball
+        ctx.fillStyle = "#ffbd00";
+        ctx.beginPath();
+        ctx.arc(bBallX, bBallY, bBallRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Render Paddle (Styled as Mind Robotics Pill Tag)
+        ctx.fillStyle = "#299093";
+        ctx.beginPath();
+        ctx.roundRect(bPaddleX, paddleY, paddleW, paddleH, 8);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Accent dots on paddle
+        ctx.fillStyle = "#ef6156";
+        ctx.beginPath();
+        ctx.arc(bPaddleX + 10, paddleY + paddleH / 2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffbd00";
+        ctx.beginPath();
+        ctx.arc(bPaddleX + paddleW - 10, paddleY + paddleH / 2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ----------------------------------------------------
+      // MODE B: MIND PONG
+      // ----------------------------------------------------
+      else if (activeGame === "pong") {
+        // AI tracking
+        const aiCenter = pAiY + pPaddleH / 2;
+        if (aiCenter < pBallY - 14) pAiY += 4.4;
+        else if (aiCenter > pBallY + 14) pAiY -= 4.4;
+        pAiY = Math.max(0, Math.min(height - pPaddleH, pAiY));
+
+        // Move Ball
+        pBallX += pBallVx;
+        pBallY += pBallVy;
+
+        pTrails.push({ x: pBallX, y: pBallY, alpha: 0.6 });
+        if (pTrails.length > 10) pTrails.shift();
+
+        if (pBallY - pBallRadius <= 0 || pBallY + pBallRadius >= height) {
+          pBallVy = -pBallVy;
+        }
+
+        // Left Player Paddle Collision
+        if (
+          pBallX - pBallRadius <= pPaddleW + 24 &&
+          pBallY >= pPlayerY &&
+          pBallY <= pPlayerY + pPaddleH
+        ) {
+          pBallVx = Math.abs(pBallVx) * 1.05;
+          const deltaY = pBallY - (pPlayerY + pPaddleH / 2);
+          pBallVy = deltaY * 0.25;
+          spawnParticles(pPaddleW + 24, pBallY, "#299093", 6);
+        }
+
+        // Right AI Paddle Collision
+        if (
+          pBallX + pBallRadius >= width - (pPaddleW + 24) &&
+          pBallY >= pAiY &&
+          pBallY <= pAiY + pPaddleH
+        ) {
+          pBallVx = -Math.abs(pBallVx) * 1.05;
+          const deltaY = pBallY - (pAiY + pPaddleH / 2);
+          pBallVy = deltaY * 0.25;
+          spawnParticles(width - pPaddleW - 24, pBallY, "#ef6156", 6);
+        }
+
+        // Scoring
+        if (pBallX < 0) {
+          setAiScore((s) => {
+            const next = s + 1;
+            if (next >= 5) setGameStatus("gameover");
+            return next;
+          });
+          pBallX = width / 2;
+          pBallY = height / 2;
+          pBallVx = 6;
+          pBallVy = (Math.random() - 0.5) * 6;
+        } else if (pBallX > width) {
+          setPlayerScore((s) => {
+            const next = s + 1;
+            if (next >= 5) setGameStatus("victory");
+            return next;
+          });
+          pBallX = width / 2;
+          pBallY = height / 2;
+          pBallVx = -6;
+          pBallVy = (Math.random() - 0.5) * 6;
+        }
+
+        // Dashed center court divider
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(width / 2, 0);
+        ctx.lineTo(width / 2, height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Trails
+        for (const t of pTrails) {
+          t.alpha -= 0.05;
+          if (t.alpha > 0) {
+            ctx.fillStyle = `rgba(41, 144, 147, ${t.alpha})`;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, pBallRadius * 0.75, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Ball
+        ctx.fillStyle = "#ffbd00";
+        ctx.beginPath();
+        ctx.arc(pBallX, pBallY, pBallRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Left Player Paddle
+        ctx.fillStyle = "#299093";
+        ctx.beginPath();
+        ctx.roundRect(24, pPlayerY, pPaddleW, pPaddleH, 8);
+        ctx.fill();
+
+        // Right AI Paddle
+        ctx.fillStyle = "#ef6156";
+        ctx.beginPath();
+        ctx.roundRect(width - pPaddleW - 24, pAiY, pPaddleW, pPaddleH, 8);
+        ctx.fill();
+      }
+
+      // ----------------------------------------------------
+      // MODE C: ASSEMBLY SNAKE
+      // ----------------------------------------------------
+      else if (activeGame === "snake") {
+        if (currentTime - sLastTick > sTickRate) {
+          sLastTick = currentTime;
+          sDir = sNextDir;
+
+          const head = { x: snake[0].x + sDir.x, y: snake[0].y + sDir.y };
+
+          // Wall wrapping
+          if (head.x < 0) head.x = sCols - 1;
+          else if (head.x >= sCols) head.x = 0;
+          if (head.y < 0) head.y = sRows - 1;
+          else if (head.y >= sRows) head.y = 0;
+
+          // Self collision
+          if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+            setGameStatus("gameover");
+          } else {
+            snake.unshift(head);
+
+            // Food collision
+            if (head.x === sFood.x && head.y === sFood.y) {
+              spawnParticles(
+                sFood.x * gridSize + gridSize / 2,
+                sFood.y * gridSize + gridSize / 2,
+                sFood.type.color,
+                12
+              );
+              setSnakeScore((s) => {
+                const next = s + sFood.type.points;
+                setSnakeHigh((h) => Math.max(h, next));
+                return next;
+              });
+              setSnakeLength(snake.length);
+              const randType = foodTypes[Math.floor(Math.random() * foodTypes.length)];
+              sFood = {
+                x: Math.floor(Math.random() * sCols),
+                y: Math.floor(Math.random() * sRows),
+                type: randType,
+              };
+            } else {
+              snake.pop();
+            }
+          }
+        }
+
+        // Render Food Component Chip
+        const fx = sFood.x * gridSize + 2;
+        const fy = sFood.y * gridSize + 2;
+        const fw = gridSize - 4;
+        ctx.fillStyle = sFood.type.color;
+        ctx.beginPath();
+        ctx.roundRect(fx, fy, fw, fw, 5);
+        ctx.fill();
+
+        // Inner glowing core
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(fx + fw / 2, fy + fw / 2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Render Snake Circuit Body
+        snake.forEach((seg, idx) => {
+          const sx = seg.x * gridSize + 2;
+          const sy = seg.y * gridSize + 2;
+          const sw = gridSize - 4;
+
+          if (idx === 0) {
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.roundRect(sx, sy, sw, sw, 6);
+            ctx.fill();
+
+            // Head Sensor Eyes
+            ctx.fillStyle = "#299093";
+            ctx.beginPath();
+            ctx.arc(sx + sw / 2, sy + sw / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = idx % 2 === 0 ? "#299093" : "#247f82";
+            ctx.beginPath();
+            ctx.roundRect(sx, sy, sw, sw, 4);
+            ctx.fill();
+          }
+        });
+      }
+
+      animId = requestAnimationFrame(loop);
     };
 
-    animId = requestAnimationFrame(render);
+    animId = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [gameOpen]);
+  }, [gameOpen, activeGame, resetTrigger]);
 
-  const restartGame = () => {
+  const restartCurrentGame = () => {
     setPlayerScore(0);
     setAiScore(0);
+    setBreakoutScore(0);
+    setBreakoutLives(3);
+    setSnakeScore(0);
+    setSnakeLength(3);
     setGameStatus("playing");
+    setResetTrigger((prev) => prev + 1);
   };
 
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -388,40 +820,76 @@ export default function OutroSection() {
         </motion.p>
       </div>
 
-      {/* Playable Pong Dialog Modal */}
+      {/* Playable Multi-Game Dialog Modal */}
       {gameOpen && (
         <div
           role="dialog"
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
         >
-          <div className="relative w-full max-w-3xl rounded-[2.5rem] bg-[#061417] border border-white/20 p-6 md:p-8 shadow-2xl flex flex-col text-white">
-            {/* Header / Score Board */}
-            <div className="flex items-center justify-between pb-6 border-b border-white/10">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <span className="size-3 rounded-full bg-[#299093]" />
-                  <span className="font-mono text-xs uppercase tracking-wider">You: {playerScore}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="size-3 rounded-full bg-[#ef6156]" />
-                  <span className="font-mono text-xs uppercase tracking-wider">Mind AI: {aiScore}</span>
-                </div>
+          <div className="relative w-full max-w-4xl rounded-[2.8rem] bg-[#061417] border border-white/20 p-6 md:p-8 shadow-2xl flex flex-col text-white">
+            {/* Header / Game Selector & Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-white/10">
+              {/* Game Selector Tabs (Pill Tag Design) */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveGame("breakout");
+                    setGameStatus("playing");
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                    activeGame === "breakout"
+                      ? "bg-[#ef6156] text-[#061a1e] font-bold shadow-md"
+                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  Robo Breakout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveGame("pong");
+                    setGameStatus("playing");
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                    activeGame === "pong"
+                      ? "bg-[#299093] text-white font-bold shadow-md"
+                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  Mind Pong
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveGame("snake");
+                    setGameStatus("playing");
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                    activeGame === "snake"
+                      ? "bg-[#ffbd00] text-[#061a1e] font-bold shadow-md"
+                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  Assembly Snake
+                </button>
               </div>
 
+              {/* Window Controls */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={restartGame}
-                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                  title="Restart Game"
+                  onClick={restartCurrentGame}
+                  className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                  title="Restart Current Game"
                 >
                   <RotateCcw className="size-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setGameOpen(false)}
-                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
                   title="Close Game"
                 >
                   <X className="size-5" />
@@ -429,26 +897,101 @@ export default function OutroSection() {
               </div>
             </div>
 
-            {/* Game Canvas */}
-            <div className="relative mt-6 aspect-[16/9] w-full rounded-2xl overflow-hidden bg-black/60 border border-white/10 flex items-center justify-center">
-              <canvas ref={canvasRef} className="size-full cursor-none" />
+            {/* Telemetry HUD Bar */}
+            <div className="flex items-center justify-between pt-4 pb-2 font-mono text-xs uppercase tracking-wider text-white/80">
+              {activeGame === "breakout" && (
+                <>
+                  <div className="flex items-center gap-6">
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#ef6156]" />
+                      <span>SCORE: {breakoutScore}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#ffbd00]" />
+                      <span>MODULES LEFT: {breakoutBricksLeft}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="opacity-60 mr-1">LIVES:</span>
+                    {[...Array(3)].map((_, i) => (
+                      <span
+                        key={i}
+                        className={`size-2.5 rounded-full transition-all duration-300 ${
+                          i < breakoutLives ? "bg-[#299093] shadow-[0_0_8px_#299093]" : "bg-white/15"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
 
-              {/* Game Over Overlay */}
-              {gameStatus === "gameover" && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 text-center p-6">
-                  <Trophy className={`size-12 ${playerScore > aiScore ? "text-[#ffbd00]" : "text-white/40"}`} />
-                  <h4 className="text-2xl md:text-3xl font-bold">
-                    {playerScore > aiScore ? "Victory! Human Agility Won" : "Mind Robotics AI Won"}
+              {activeGame === "pong" && (
+                <>
+                  <div className="flex items-center gap-6">
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#299093]" />
+                      <span>YOU: {playerScore}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#ef6156]" />
+                      <span>MIND AI: {aiScore}</span>
+                    </span>
+                  </div>
+                  <span className="text-white/50">FIRST TO 5 POINTS</span>
+                </>
+              )}
+
+              {activeGame === "snake" && (
+                <>
+                  <div className="flex items-center gap-6">
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#ffbd00]" />
+                      <span>SCORE: {snakeScore}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="size-2.5 rounded-full bg-[#299093]" />
+                      <span>CIRCUIT LENGTH: {snakeLength}</span>
+                    </span>
+                  </div>
+                  <span className="text-white/50">COLLECT SENSOR CHIPS</span>
+                </>
+              )}
+            </div>
+
+            {/* Game Canvas */}
+            <div className="relative mt-3 aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#040d0f] border border-white/10 flex items-center justify-center shadow-inner">
+              <canvas ref={canvasRef} className="size-full cursor-crosshair" />
+
+              {/* Game Over / Victory Overlay */}
+              {(gameStatus === "gameover" || gameStatus === "victory") && (
+                <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 text-center p-6 animate-in fade-in duration-200">
+                  <Trophy
+                    className={`size-12 ${
+                      gameStatus === "victory" ? "text-[#ffbd00]" : "text-white/30"
+                    }`}
+                  />
+                  <h4 className="text-2xl md:text-3xl font-bold tracking-tight">
+                    {gameStatus === "victory"
+                      ? "Calibration Complete!"
+                      : "Telemetry Interrupted"}
                   </h4>
-                  <p className="text-sm text-white/70 max-w-sm">
-                    {playerScore > aiScore
-                      ? "Flawless reflexes. You mastered kinematic line routing."
-                      : "The foundation models learned your trajectory across production cycles."}
+                  <p className="text-sm text-white/70 max-w-md">
+                    {gameStatus === "victory"
+                      ? activeGame === "breakout"
+                        ? "Flawless kinematic execution. All 32 production modules calibrated."
+                        : activeGame === "pong"
+                        ? "Human agility prevails over the reinforcement model."
+                        : "Circuit trace fully routed with zero continuity breaks."
+                      : activeGame === "breakout"
+                      ? "Manipulator lost telemetry tracking. Recalibrate and try again."
+                      : activeGame === "pong"
+                      ? "The foundation model adapted to your trajectory across production cycles."
+                      : "Trace collided with existing bus topology."}
                   </p>
                   <button
                     type="button"
-                    onClick={restartGame}
-                    className="mt-2 px-6 py-2.5 rounded-full font-bold bg-[#299093] text-white hover:bg-[#207477] transition-colors"
+                    onClick={restartCurrentGame}
+                    className="mt-3 px-8 py-3 rounded-full font-bold bg-[#299093] text-white hover:bg-[#207477] transition-all hover:scale-105 cursor-pointer shadow-lg"
                   >
                     Play Again
                   </button>
@@ -456,8 +999,11 @@ export default function OutroSection() {
               )}
             </div>
 
-            <p className="text-xs font-mono text-center opacity-50 mt-4">
-              Move your mouse or finger up and down to control the left paddle. First to 5 points wins.
+            {/* Control Instructions */}
+            <p className="text-xs font-mono text-center text-white/40 mt-4 tracking-wider">
+              {activeGame === "breakout" && "MOVE MOUSE OR USE ← / → KEYS TO STEER THE MANIPULATOR PADDLE"}
+              {activeGame === "pong" && "MOVE MOUSE OR TOUCH UP / DOWN TO ENGAGE AI DEFENSE"}
+              {activeGame === "snake" && "USE ARROW KEYS OR W / A / S / D TO ROUTE THE CIRCUIT TRACE"}
             </p>
           </div>
         </div>
