@@ -143,16 +143,16 @@ export default function HeroSection() {
   return (
     <>
       {/* SECTION 0: Hero 3D Arm, Wordmark, and Parallax Capsules */}
-      <section className="px-6 md:px-8 desktop:px-8 relative flex flex-col gap-y-36 md:gap-y-48 lg:gap-y-56 pt-28 md:pt-40 lg:pt-52">
+      <section className="px-6 md:px-8 desktop:px-8 relative flex flex-col gap-y-36 tablet:gap-y-[220px] laptop:gap-y-[240px] desktop:gap-y-[260px] pt-[140px] tablet:pt-[320px] laptop:pt-[340px] desktop:pt-[360px]">
         {/* 3D Cel-shaded Robotic Arm Viewport */}
         <div className="z-above-content pointer-events-none absolute inset-x-0 top-0 bottom-[-75svmin]">
           <HeroRobotArm3D />
         </div>
 
-        {/* Wordmark Presentation */}
+        {/* Wordmark Presentation - Positioned in the Lower Part of Initial Viewport */}
         <span
           ref={wordmarkRef}
-          className="z-above-content tablet:gap-[3.6vw] flex flex-col gap-[7vw] select-none"
+          className="z-above-content tablet:gap-[4.5vw] flex flex-col gap-[8vw] select-none"
           aria-label="Mind Robotics"
         >
           {/* "MIND" Wordmark SVG */}
@@ -210,27 +210,21 @@ export default function HeroSection() {
           </svg>
         </span>
 
-        {/* Background Capsule Silhouettes - Architectural Solid Pill Silhouettes */}
+        {/* Background Capsule Silhouettes - Pure Recreated Architectural Pills with Zero Internal Padding */}
         <div className="flex justify-between laptop:px-[inherit] select-none pointer-events-none">
-          {/* Left Capsule */}
-          <div
-            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#faf9f6] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/15 shadow-[0_24px_64px_rgba(6,26,30,0.06)] overflow-hidden"
+          {/* Left Capsule - Top dome subtly peeking in from bottom-left behind the lower wordmark */}
+          <span
+            className="w-[32%] rounded-full bg-white dark:bg-[#0c2226] border border-[#061a1e]/[0.06] dark:border-white/10 shadow-[0_20px_50px_rgba(6,26,30,0.04)] aspect-[2/5] z-behind-content will-change-transform block p-0 m-0"
             style={{ transform: `translateY(${leftY}%)` }}
             aria-hidden="true"
-          >
-            {/* Concentric Inner Hairline Ring */}
-            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.05] pointer-events-none" />
-          </div>
+          />
 
           {/* Right Capsule */}
-          <div
-            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#faf9f6] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/15 shadow-[0_24px_64px_rgba(6,26,30,0.06)] overflow-hidden"
+          <span
+            className="w-[32%] rounded-full bg-white dark:bg-[#0c2226] border border-[#061a1e]/[0.06] dark:border-white/10 shadow-[0_20px_50px_rgba(6,26,30,0.04)] aspect-[2/5] z-behind-content will-change-transform block p-0 m-0"
             style={{ transform: `translateY(${rightY}%)` }}
             aria-hidden="true"
-          >
-            {/* Concentric Inner Hairline Ring */}
-            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.05] pointer-events-none" />
-          </div>
+          />
         </div>
       </section>
 
