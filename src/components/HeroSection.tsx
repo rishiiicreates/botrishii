@@ -152,13 +152,13 @@ export default function HeroSection() {
         {/* Wordmark Presentation */}
         <span
           ref={wordmarkRef}
-          className="z-above-content tablet:gap-[4.5vw] flex flex-col gap-[9.2vw] select-none"
+          className="z-above-content tablet:gap-[3.6vw] flex flex-col gap-[7vw] select-none"
           aria-label="Mind Robotics"
         >
           {/* "MIND" Wordmark SVG */}
           <svg
             ref={mindSvgRef}
-            className="tablet:h-[12vw] tablet:w-auto w-[49%] self-start text-current wordmark-reveal overflow-visible"
+            className="tablet:h-[9.6vw] tablet:w-auto w-[42%] self-start text-current wordmark-reveal overflow-visible"
             viewBox={WORDMARK_MARKS.mind.viewBox}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -184,7 +184,7 @@ export default function HeroSection() {
 
           {/* "ROBOTICS" Wordmark SVG */}
           <svg
-            className="tablet:h-[12vw] tablet:w-auto w-full self-end text-current wordmark-reveal overflow-visible"
+            className="tablet:h-[9.6vw] tablet:w-auto w-[88%] tablet:w-auto self-end text-current wordmark-reveal overflow-visible"
             viewBox={WORDMARK_MARKS.robotics.viewBox}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -210,63 +210,18 @@ export default function HeroSection() {
           </svg>
         </span>
 
-        {/* Background Capsule Silhouettes - Center Circle Removed, Side Capsules with Architectural Character */}
+        {/* Background Capsule Silhouettes - Minimalist Clean Pill Silhouettes */}
         <div className="flex justify-between laptop:px-[inherit] select-none pointer-events-none">
-          {/* Left Capsule with Architectural Depth & Telemetry Accents */}
-          <div
-            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#fcfbf9] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/10 shadow-[0_24px_64px_rgba(6,26,30,0.04)] overflow-hidden flex flex-col justify-between items-center py-8 tablet:py-12"
+          <span
+            className="w-[32%] rounded-full bg-white dark:bg-white/10 aspect-2/5 z-behind-content will-change-transform"
             style={{ transform: `translateY(${leftY}%)` }}
             aria-hidden="true"
-          >
-            {/* Concentric Inner Hairline Ring */}
-            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.04] pointer-events-none" />
-
-            {/* Top Precision Metric / Accent */}
-            <div className="relative z-10 flex flex-col items-center gap-1 opacity-45 font-mono text-[9px] tablet:text-[11px] tracking-widest text-[#061a1e] dark:text-white uppercase select-none">
-              <span className="size-1.5 rounded-full bg-[#299093]" />
-              <span>SYS // L01</span>
-            </div>
-
-            {/* Subtle Mechanical Tick Marks in Center */}
-            <div className="relative z-10 flex flex-col items-center gap-2 opacity-30">
-              <span className="w-4 h-[1px] bg-[#061a1e] dark:bg-white" />
-              <span className="w-2 h-[1px] bg-[#061a1e] dark:bg-white" />
-              <span className="w-4 h-[1px] bg-[#061a1e] dark:bg-white" />
-            </div>
-
-            {/* Bottom Coordinate Mark */}
-            <div className="relative z-10 opacity-35 font-mono text-[9px] tablet:text-[10px] tracking-widest text-[#061a1e] dark:text-white uppercase select-none">
-              SEC-00
-            </div>
-          </div>
-
-          {/* Right Capsule with Architectural Depth & Telemetry Accents */}
-          <div
-            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#fcfbf9] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/10 shadow-[0_24px_64px_rgba(6,26,30,0.04)] overflow-hidden flex flex-col justify-between items-center py-8 tablet:py-12"
+          />
+          <span
+            className="w-[32%] rounded-full bg-white dark:bg-white/10 aspect-2/5 z-behind-content will-change-transform"
             style={{ transform: `translateY(${rightY}%)` }}
             aria-hidden="true"
-          >
-            {/* Concentric Inner Hairline Ring */}
-            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.04] pointer-events-none" />
-
-            {/* Top Precision Metric / Accent */}
-            <div className="relative z-10 flex flex-col items-center gap-1 opacity-45 font-mono text-[9px] tablet:text-[11px] tracking-widest text-[#061a1e] dark:text-white uppercase select-none">
-              <span className="size-1.5 rounded-full bg-[#ef6156]" />
-              <span>SYS // R02</span>
-            </div>
-
-            {/* Subtle Mechanical Tick Marks in Center */}
-            <div className="relative z-10 flex flex-col items-center gap-2 opacity-30">
-              <span className="w-4 h-[1px] bg-[#061a1e] dark:bg-white" />
-              <span className="w-2 h-[1px] bg-[#061a1e] dark:bg-white" />
-              <span className="w-4 h-[1px] bg-[#061a1e] dark:bg-white" />
-            </div>
-
-            {/* Bottom Coordinate Mark */}
-            <div className="relative z-10 opacity-35 font-mono text-[9px] tablet:text-[10px] tracking-widest text-[#061a1e] dark:text-white uppercase select-none">
-              POS-100%
-            </div>
-          </div>
+          />
         </div>
       </section>
 
