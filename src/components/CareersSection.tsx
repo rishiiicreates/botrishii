@@ -100,7 +100,7 @@ export default function CareersSection() {
           {/* CTA Button */}
           <div>
             <a
-              href="https://jobs.ashbyhq.com/mindrobotics"
+              href="https://nacreous-one.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="group grid-pile text-button bg-[#299093] h-10 w-fit cursor-pointer items-center overflow-clip rounded-full text-white"
