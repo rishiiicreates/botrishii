@@ -321,7 +321,7 @@ export default function HeroSection() {
             aria-label="Mind Robotics is building universally capable robots to transform industrial work."
           >
             {/* Pill 1: Mind Robotics */}
-            <span className="-ml-[var(--tag-padding-inline)] inline-block align-baseline">
+            <span className="-ml-[var(--tag-padding-inline)]">
               <FanTag
                 text="Mind Robotics"
                 color="#299093"
@@ -341,64 +341,64 @@ export default function HeroSection() {
             <span
               className="headline-word mr-[var(--tag-padding-inline)]"
               data-can-reveal={section1CanReveal ? "true" : "false"}
-              style={{ "--delay": "0.35s" } as React.CSSProperties}
+              style={{ "--delay": "0.4s" } as React.CSSProperties}
             >
               building
             </span>{" "}
             {/* Pill 2: universally */}
-            <span className="-ml-[var(--tag-padding-inline)] mr-[var(--tag-padding-inline)] inline-block align-baseline">
+            <span className="-ml-[var(--tag-padding-inline)] mr-[var(--tag-padding-inline)]">
               <FanTag
                 text="universally"
                 color="#ffffff"
                 textColor="text-[#061a1e]"
                 size="headline"
                 canReveal={section1CanReveal}
-                delay={0.5}
+                delay={0.6}
               />
             </span>{" "}
             {/* Pill 3: capable */}
-            <span className="-ml-[var(--tag-padding-inline)] mr-[var(--tag-padding-inline)] inline-block align-baseline">
+            <span className="-ml-[var(--tag-padding-inline)]">
               <FanTag
                 text="capable"
                 color="#ef6156"
-                textColor="text-white"
+                textColor="text-[#061a1e]"
                 size="headline"
                 canReveal={section1CanReveal}
-                delay={0.7}
+                delay={0.8}
               />
-            </span>{" "}
-            <span
-              className="headline-word"
-              data-can-reveal={section1CanReveal ? "true" : "false"}
-              style={{ "--delay": "0.85s" } as React.CSSProperties}
-            >
-              robots
             </span>{" "}
             <span
               className="headline-word"
               data-can-reveal={section1CanReveal ? "true" : "false"}
               style={{ "--delay": "1.0s" } as React.CSSProperties}
             >
+              robots
+            </span>{" "}
+            <span
+              className="headline-word"
+              data-can-reveal={section1CanReveal ? "true" : "false"}
+              style={{ "--delay": "1.2s" } as React.CSSProperties}
+            >
               to
             </span>{" "}
             <span
               className="headline-word"
               data-can-reveal={section1CanReveal ? "true" : "false"}
-              style={{ "--delay": "1.15s" } as React.CSSProperties}
+              style={{ "--delay": "1.4s" } as React.CSSProperties}
             >
               transform
             </span>{" "}
             <span
               className="headline-word"
               data-can-reveal={section1CanReveal ? "true" : "false"}
-              style={{ "--delay": "1.3s" } as React.CSSProperties}
+              style={{ "--delay": "1.6s" } as React.CSSProperties}
             >
               industrial
             </span>{" "}
             <span
               className="headline-word"
               data-can-reveal={section1CanReveal ? "true" : "false"}
-              style={{ "--delay": "1.45s" } as React.CSSProperties}
+              style={{ "--delay": "1.8s" } as React.CSSProperties}
             >
               work.
             </span>

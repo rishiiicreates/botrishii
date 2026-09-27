@@ -151,32 +151,30 @@ body {
 
 .grid-pile {
   display: grid;
-  grid-template-areas: "pile";
 }
 
 .grid-pile > * {
-  grid-area: pile;
+  grid-area: 1 / 1;
 }
 
 .grid-pile-inline {
   display: inline-grid;
-  grid-template-areas: "pile";
-  vertical-align: middle;
+  vertical-align: baseline;
 }
 
 .grid-pile-inline > * {
-  grid-area: pile;
+  grid-area: 1 / 1;
 }
 
 /* Stacking context utilities matching mindrobotics.com */
 .z-above-content {
   z-index: var(--z-index-above-content, 10);
-  position: relative;
 }
 
 .z-behind-content {
   z-index: var(--z-index-behind-content, -1);
 }
+
 
 /* Column width utilities matching live design system */
 .w-columns-5\/4 {

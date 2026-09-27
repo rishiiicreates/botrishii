@@ -90,7 +90,7 @@ export default function FanTag({
 
       {/* Final Top Layer with background and text */}
       <span
-        className={`tag-layer flex h-full items-center font-bold leading-[var(--tag-height)] self-stretch ${
+        className={`tag-layer flex h-full items-center font-bold leading-[var(--tag-height)] self-baseline ${
           isDot ? "" : "px-[var(--tag-padding-inline)]"
         } ${computedTextColor || ""}`}
         style={

@@ -258,7 +258,7 @@ export default function OutroSection() {
         </div>
 
         {/* Massive Poster Typography ("Get to know Mind") layered as z-above-content matching mindrobotics.com */}
-        <p className="text-poster tablet:flex z-above-content pointer-events-none hidden w-full flex-col justify-center gap-[0.15em] whitespace-nowrap self-center select-none text-[#061a1e]">
+        <p className="text-poster tablet:flex z-above-content relative pointer-events-none hidden w-full flex-col justify-center gap-[0.15em] whitespace-nowrap self-center select-none text-[#061a1e]">
           <span className="even:text-right">Get to</span>
           <span className="even:text-right">know</span>
           <span className="even:text-right">Mind</span>
