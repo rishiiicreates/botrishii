@@ -31,9 +31,12 @@ export default function ContactPage() {
 
       {/* Main Contact Stage */}
       <section className="px-6 md:px-12 pt-36 md:pt-44 pb-20 flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-xl bg-[#e8e5e0] border border-[#061a1e]/[0.08] rounded-[3.2rem] md:rounded-[4.2rem] p-8 md:p-14 shadow-[0_24px_64px_rgba(6,26,30,0.12)] flex flex-col gap-8 text-[#061a1e]">
+        <div
+          className="w-full max-w-[94vw] md:w-[68vw] lg:w-[66vw] max-w-5xl bg-[#e8e5e0] border border-[#061a1e]/[0.08] rounded-[3.6rem] md:rounded-[4.8rem] p-10 md:p-14 lg:p-16 shadow-[0_32px_80px_rgba(6,26,30,0.14)] flex flex-col justify-between text-[#061a1e]"
+          style={{ minHeight: "75vh" }}
+        >
           {/* Header & Technical Tags */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold">
                 Mind Robotics
@@ -41,70 +44,58 @@ export default function ContactPage() {
               <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold">
                 Palo Alto, CA
               </span>
+              <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold hidden md:inline-block">
+                HQ Lab
+              </span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-[#061a1e] mt-1">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-[#061a1e]">
               Contact us
             </h1>
-            <p className="text-base md:text-lg text-[#061a1e]/70 leading-relaxed">
-              We are building universally capable robotics for physical industrial labor. Reach out to discuss partnerships, press, or hardware deployment.
+            <p className="text-lg md:text-2xl text-[#061a1e]/70 leading-relaxed max-w-2xl text-balance">
+              We are building universally capable robotics for physical industrial labor. Reach out to discuss commercial deployments, press inquiries, or hardware partnerships.
             </p>
           </div>
 
-          {/* Details List */}
-          <dl className="flex flex-col gap-5 pt-4 border-t border-[#061a1e]/10">
-            {/* Address */}
-            <div className="flex flex-col gap-1">
-              <dt className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/50 dark:text-white/50 flex items-center gap-1.5">
-                <MapPin className="size-3.5 text-[#299093]" />
-                Address
-              </dt>
-              <dd className="text-lg font-semibold text-[#061a1e] dark:text-[#f6f4f0]">
-                Palo Alto, CA
-              </dd>
+          {/* Spacious 3-Column Channels Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6 border-y border-[#061a1e]/10">
+            <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Headquarters</span>
+                <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1">Palo Alto, CA</p>
+              </div>
+              <span className="text-xs text-[#061a1e]/60 font-mono">Silicon Valley Lab</span>
             </div>
 
-            {/* Phone */}
-            <div className="flex flex-col gap-1">
-              <dt className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/50 dark:text-white/50 flex items-center gap-1.5">
-                <Phone className="size-3.5 text-[#ffbd00]" />
-                Phone
-              </dt>
-              <dd>
-                <a
-                  href="tel:+14084599351"
-                  className="text-lg font-semibold text-[#061a1e] dark:text-[#f6f4f0] hover:text-[#299093] transition-colors"
-                >
-                  408-459-9351
-                </a>
-              </dd>
+            <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Telephone</span>
+                <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1">
+                  <a href="tel:+14084599351" className="hover:text-[#299093] transition-colors">408-459-9351</a>
+                </p>
+              </div>
+              <span className="text-xs text-[#061a1e]/60 font-mono">Mon–Fri 9am–6pm PST</span>
             </div>
 
-            {/* Email */}
-            <div className="flex flex-col gap-1">
-              <dt className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/50 dark:text-white/50 flex items-center gap-1.5">
-                <Mail className="size-3.5 text-[#ef6156]" />
-                Email
-              </dt>
-              <dd>
-                <a
-                  href="mailto:press@mindrobotics.com"
-                  className="text-lg font-semibold text-[#061a1e] dark:text-[#f6f4f0] hover:text-[#299093] transition-colors truncate block"
-                >
-                  press@mindrobotics.com
-                </a>
-              </dd>
+            <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Inquiries & Press</span>
+                <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1 truncate">
+                  <a href="mailto:press@mindrobotics.com" className="hover:text-[#299093] transition-colors">press@mindrobotics.com</a>
+                </p>
+              </div>
+              <span className="text-xs text-[#061a1e]/60 font-mono">&lt; 24h response time</span>
             </div>
-          </dl>
+          </div>
 
           {/* Action CTAs with 3-Layer Waterfall */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-4 mt-2">
             {/* Send email */}
             <a
               href="mailto:press@mindrobotics.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="group grid-pile h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#061a1e] text-[1.4rem] font-bold"
+              className="group grid-pile h-12 md:h-14 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#061a1e] text-[1.5rem] font-bold"
             >
               <span
                 className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -118,7 +109,7 @@ export default function ContactPage() {
                 className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#299093] delay-[120ms]"
                 aria-hidden="true"
               />
-              <span className="relative z-10 px-6 text-center leading-none">
+              <span className="relative z-10 px-8 text-center leading-none">
                 Send email
               </span>
             </a>
@@ -127,7 +118,7 @@ export default function ContactPage() {
             <button
               type="button"
               onClick={copyAddress}
-              className="group grid-pile h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
+              className="group grid-pile h-12 md:h-14 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.5rem] font-bold"
             >
               <span
                 className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -141,7 +132,7 @@ export default function ContactPage() {
                 className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
                 aria-hidden="true"
               />
-              <span className="relative z-10 px-6 text-center leading-none">
+              <span className="relative z-10 px-8 text-center leading-none">
                 {copied ? "Address Copied!" : "Copy Address"}
               </span>
             </button>
@@ -149,7 +140,7 @@ export default function ContactPage() {
             {/* Back to Home */}
             <Link
               href="/"
-              className="flex items-center gap-2 px-5 h-11 rounded-full text-sm font-semibold border border-[#061a1e]/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 text-[#061a1e] dark:text-[#f6f4f0] transition-colors ml-auto"
+              className="flex items-center gap-2 px-6 h-12 md:h-14 rounded-full text-base font-semibold border border-[#061a1e]/15 hover:bg-black/5 text-[#061a1e] transition-colors ml-auto"
             >
               <ArrowLeft className="size-4" />
               <span>Back to Home</span>

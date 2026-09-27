@@ -95,75 +95,91 @@ export default function Header() {
         </nav>
       </header>
 
-      {/* Contact Modal Dialog - Styled Exactly Consistent with Mind Robotics UI */}
+      {/* Contact Modal Dialog - Sized to at least 45% of screen area */}
       {contactOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4 md:p-8 overflow-y-auto"
           onClick={() => setContactOpen(false)}
         >
           <div
-            className="py-8 flex w-full max-w-md flex-col items-center gap-6 my-auto"
+            className="py-6 flex w-full max-w-[94vw] md:w-[68vw] lg:w-[66vw] max-w-5xl flex-col items-center gap-6 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Card with Warm Concrete Background & Large Pill Geometry */}
-            <div className="bg-[#e8e5e0] rounded-[3.2rem] md:rounded-[4rem] border border-[#061a1e]/[0.08] flex w-full flex-col gap-8 p-8 md:p-12 shadow-[0_24px_64px_rgba(6,26,30,0.18)] text-[#061a1e]">
+            <div
+              className="bg-[#e8e5e0] rounded-[3.6rem] md:rounded-[4.8rem] border border-[#061a1e]/[0.08] flex w-full flex-col justify-between p-10 md:p-14 lg:p-16 shadow-[0_32px_80px_rgba(6,26,30,0.22)] text-[#061a1e]"
+              style={{ minHeight: "75vh" }}
+            >
               <div className="flex items-center justify-between">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-[#061a1e]">
-                  Contact us
-                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold">
+                    Mind Robotics
+                  </span>
+                  <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold">
+                    Palo Alto, CA
+                  </span>
+                  <span className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-[#dbd7ca] text-[#061a1e] font-semibold hidden md:inline-block">
+                    HQ Lab
+                  </span>
+                </div>
                 <Link
                   href="/contact"
                   onClick={() => setContactOpen(false)}
-                  className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/50 hover:text-[#299093] transition-colors"
+                  className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 hover:text-[#299093] transition-colors"
                 >
                   Full page ↗
                 </Link>
               </div>
 
-              <dl className="text-base md:text-lg flex flex-col gap-6 text-[#061a1e]">
-                <div>
-                  <dt className="text-[#061a1e]/60 font-medium text-sm uppercase tracking-wider font-mono">
-                    Address
-                  </dt>
-                  <dd className="font-semibold text-lg md:text-xl mt-0.5">Palo Alto, CA</dd>
+              <div className="flex flex-col gap-3 my-2">
+                <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-[#061a1e]">
+                  Contact us
+                </h2>
+                <p className="text-lg md:text-2xl text-[#061a1e]/70 leading-relaxed max-w-2xl text-balance">
+                  We are building universally capable robotics for physical industrial labor. Connect with our engineering, commercial, and research teams.
+                </p>
+              </div>
+
+              {/* Spacious 3-Column Channels Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6 border-y border-[#061a1e]/10">
+                <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Headquarters</span>
+                    <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1">Palo Alto, CA</p>
+                  </div>
+                  <span className="text-xs text-[#061a1e]/60 font-mono">Silicon Valley Lab</span>
                 </div>
-                <div>
-                  <dt className="text-[#061a1e]/60 font-medium text-sm uppercase tracking-wider font-mono">
-                    Phone number
-                  </dt>
-                  <dd className="mt-0.5">
-                    <a
-                      href="tel:+14084599351"
-                      className="font-semibold text-lg md:text-xl hover:text-[#299093] transition-colors"
-                    >
-                      408-459-9351
-                    </a>
-                  </dd>
+
+                <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Telephone</span>
+                    <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1">
+                      <a href="tel:+14084599351" className="hover:text-[#299093] transition-colors">408-459-9351</a>
+                    </p>
+                  </div>
+                  <span className="text-xs text-[#061a1e]/60 font-mono">Mon–Fri 9am–6pm PST</span>
                 </div>
-                <div>
-                  <dt className="text-[#061a1e]/60 font-medium text-sm uppercase tracking-wider font-mono">
-                    Email
-                  </dt>
-                  <dd className="mt-0.5">
-                    <a
-                      href="mailto:press@mindrobotics.com"
-                      className="font-semibold text-lg md:text-xl hover:text-[#299093] transition-colors"
-                    >
-                      press@mindrobotics.com
-                    </a>
-                  </dd>
+
+                <div className="p-6 rounded-[2rem] bg-white/60 border border-[#061a1e]/[0.06] flex flex-col justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono uppercase tracking-wider text-[#061a1e]/60 font-medium">Inquiries & Press</span>
+                    <p className="text-xl md:text-2xl font-bold text-[#061a1e] mt-1 truncate">
+                      <a href="mailto:press@mindrobotics.com" className="hover:text-[#299093] transition-colors">press@mindrobotics.com</a>
+                    </p>
+                  </div>
+                  <span className="text-xs text-[#061a1e]/60 font-mono">&lt; 24h response time</span>
                 </div>
-              </dl>
+              </div>
 
               {/* Action Buttons with 3-Layer Slide-in Waterfall */}
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-4 mt-2">
                 <a
                   href="mailto:press@mindrobotics.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group grid-pile h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#061a1e] text-[1.4rem] font-bold"
+                  className="group grid-pile h-12 md:h-14 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#061a1e] text-[1.5rem] font-bold"
                 >
                   <span
                     className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -177,13 +193,13 @@ export default function Header() {
                     className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#299093] delay-[120ms]"
                     aria-hidden="true"
                   />
-                  <span className="relative z-10 px-5 text-center leading-none">Send email</span>
+                  <span className="relative z-10 px-8 text-center leading-none">Send email</span>
                 </a>
 
                 <button
                   type="button"
                   onClick={copyAddress}
-                  className="group grid-pile h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
+                  className="group grid-pile h-12 md:h-14 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.5rem] font-bold"
                 >
                   <span
                     className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -197,7 +213,7 @@ export default function Header() {
                     className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
                     aria-hidden="true"
                   />
-                  <span className="relative z-10 px-5 text-center leading-none">
+                  <span className="relative z-10 px-8 text-center leading-none">
                     {copied ? "Address Copied!" : "Copy Address"}
                   </span>
                 </button>
@@ -208,10 +224,10 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setContactOpen(false)}
-              className="flex min-h-11 cursor-pointer items-center gap-1.5 px-3 text-white text-base md:text-lg hover:text-[#ffbd00] transition-colors"
+              className="flex min-h-12 cursor-pointer items-center gap-2 px-4 text-white text-lg md:text-xl hover:text-[#ffbd00] transition-colors"
               aria-label="Close dialog"
             >
-              <X className="size-5" />
+              <X className="size-6" />
               <span>Close</span>
             </button>
           </div>
