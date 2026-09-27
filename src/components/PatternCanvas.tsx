@@ -123,15 +123,15 @@ export default function PatternCanvas({
     let offsetX = 0;
     let offsetY = 0;
     const blooming = new Set<Cell>();
-    const threadTimes = [0, 0, 0];
+    const threadTimes = [0, 0, 0, 0];
 
     const SQRT2 = Math.SQRT2;
     const CROSS_G = 9.6 / SQRT2;
 
     const buildGrid = () => {
       const rect = canvas.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
+      width = rect.width || window.innerWidth;
+      height = rect.height || window.innerHeight;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = width * dpr;
@@ -149,7 +149,7 @@ export default function PatternCanvas({
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < columns; c++) {
-          if (!isFaded(c, r, rows, seed, fade)) {
+          if (fade.length > 0 && !isFaded(c, r, rows, seed, fade)) {
             cells.push(undefined);
             continue;
           }
@@ -188,7 +188,7 @@ export default function PatternCanvas({
           const dist = Math.hypot(a.x - pt.x, a.y - pt.y);
           const force = 1 - dist / 48;
           if (force > 0) {
-            a.energy = Math.min(1, a.energy + 0.2 * force);
+            a.energy = Math.min(1, a.energy + 0.25 * force);
             blooming.add(a);
           }
         }
@@ -224,8 +224,24 @@ export default function PatternCanvas({
       lastPointer = current;
     };
 
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("mousemove", handlePointerMove);
+    const handleScroll = () => {
+      if (lastPointer) {
+        injectEnergy(lastPointer);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    let isLight = document.documentElement.getAttribute("data-theme") !== "dark";
+    const themeObserver = new MutationObserver(() => {
+      isLight = document.documentElement.getAttribute("data-theme") !== "dark";
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
 
     const getBloomAlpha = (cell: Cell, time: number) => {
       const u = (time - cell.bloomStart) / cell.bloomDuration;
@@ -241,7 +257,7 @@ export default function PatternCanvas({
       const delta = currentTime - lastTime;
       lastTime = currentTime;
 
-      // Ambient random blooming threads (6 concurrent)
+      // Ambient random blooming threads (4 concurrent)
       if (motifs.length > 0) {
         threadTimes.forEach((tTime, i) => {
           if (currentTime >= tTime) {
@@ -269,7 +285,6 @@ export default function PatternCanvas({
       ctx.clearRect(0, 0, width, height);
 
       // Check current theme colors: Light mode is default Mind Robotics warm concrete
-      const isLight = document.documentElement.getAttribute("data-theme") !== "dark";
       const colorCircle = isLight ? "#f6f4f0" : "rgba(255, 255, 255, 0.30)";
       const colorSquare = isLight ? "#dbd7ca" : "rgba(219, 215, 202, 0.20)";
       const colorCross = "#299093"; // Exact Mind Robotics Teal
@@ -319,6 +334,8 @@ export default function PatternCanvas({
       cancelAnimationFrame(animId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("scroll", handleScroll);
+      themeObserver.disconnect();
       resizeObserver.disconnect();
     };
   }, [seed, density, fade]);

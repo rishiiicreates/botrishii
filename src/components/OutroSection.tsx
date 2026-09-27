@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import PatternCanvas from "./PatternCanvas";
 import { X, RotateCcw, Trophy } from "lucide-react";
 
 export default function OutroSection() {
@@ -210,14 +209,6 @@ export default function OutroSection() {
   return (
     <section ref={sectionRef} className="tablet:h-[200svh] relative min-h-[160vh]">
       <div className="grid-pile px-gutter-outer tablet:sticky tablet:top-0 tablet:h-svh tablet:grid-rows-[minmax(0,1fr)] tablet:py-6 desktop:py-14 py-10 overflow-hidden">
-        {/* Background 2D Pattern Canvas with Top/Bottom Edge Fading matching module 65578 */}
-        <PatternCanvas
-          seed={2}
-          density={0.5}
-          fade={["top", "bottom"]}
-          className="z-behind-content absolute inset-0 size-full pointer-events-none"
-        />
-
         {/* Center Silhouette Geometry & Interactive Pong Ball layered in the center */}
         <div className="flex justify-between w-columns-5/4 tablet:w-columns-10/9 desktop:w-columns-9/8 tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center relative z-0">
           {/* Left Pill: Solid White */}

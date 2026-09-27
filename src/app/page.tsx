@@ -1,5 +1,6 @@
 import React from "react";
 import Header from "@/components/Header";
+import PatternCanvas from "@/components/PatternCanvas";
 import HeroSection from "@/components/HeroSection";
 import LearningOnTheJob from "@/components/LearningOnTheJob";
 import CapabilitiesStickyScroll from "@/components/CapabilitiesStickyScroll";
@@ -12,6 +13,13 @@ import Footer from "@/components/Footer";
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col relative w-full">
+      {/* Global Persistent Interactive Grid & Cursor Animation across the entire UI */}
+      <PatternCanvas
+        seed={3}
+        density={0.5}
+        className="fixed inset-0 size-full pointer-events-none z-behind-content"
+      />
+
       {/* Global Minimal Navigation */}
       <Header />
 

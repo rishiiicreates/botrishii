@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import PatternCanvas from "./PatternCanvas";
 import HeroRobotArm3D from "./HeroRobotArm3D";
 import FanTag from "./FanTag";
 
@@ -87,14 +86,6 @@ export default function HeroSection() {
     <>
       {/* SECTION 0: Hero 3D Arm, Wordmark, and Parallax Capsules */}
       <section className="px-6 md:px-8 desktop:px-8 relative flex flex-col gap-y-36 md:gap-y-48 lg:gap-y-56 pt-28 md:pt-40 lg:pt-52">
-        {/* 2D Pattern Canvas Background matching module 65578 */}
-        <PatternCanvas
-          seed={3}
-          density={0.5}
-          fade={["bottom"]}
-          className="z-behind-content absolute inset-0 size-full pointer-events-none"
-        />
-
         {/* 3D Cel-shaded Robotic Arm Viewport */}
         <div className="z-above-content pointer-events-none absolute inset-x-0 top-0 bottom-[-75svmin]">
           <HeroRobotArm3D />
@@ -295,15 +286,15 @@ export default function HeroSection() {
         {/* Triple Background Capsule Silhouette Geometry matching mindrobotics.com */}
         <div className="flex justify-between laptop:px-[inherit] select-none pointer-events-none">
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] z-behind-content transition-transform duration-75 ease-out"
+            className="w-[32%] rounded-full bg-white relative aspect-[2/5] z-behind-content transition-transform duration-75 ease-out"
             style={{ transform: `translateY(${leftY}%)` }}
           />
           <span
-            className="w-[32%] rounded-full bg-white mt-[9.6%] aspect-square self-start z-above-content transition-transform duration-75 ease-out"
+            className="w-[32%] rounded-full bg-white relative mt-[9.6%] aspect-square self-start z-above-content transition-transform duration-75 ease-out"
             style={{ transform: `translateY(${centerY}%)` }}
           />
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] z-behind-content transition-transform duration-75 ease-out"
+            className="w-[32%] rounded-full bg-white relative aspect-[2/5] z-behind-content transition-transform duration-75 ease-out"
             style={{ transform: `translateY(${rightY}%)` }}
           />
         </div>
