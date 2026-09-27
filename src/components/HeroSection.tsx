@@ -158,7 +158,7 @@ export default function HeroSection() {
           {/* "MIND" Wordmark SVG */}
           <svg
             ref={mindSvgRef}
-            className="tablet:h-[9.6vw] tablet:w-auto w-[42%] self-start text-current wordmark-reveal overflow-visible"
+            className="tablet:h-[9.6vw] tablet:w-auto w-[42%] aspect-[333/100] self-start text-current wordmark-reveal overflow-visible"
             viewBox={WORDMARK_MARKS.mind.viewBox}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -184,7 +184,7 @@ export default function HeroSection() {
 
           {/* "ROBOTICS" Wordmark SVG */}
           <svg
-            className="tablet:h-[9.6vw] tablet:w-auto w-[88%] tablet:w-auto self-end text-current wordmark-reveal overflow-visible"
+            className="tablet:h-[9.6vw] tablet:w-auto w-[88%] tablet:w-auto aspect-[679/100] self-end text-current wordmark-reveal overflow-visible"
             viewBox={WORDMARK_MARKS.robotics.viewBox}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -210,18 +210,27 @@ export default function HeroSection() {
           </svg>
         </span>
 
-        {/* Background Capsule Silhouettes - Minimalist Clean Pill Silhouettes */}
+        {/* Background Capsule Silhouettes - Architectural Solid Pill Silhouettes */}
         <div className="flex justify-between laptop:px-[inherit] select-none pointer-events-none">
-          <span
-            className="w-[32%] rounded-full bg-white dark:bg-white/10 aspect-2/5 z-behind-content will-change-transform"
+          {/* Left Capsule */}
+          <div
+            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#faf9f6] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/15 shadow-[0_24px_64px_rgba(6,26,30,0.06)] overflow-hidden"
             style={{ transform: `translateY(${leftY}%)` }}
             aria-hidden="true"
-          />
-          <span
-            className="w-[32%] rounded-full bg-white dark:bg-white/10 aspect-2/5 z-behind-content will-change-transform"
+          >
+            {/* Concentric Inner Hairline Ring */}
+            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.05] pointer-events-none" />
+          </div>
+
+          {/* Right Capsule */}
+          <div
+            className="w-[32%] relative aspect-[2/5] z-behind-content will-change-transform rounded-full bg-gradient-to-b from-white via-[#faf9f6] to-[#ece9e2] dark:from-[#0d2227] dark:via-[#091a1e] dark:to-[#051316] border border-[#061a1e]/[0.08] dark:border-white/15 shadow-[0_24px_64px_rgba(6,26,30,0.06)] overflow-hidden"
             style={{ transform: `translateY(${rightY}%)` }}
             aria-hidden="true"
-          />
+          >
+            {/* Concentric Inner Hairline Ring */}
+            <span className="absolute inset-[10px] tablet:inset-[14px] rounded-full border border-[#061a1e]/[0.04] dark:border-white/[0.05] pointer-events-none" />
+          </div>
         </div>
       </section>
 
