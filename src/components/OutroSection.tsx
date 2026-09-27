@@ -219,11 +219,12 @@ export default function OutroSection() {
         />
 
         {/* Center Silhouette Geometry & Interactive Pong Ball layered in the center */}
-        <div className="flex justify-between w-full max-w-[85rem] tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center px-4">
+        <div className="flex justify-between w-columns-5/4 tablet:w-columns-10/9 desktop:w-columns-9/8 tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center relative z-0">
           {/* Left Pill: Solid White */}
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] shadow-sm will-change-transform"
+            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform"
             style={{ transform: `translateY(${leftY}%)` }}
+            aria-hidden="true"
           />
 
           {/* Center Interactive Pong Ball Button */}
@@ -233,33 +234,34 @@ export default function OutroSection() {
               setGameOpen(true);
               setGameStatus("playing");
             }}
-            className="pong-ball group grid-pile relative w-[32%] mt-[9.6%] aspect-square rounded-full cursor-pointer items-center self-start overflow-hidden bg-white border-2 border-black/10 shadow-2xl transition-transform duration-100 hover:scale-105 will-change-transform"
+            className="pong-ball group grid-pile max-tablet:pointer-coarse:bg-black @container mt-[9.6%] aspect-square w-[32%] cursor-pointer items-center self-start overflow-clip rounded-full bg-white will-change-transform"
             style={{ transform: `translateY(${centerY}%)` }}
             aria-label="Play Mind Pong"
           >
             {/* 4-Layer Radial Fan Hover Wipe */}
-            <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#299093]" />
-            <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156] delay-[50ms]" />
-            <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[100ms]" />
-            <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[180ms]" />
+            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#299093] delay-0" aria-hidden="true" />
+            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ef6156] delay-50" aria-hidden="true" />
+            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ffbd00] delay-100" aria-hidden="true" />
+            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#061a1e] delay-180" aria-hidden="true" />
 
-            <span className="relative z-10 self-center justify-self-center text-center font-bold text-3xl md:text-5xl lg:text-6xl text-[#061a1e] group-hover:text-white transition-colors duration-200">
+            <span className="pong-play max-tablet:pointer-coarse:opacity-100 relative justify-self-center text-[25cqw] leading-none font-bold tracking-[-0.02em] text-white opacity-0 transition-opacity delay-300 duration-200 group-hover:opacity-100 motion-reduce:transition-none">
               Play
             </span>
           </button>
 
           {/* Right Pill: Solid White */}
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] shadow-sm will-change-transform"
+            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform"
             style={{ transform: `translateY(${rightY}%)` }}
+            aria-hidden="true"
           />
         </div>
 
         {/* Massive Poster Typography ("Get to know Mind") layered as z-above-content matching mindrobotics.com */}
         <p className="text-poster tablet:flex z-above-content pointer-events-none hidden w-full flex-col justify-center gap-[0.15em] whitespace-nowrap self-center select-none text-[#061a1e]">
-          <span className="self-start">Get to</span>
-          <span className="self-end text-right">know</span>
-          <span className="self-start">Mind</span>
+          <span className="even:text-right">Get to</span>
+          <span className="even:text-right">know</span>
+          <span className="even:text-right">Mind</span>
         </p>
       </div>
 

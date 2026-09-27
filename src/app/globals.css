@@ -60,6 +60,10 @@
     --single-column-width: calc((100vw - var(--gutter-outer) * 2 - var(--gutter-inner) * (var(--columns) - 1)) / var(--columns));
     --single-column-width-with-gutter-inner: calc(var(--single-column-width) + var(--gutter-inner));
 
+    --target-window-width: 1600;
+    --z-index-above-content: 10;
+    --z-index-behind-content: -1;
+
     /* Easing curves from original site */
     --ease-out: cubic-bezier(0.14, 1, 0.34, 1);
     --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
@@ -162,6 +166,31 @@ body {
 
 .grid-pile-inline > * {
   grid-area: pile;
+}
+
+/* Stacking context utilities matching mindrobotics.com */
+.z-above-content {
+  z-index: var(--z-index-above-content, 10);
+  position: relative;
+}
+
+.z-behind-content {
+  z-index: var(--z-index-behind-content, -1);
+}
+
+/* Column width utilities matching live design system */
+.w-columns-5\/4 {
+  width: calc(var(--single-column-width) * 5 + var(--gutter-inner) * 4);
+}
+@media (min-width: 768px) {
+  .tablet\:w-columns-10\/9 {
+    width: calc(var(--single-column-width) * 10 + var(--gutter-inner) * 9);
+  }
+}
+@media (min-width: 1680px) {
+  .desktop\:w-columns-9\/8 {
+    width: calc(var(--single-column-width) * 9 + var(--gutter-inner) * 8);
+  }
 }
 
 /* Background grid line overlay */
@@ -416,11 +445,27 @@ body {
 
 .text-poster {
   font-family: var(--font-centra), sans-serif;
-  font-size: clamp(8rem, 16.5vw, 24rem);
+  font-size: calc(100vw * (80 / var(--target-window-width, 1600)));
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 0.8;
 }
+@media (min-width: 768px) {
+  .text-poster {
+    font-size: calc(100vw * (180 / var(--target-window-width, 1600)));
+  }
+}
+@media (min-width: 1280px) {
+  .text-poster {
+    font-size: calc(100vw * (300 / var(--target-window-width, 1600)));
+  }
+}
+@media (min-width: 1680px) {
+  .text-poster {
+    font-size: calc(100vw * (360 / var(--target-window-width, 1600)));
+  }
+}
+
 
 /* Custom Scrollbar for sleek industrial feel */
 ::-webkit-scrollbar {
