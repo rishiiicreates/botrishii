@@ -1,96 +1,62 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, Activity, Award, Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const MissionHand3D = dynamic(() => import("./MissionHand3D"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full" />,
+});
 
 export default function MissionStatement() {
   return (
-    <section className="layout-grid py-28 md:py-40 gap-y-16 items-start border-b border-black/10 dark:border-white/10">
-      {/* Manifesto Headline */}
-      <div className="col-span-full">
-        <h2 className="flex flex-col gap-2 max-w-4xl">
-          {/* Line 1: [Dot] + The work we + always imagined */}
-          <span className="flex flex-wrap items-center gap-3">
-            <span className="h-16 md:h-24 lg:h-28 aspect-square rounded-full bg-[#ef6156] shrink-0" />
-            <span className="grid-pile-inline h-16 md:h-24 lg:h-28 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-[#ef6156] text-black font-bold">
-                The work we
-              </span>
-            </span>
-            <span className="grid-pile-inline h-16 md:h-24 lg:h-28 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-[#061a1e] dark:bg-[#0a2228] text-white font-bold border border-white/10">
-                always imagined
-              </span>
+    <section className="layout-grid lg:grid-cols-12 lg:grid-rows-[auto_1fr] py-[20rem] items-start relative z-20 overflow-visible">
+      {/* Left Column: Heading (Row 1) */}
+      <h2 className="col-span-full lg:col-span-6 lg:row-start-1 max-w-[70rem]">
+        <span className="flex flex-col gap-2 md:gap-3">
+          {/* Line 1: [Coral Pill: The work we] */}
+          <span className="flex flex-wrap gap-2">
+            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#ef6156] text-[#061a1e] items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0">
+              The work we
             </span>
           </span>
 
-          {/* Line 2: machines could do */}
-          <span className="flex mt-1">
-            <span className="grid-pile-inline h-16 md:h-24 lg:h-28 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-white text-black font-bold shadow-sm">
-                machines could do
-              </span>
+          {/* Line 2: [Dark Pill: always imagined] */}
+          <span className="flex flex-wrap gap-2">
+            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#061a1e] text-white items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0 shadow-sm">
+              always imagined
             </span>
           </span>
-        </h2>
+
+          {/* Line 3: [White Pill: machines could do] */}
+          <span className="flex flex-wrap gap-2">
+            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-white text-[#061a1e] items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0 shadow-sm border border-black/5">
+              machines could do
+            </span>
+          </span>
+        </span>
+      </h2>
+
+      {/* Left Column: Narrative Copy (Row 2) */}
+      <div className="text-[1.8rem] sm:text-[2rem] leading-[1.5] text-[#061a1e] col-span-full lg:col-span-5 lg:row-start-2 lg:self-start max-w-[60rem] mt-10">
+        <p className="mb-6">
+          <strong className="font-bold">Our robots take on</strong> the intricate, often grueling
+          work the world actually runs on, not the rigid, perfectly predictable motions that
+          classical automation has already solved. By focusing on skills that require more reasoning,
+          variability, and dexterity, Mind robots can finally help with tasks that have always
+          depended on human hands.
+        </p>
+        <p>
+          Our aim is to make manufacturing safer, more efficient, and more globally competitive by
+          augmenting human capability.
+        </p>
       </div>
 
-      {/* Manifesto Narrative & Principles Grid */}
-      <div className="col-span-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        {/* Main Manifesto Copy */}
-        <div className="lg:col-span-7 flex flex-col gap-8 text-paragraph-large opacity-90 leading-relaxed font-normal">
-          <p className="text-2xl md:text-3xl font-medium tracking-tight leading-snug">
-            <strong className="font-bold text-current">Our robots take on</strong> the intricate,
-            often grueling work the world actually runs on, not the rigid, perfectly predictable
-            motions that classical automation has already solved.
-          </p>
-          <p>
-            By focusing on skills that require more reasoning, variability, and dexterity, Mind
-            robots can finally help with tasks that have always depended on human hands.
-          </p>
-          <p className="text-xl md:text-2xl font-semibold text-[#299093]">
-            Our aim is to make manufacturing safer, more efficient, and more globally competitive by
-            augmenting human capability.
-          </p>
-        </div>
-
-        {/* Industrial Principle Pillars */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
-          <div className="p-6 rounded-[2rem] bg-[#0a1e23] border border-white/10 text-white flex items-start gap-4 shadow-sm">
-            <div className="size-10 rounded-xl bg-[#299093]/20 text-[#299093] flex items-center justify-center shrink-0">
-              <ShieldCheck className="size-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-lg text-white">Workplace Safety First</h4>
-              <p className="text-sm text-white/75 mt-1">
-                Absorbing high-strain, ergonomic injury risks and repetitive stress cycles on live lines.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-[2rem] bg-[#0a1e23] border border-white/10 text-white flex items-start gap-4 shadow-sm">
-            <div className="size-10 rounded-xl bg-[#ffbd00]/20 text-[#ffbd00] flex items-center justify-center shrink-0">
-              <Activity className="size-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-lg text-white">Continuous Generalization</h4>
-              <p className="text-sm text-white/75 mt-1">
-                Zero re-programming downtime across batch variances, orientation shifts, and new SKUs.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-[2rem] bg-[#0a1e23] border border-white/10 text-white flex items-start gap-4 shadow-sm">
-            <div className="size-10 rounded-xl bg-[#ef6156]/20 text-[#ef6156] flex items-center justify-center shrink-0">
-              <Sparkles className="size-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-lg text-white">Human Collaborative Augmentation</h4>
-              <p className="text-sm text-white/75 mt-1">
-                Engineered to share floor space alongside existing operators with reactive safety margins.
-              </p>
-            </div>
-          </div>
+      {/* Right Column: 3D Cel-Shaded Robotic Hand Card (Row span 2 starting at row 1) */}
+      <div className="bg-[#dbd7ca] rounded-[3.2rem] lg:rounded-[4rem] border border-[#061a1e] relative aspect-[19/20] col-span-full lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1 lg:self-start lg:mt-0 mt-14 z-20 overflow-visible">
+        {/* Spill Container: extends down and left to let the hand fingers spill naturally without being clipped */}
+        <div className="pointer-events-none absolute top-0 right-0 -bottom-[38rem] lg:-bottom-[46rem] -left-[32rem] lg:-left-[40rem] [clip-path:inset(0_round_0_3.2rem_0_0)] lg:[clip-path:inset(0_round_0_4rem_0_0)] overflow-visible">
+          <MissionHand3D />
         </div>
       </div>
     </section>

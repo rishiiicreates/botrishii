@@ -17,7 +17,7 @@ export default function CareersSection() {
   const [videoOpen, setVideoOpen] = useState(false);
 
   return (
-    <section className="layout-grid py-28 md:py-40 gap-y-16 items-center border-b border-black/10 dark:border-white/10">
+    <section className="layout-grid py-[20rem] gap-y-16 items-center border-b border-black/10 dark:border-white/10 relative z-10 overflow-visible">
       {/* Centered Heading with Pill Fan Tags */}
       <div className="col-span-full flex justify-center text-center">
         <h2 className="text-heading-1 tracking-tight max-w-4xl text-balance">

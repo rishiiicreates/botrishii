@@ -5,71 +5,55 @@ import Image from "next/image";
 
 export default function LearningOnTheJob() {
   return (
-    <section className="layout-grid py-24 md:py-36 gap-y-12 items-start border-b border-black/10 dark:border-white/10">
-      {/* Left Column: Heading and Narrative */}
-      <div className="col-span-full lg:col-span-6 flex flex-col gap-8 md:gap-12">
-        {/* Headline with Pill Badges */}
-        <h2 className="flex flex-col gap-2 max-w-xl">
+    <section className="layout-grid lg:grid-cols-12 lg:grid-rows-[auto_1fr] py-20 md:py-32 items-start border-b border-black/10 dark:border-white/10">
+      {/* Left Column: Heading (Row 1) */}
+      <h2 className="col-span-full lg:col-span-6 lg:row-start-1 max-w-[70rem]">
+        <span className="flex flex-col gap-2 md:gap-3">
           {/* Line 1: Our first robots are */}
-          <span className="flex">
-            <span className="grid-pile-inline h-16 md:h-24 lg:h-28 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-[#061a1e] dark:bg-[#0a2228] text-white font-bold border border-white/10">
-                Our first robots are
-              </span>
+          <span className="flex flex-wrap gap-2">
+            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#061a1e] text-white items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shadow-sm shrink-0">
+              Our first robots are
             </span>
           </span>
 
-          {/* Line 2: [Yellow Dot] + [Terracotta: learning on the job] */}
-          <span className="flex items-center gap-3">
-            <span className="h-16 md:h-24 lg:h-28 aspect-square rounded-full bg-[#ffbd00] shrink-0" />
-            <span className="grid-pile-inline h-16 md:h-24 lg:h-28 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-[#ef6156] text-black font-bold">
-                learning on the job
-              </span>
+          {/* Line 2: [Yellow Circle] + [Coral: learning on the job] */}
+          <span className="flex items-center gap-2 md:gap-3 flex-wrap">
+            <span className="h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] aspect-square rounded-full bg-[#ffbd00] shrink-0" />
+            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#ef6156] text-[#061a1e] items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0">
+              learning on the job
             </span>
           </span>
-        </h2>
+        </span>
+      </h2>
 
-        {/* Narrative Copy */}
-        <div className="flex flex-col gap-6 text-paragraph-large opacity-90 max-w-xl font-normal leading-relaxed">
-          <p>
-            <strong className="font-bold text-current">With Rivian</strong> as our first
-            manufacturing partner, we&apos;re building a rich dataset inside a live production
-            facility and training on active vehicle lines. Our data pipeline is centered on learning
-            from skilled operators as they perform highly dexterous tasks, distilling the actions,
-            tools, context, and decisions that make each cycle successful.
-          </p>
-          <p>
-            Mind&apos;s live dataset gives our models a deep understanding of real-world physics,
-            variance, and material behavior. By mastering diverse automotive tasks first, we&apos;re
-            building capabilities that transfer across all of industrial manufacturing.
-          </p>
-        </div>
+      {/* Left Column: Narrative Copy (Row 2) */}
+      <div className="text-[1.8rem] sm:text-[2rem] leading-[1.5] text-[#061a1e] col-span-full lg:col-span-5 lg:row-start-2 lg:self-start max-w-[60rem] mt-10">
+        <p className="mb-6">
+          <strong className="font-bold">With Rivian</strong> as our first manufacturing partner,
+          we&apos;re building a rich dataset inside a live production facility and training on
+          active vehicle lines. Our data pipeline is centered on learning from skilled operators as
+          they perform highly dexterous tasks, distilling the actions, tools, context, and decisions
+          that make each cycle successful.
+        </p>
+        <p>
+          Mind&apos;s live dataset gives our models a deep understanding of real-world physics,
+          variance, and material behavior. By mastering diverse automotive tasks first, we&apos;re
+          building capabilities that transfer across all of industrial manufacturing.
+        </p>
       </div>
 
-      {/* Right Column: Supporting Factory Hardware Photo */}
-      <div className="col-span-full lg:col-span-6 lg:col-start-7 flex justify-center lg:justify-end">
-        <figure className="relative w-full aspect-[755/503] max-w-2xl rounded-[2.5rem] md:rounded-[3.2rem] overflow-hidden border border-black/10 dark:border-white/15 bg-black/10 dark:bg-white/5 shadow-2xl group">
-          <Image
-            src="/images/robots-learning.png"
-            alt="Mind Robotics hardware learning dexterous automotive assembly inside Rivian production plant"
-            fill
-            priority
-            unoptimized
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-
-          {/* Telemetry Badge */}
-          <div className="absolute bottom-6 left-6 z-10 text-white font-mono text-xs flex items-center gap-2">
-            <span className="size-2 rounded-full bg-[#ffbd00] animate-pulse" />
-            <span className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-              Live Partner Facility — Active Cycle Telemetry
-            </span>
-          </div>
-        </figure>
-      </div>
+      {/* Right Column: Supporting Rivian Photography (Row span 2 starting at row 1) */}
+      <figure className="col-span-full lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1 lg:self-start lg:mt-0 mt-14 rounded-[3.2rem] lg:rounded-[4rem] overflow-hidden aspect-[755/503] relative border border-black/10 shadow-lg">
+        <Image
+          src="/images/robots-learning.png"
+          alt="Mind Robotics hardware learning dexterous automotive assembly inside Rivian production plant"
+          fill
+          priority
+          unoptimized
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          className="object-cover"
+        />
+      </figure>
     </section>
   );
 }
