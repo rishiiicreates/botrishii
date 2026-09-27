@@ -1,33 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import FanTag from "./FanTag";
 
 export default function LearningOnTheJob() {
+  const [canReveal, setCanReveal] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const el = headingRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCanReveal(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="layout-grid laptop:grid-rows-[auto_1fr] py-[9.6rem] tablet:py-[11.2rem] laptop:py-[20rem]">
       {/* Left Column: Heading (Row 1) */}
-      <h2 className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]">
+      <h2
+        ref={headingRef}
+        aria-label="Our first robots are learning on the job"
+        className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]"
+      >
         <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
           {/* Line 1: Our first robots are */}
           <span className="flex flex-wrap gap-[inherit]">
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch text-white bg-[#061a1e]">
-                Our first robots are
-              </span>
-            </span>
+            <FanTag
+              text="Our first robots are"
+              color="#061a1e"
+              textColor="text-white"
+              size="medium"
+              canReveal={canReveal}
+              delay={0}
+            />
           </span>
 
           {/* Line 2: [Yellow Circle] + [Coral: learning on the job] */}
           <span className="flex flex-wrap gap-[inherit]">
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full aspect-square">
-              <span className="flex h-full items-center leading-none self-stretch bg-[#ffbd00]" />
-            </span>
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch text-black bg-[#ef6156]">
-                learning on the job
-              </span>
-            </span>
+            <FanTag
+              color="#ffbd00"
+              size="medium"
+              canReveal={canReveal}
+              delay={0.2}
+            />
+            <FanTag
+              text="learning on the job"
+              color="#ef6156"
+              textColor="text-[#061a1e]"
+              size="medium"
+              canReveal={canReveal}
+              delay={0.35}
+            />
           </span>
         </span>
       </h2>
@@ -48,7 +83,7 @@ export default function LearningOnTheJob() {
         </p>
       </div>
 
-      {/* Right Column: Supporting Rivian Photography (Row span full starting at row 1) */}
+      {/* Right Column: Supporting Rivian Photography */}
       <figure className="asset-container tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start rounded-[4rem] col-span-6 col-start-1 mt-20 overflow-hidden aspect-[755/503] relative">
         <Image
           src="/images/robots-learning.png"

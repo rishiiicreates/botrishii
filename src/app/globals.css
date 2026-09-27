@@ -213,40 +213,61 @@ body {
     wordmark-stroke-fade 0.8s var(--ease-out) calc(0.8s + var(--letter-index) * 60ms) forwards;
 }
 
-/* Tag Fan Layer Animation */
-@keyframes tag-layer-slide {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes tag-opacity-reveal {
-  from {
-    opacity: 0;
-  }
+/* Tag Fan Layer Animation matching mindrobotics.com */
+@keyframes tag-opacity-to-one {
   to {
     opacity: 1;
   }
 }
 
+@keyframes tag-transform-to-none {
+  to {
+    transform: none;
+  }
+}
+
+[data-reveal-type="fan"] .tag-base {
+  opacity: 0;
+}
+
+[data-reveal-type="fan"][data-can-reveal="true"] .tag-base {
+  animation: tag-opacity-to-one 0.3s var(--ease-linear) var(--delay, 0s) forwards;
+}
+
+[data-reveal-type="fan"] .tag-layer {
+  transform: translate(-100%);
+  will-change: transform;
+}
+
+[data-reveal-type="fan"][data-can-reveal="true"] .tag-layer {
+  animation: tag-transform-to-none 0.6s var(--ease-in-out) calc(0.15s + var(--delay, 0s) + var(--index, 0) * 50ms) forwards;
+}
+
+/* Legacy tag fallback support */
 .tag-fan-layer {
   transform: translateX(-100%);
-  animation: tag-layer-slide 0.6s var(--ease-in-out) calc(0.15s + var(--delay, 0s) + var(--index, 0) * 60ms) forwards;
+  animation: tag-transform-to-none 0.6s var(--ease-in-out) calc(0.15s + var(--delay, 0s) + var(--index, 0) * 60ms) forwards;
 }
 
 .tag-base-reveal {
   opacity: 0;
-  animation: tag-opacity-reveal 0.4s var(--ease-linear) var(--delay, 0s) forwards;
+  animation: tag-opacity-to-one 0.4s var(--ease-linear) var(--delay, 0s) forwards;
 }
 
 /* Headline Word Stagger */
+@keyframes headline-opacity-to-one {
+  to {
+    opacity: 1;
+  }
+}
+
 .headline-word {
   display: inline-block;
   opacity: 0;
-  animation: tag-opacity-reveal 0.35s var(--ease-linear) var(--delay, 0s) forwards;
+}
+
+.headline-word[data-can-reveal="true"] {
+  animation: headline-opacity-to-one 0.3s var(--ease-linear) var(--delay, 0s) forwards;
 }
 
 /* Carousel Wipe Effect */

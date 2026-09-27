@@ -21,7 +21,7 @@ const centraNo2 = localFont({
     },
   ],
   variable: "--font-centra",
-  display: "swap",
+  display: "block",
 });
 
 export const metadata: Metadata = {

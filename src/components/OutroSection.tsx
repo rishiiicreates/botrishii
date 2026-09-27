@@ -222,7 +222,7 @@ export default function OutroSection() {
         <div className="flex justify-between w-full max-w-[85rem] tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center px-4">
           {/* Left Pill: Solid White */}
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] transition-transform duration-75 ease-out shadow-sm"
+            className="w-[32%] rounded-full bg-white aspect-[2/5] shadow-sm will-change-transform"
             style={{ transform: `translateY(${leftY}%)` }}
           />
 
@@ -233,7 +233,7 @@ export default function OutroSection() {
               setGameOpen(true);
               setGameStatus("playing");
             }}
-            className="pong-ball group grid-pile relative w-[32%] mt-[9.6%] aspect-square rounded-full cursor-pointer items-center self-start overflow-hidden bg-white border-2 border-black/10 shadow-2xl transition-transform duration-100 hover:scale-105"
+            className="pong-ball group grid-pile relative w-[32%] mt-[9.6%] aspect-square rounded-full cursor-pointer items-center self-start overflow-hidden bg-white border-2 border-black/10 shadow-2xl transition-transform duration-100 hover:scale-105 will-change-transform"
             style={{ transform: `translateY(${centerY}%)` }}
             aria-label="Play Mind Pong"
           >
@@ -250,7 +250,7 @@ export default function OutroSection() {
 
           {/* Right Pill: Solid White */}
           <span
-            className="w-[32%] rounded-full bg-white aspect-[2/5] transition-transform duration-75 ease-out shadow-sm"
+            className="w-[32%] rounded-full bg-white aspect-[2/5] shadow-sm will-change-transform"
             style={{ transform: `translateY(${rightY}%)` }}
           />
         </div>

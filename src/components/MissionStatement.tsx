@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import FanTag from "./FanTag";
 
 const MissionHand3D = dynamic(() => import("./MissionHand3D"), {
   ssr: false,
@@ -9,35 +10,72 @@ const MissionHand3D = dynamic(() => import("./MissionHand3D"), {
 });
 
 export default function MissionStatement() {
+  const [canReveal, setCanReveal] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const el = headingRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCanReveal(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="layout-grid laptop:grid-rows-[auto_1fr] py-[9.6rem] tablet:py-[11.2rem] laptop:py-[20rem] items-start relative z-20 overflow-visible">
       {/* Left Column: Heading (Row 1) */}
-      <h2 className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]">
+      <h2
+        ref={headingRef}
+        aria-label="The work we always imagined machines could do"
+        className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]"
+      >
         <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
           {/* Line 1: [Coral Dot] + [Coral Pill: The work we] + [Dark Pill: always imagined] */}
           <span className="flex flex-wrap gap-[inherit]">
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full aspect-square">
-              <span className="flex h-full items-center leading-none self-stretch bg-[#ef6156]" />
-            </span>
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-[#ef6156] text-[#061a1e]">
-                The work we
-              </span>
-            </span>
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-[#061a1e] text-white">
-                always imagined
-              </span>
-            </span>
+            <FanTag
+              color="#ef6156"
+              size="medium"
+              canReveal={canReveal}
+              delay={0}
+            />
+            <FanTag
+              text="The work we"
+              color="#ef6156"
+              textColor="text-[#061a1e]"
+              size="medium"
+              canReveal={canReveal}
+              delay={0.15}
+            />
+            <FanTag
+              text="always imagined"
+              color="#061a1e"
+              textColor="text-white"
+              size="medium"
+              canReveal={canReveal}
+              delay={0.3}
+            />
           </span>
 
           {/* Line 2: [White Pill: machines could do] */}
           <span className="flex flex-wrap gap-[inherit]">
-            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-white text-[#061a1e]">
-                machines could do
-              </span>
-            </span>
+            <FanTag
+              text="machines could do"
+              color="#ffffff"
+              textColor="text-[#061a1e]"
+              size="medium"
+              canReveal={canReveal}
+              delay={0.45}
+            />
           </span>
         </span>
       </h2>
