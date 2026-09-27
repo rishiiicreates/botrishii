@@ -72,74 +72,93 @@ export default function CapabilitiesStickyScroll() {
       ref={containerRef}
       className="bg-[#dbd7ca] dark:bg-[#081a1e] relative h-[400lvh] border-t border-[#d3d0c5] dark:border-white/10"
     >
-      <div className="sticky top-0 h-lvh w-full overflow-hidden">
+      <div className="grid-pile sticky top-0 h-lvh w-full overflow-clip">
         {/* 3D Isometric Living Factory Floor Canvas */}
         <FactoryFloor3D
           scrollProgress={scrollProgress}
           onStationChange={setActiveStationIndex}
         />
 
-        {/* Pinned Top-Left Headline */}
-        <div className="absolute top-10 left-6 md:top-14 md:left-12 lg:left-16 z-10 pointer-events-none select-none">
-          <h2 className="flex flex-col gap-2 max-w-none">
-            {/* Line 1: Intelligence on */}
-            <span className="flex">
-              <span className="grid-pile-inline shrink-0 h-14 md:h-20 lg:h-24 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-                <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-[#299093] text-white font-bold">
-                  Intelligence on
+        {/* Grid Overlay with Headline at Top and Floating Capability Card at Bottom-Right */}
+        <div className="layout-grid pb-gutter-outer tablet:gap-y-20 relative h-full content-between gap-y-12 pt-[var(--header-height)] pointer-events-none">
+          {/* Top-Left Headline */}
+          <h2 className="col-span-full select-none">
+            <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
+              {/* Line 1: [Teal Pill: Intelligence on] */}
+              <span className="flex flex-wrap gap-[inherit]">
+                <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
+                  <span className="tag-fan-layer flex h-full items-center px-[var(--tag-padding-inline)] bg-[#299093] text-white font-bold leading-none">
+                    Intelligence on
+                  </span>
                 </span>
               </span>
-            </span>
 
-            {/* Line 2: [White Dot] + [White pill: the factory floor] */}
-            <span className="flex items-center gap-3">
-              <span className="h-14 md:h-20 lg:h-24 aspect-square rounded-full bg-white shrink-0 shadow-sm" />
-              <span className="grid-pile-inline shrink-0 h-14 md:h-20 lg:h-24 overflow-hidden rounded-full whitespace-nowrap text-heading-2">
-                <span className="tag-fan-layer flex h-full items-center px-6 md:px-10 bg-white text-[#061a1e] font-bold shadow-sm">
-                  the factory floor
+              {/* Line 2: [White Dot] + [White pill: the factory floor] */}
+              <span className="flex flex-wrap gap-[inherit]">
+                <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full aspect-square">
+                  <span className="tag-fan-layer flex h-full items-center leading-none self-stretch bg-white" />
+                </span>
+                <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
+                  <span className="tag-fan-layer flex h-full items-center px-[var(--tag-padding-inline)] bg-white text-[#061a1e] font-bold leading-none">
+                    the factory floor
+                  </span>
                 </span>
               </span>
             </span>
           </h2>
-        </div>
 
-        {/* Pinned Bottom-Right Floating Telemetry Capability Card */}
-        <div className="absolute bottom-8 right-6 md:bottom-12 md:right-12 lg:right-16 z-20 w-[92vw] max-w-[420px] bg-white dark:bg-[#0d252b] rounded-[2.4rem] p-7 md:p-9 shadow-2xl text-[#061a1e] dark:text-white border border-black/5 dark:border-white/10 transition-all duration-300">
-          <div className="flex flex-col gap-3 min-h-[120px]">
-            <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-[#061a1e] dark:text-white">
-              {activeStation.title}
-            </h3>
-            <p className="text-sm md:text-base leading-relaxed text-[#546063] dark:text-white/80 font-normal">
-              {activeStation.description}
-            </p>
-          </div>
-
-          {/* 4-Dot Pill Indicator Bar matching mindrobotics.com */}
-          <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/10 flex items-center gap-2">
-            {STATIONS.map((stn, idx) => {
-              const isActive = idx === activeStationIndex;
-              return (
-                <button
-                  key={stn.id}
-                  type="button"
-                  onClick={() => scrollToStation(idx)}
-                  aria-label={`Jump to station ${idx + 1}: ${stn.title}`}
-                  className="group relative flex items-center h-4 p-1 cursor-pointer focus:outline-none"
-                >
-                  <span
-                    className={`relative block h-3 rounded-full overflow-hidden transition-all duration-300 ${
-                      isActive
-                        ? "w-14 md:w-20 bg-[#dbd7ca] dark:bg-white/20"
-                        : "w-3 bg-black/15 dark:bg-white/20 hover:bg-black/30 dark:hover:bg-white/40"
+          {/* Bottom-Right Floating Telemetry Capability Card matching mindrobotics.com */}
+          <div
+            aria-live="polite"
+            className="tablet:max-w-[40rem] rounded-[2.4rem] col-span-full flex w-full flex-col gap-8 justify-self-end bg-white p-8 pointer-events-auto text-[#061a1e]"
+          >
+            <div className="grid-pile">
+              {STATIONS.map((stn, idx) => {
+                const isActive = idx === activeStationIndex;
+                return (
+                  <div
+                    key={stn.id}
+                    data-is-active={isActive ? "true" : "false"}
+                    className={`tablet:gap-6 flex flex-col gap-4 transition-[opacity,visibility] duration-200 ease-in-out ${
+                      isActive ? "visible opacity-100" : "invisible opacity-0 pointer-events-none"
                     }`}
                   >
-                    {isActive && (
-                      <span className="block h-full bg-[#299093] rounded-full w-full" />
-                    )}
-                  </span>
-                </button>
-              );
-            })}
+                    <h3 className="text-heading-4 text-[#061a1e]">{stn.title}</h3>
+                    <div className="text-paragraph-medium text-[#061a1e]">
+                      <p>{stn.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 4-Dot Pill Indicator Bar matching mindrobotics.com */}
+            <ul className="flex gap-2 items-center">
+              {STATIONS.map((stn, idx) => {
+                const isActive = idx === activeStationIndex;
+                const isBeforeActive = idx < activeStationIndex;
+                return (
+                  <li key={stn.id}>
+                    <button
+                      type="button"
+                      onClick={() => scrollToStation(idx)}
+                      aria-label={`Show ${stn.title}`}
+                      className="group relative flex cursor-pointer items-center py-2"
+                    >
+                      <span
+                        className={`h-3 rounded-full overflow-hidden transition-[width,background-color] duration-200 ease-in-out ${
+                          isActive
+                            ? "w-16 tablet:w-20 laptop:w-31 bg-[#299093]"
+                            : isBeforeActive
+                            ? "w-3 bg-[#299093]"
+                            : "w-3 bg-[#dbd7ca] group-hover:bg-[#b8b3a5]"
+                        }`}
+                      />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       </div>

@@ -2,20 +2,18 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { MapPin, Phone, Mail, Check } from "lucide-react";
 
 export default function Footer() {
   const [privacyChoiceActive, setPrivacyChoiceActive] = useState(false);
 
   return (
-    <footer className="w-full px-6 md:px-12 py-12 md:py-16 mt-auto">
-      {/* Pill Capsule Container */}
-      <div className="w-full rounded-[2.5rem] lg:rounded-full bg-[#f6f4f0] dark:bg-[#0a1a1e] border border-black/10 dark:border-white/10 p-6 md:px-10 md:py-5 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8 shadow-sm text-[#061a1e] dark:text-[#f6f4f0]">
+    <footer className="laptop:px-8 px-gutter-outer py-[var(--footer-padding-block)] mt-auto">
+      <div className="bg-[#f6f4f0] rounded-[2.4rem] tablet:items-center tablet:px-7 tablet:py-3 laptop:gap-16 laptop:rounded-full laptop:px-8 laptop:py-4 flex items-start justify-between gap-4 p-6 text-[#061a1e]">
         {/* Monogram Logo */}
         <Link
           href="/"
           className="group focus:outline-none shrink-0"
-          aria-label="Go to Mind Robotics Home"
+          aria-label="Go to Mind Robotics home"
         >
           <svg
             className="h-8 w-auto text-current transition-transform duration-300 group-hover:scale-105"
@@ -39,54 +37,59 @@ export default function Footer() {
           </svg>
         </Link>
 
-        {/* Contact Info Group */}
-        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-xs md:text-sm font-medium">
-          {/* Location */}
-          <div className="flex items-center gap-2 opacity-80">
-            <MapPin className="size-4 text-[#299093]" />
-            <span>Palo Alto, CA</span>
-          </div>
+        {/* Content Bar */}
+        <div className="text-paragraph-small tablet:flex-row tablet:items-start tablet:gap-10 laptop:flex-1 laptop:items-center laptop:justify-between laptop:gap-4 flex flex-col gap-3">
+          <ul className="tablet:gap-2 laptop:flex-row laptop:gap-10 flex flex-col gap-3">
+            <li className="flex items-center gap-2">
+              <svg className="size-5 shrink-0" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="currentColor" d="M10.949 9.498q.39-.39.39-.95t-.39-.95-.95-.39q-.562 0-.95.39-.39.39-.39.95t.39.95q.388.39.95.39.56 0 .95-.39m-.95 6.66q2.382-2.086 3.71-4.065 1.33-1.98 1.33-3.49 0-2.196-1.428-3.653-1.426-1.458-3.613-1.458-2.185 0-3.613 1.458T4.958 8.603q0 1.51 1.329 3.49t3.711 4.064m0 1.433q-3.063-2.6-4.594-4.844-1.53-2.244-1.53-4.144 0-2.551 1.71-4.369t4.413-1.817q2.683 0 4.404 1.817 1.72 1.818 1.72 4.369 0 1.9-1.52 4.134-1.52 2.233-4.604 4.854" />
+              </svg>
+              <span>Palo Alto, CA</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <svg className="size-5 shrink-0" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="currentColor" d="M6.258 18.583q-.555 0-.948-.392a1.3 1.3 0 0 1-.392-.947V2.757q0-.632.354-.986t.986-.354h7.519q.554 0 .947.392.393.393.393.948v3.048a.82.82 0 0 1 .676.191.78.78 0 0 1 .292.624v1.904q0 .377-.292.624a.82.82 0 0 1-.676.192v7.904q0 .554-.393.947a1.3 1.3 0 0 1-.947.392zm0-1.083h7.519a.25.25 0 0 0 .184-.072.25.25 0 0 0 .072-.184V2.757a.25.25 0 0 0-.072-.185.25.25 0 0 0-.184-.072h-7.52a.25.25 0 0 0-.184.072.25.25 0 0 0-.072.185v14.487a.25.25 0 0 0 .072.184.25.25 0 0 0 .185.072m4.222-1.507a.62.62 0 0 0 .191-.463.643.643 0 0 0-.65-.658.643.643 0 0 0-.657.65.643.643 0 0 0 .649.658q.277 0 .467-.187" />
+              </svg>
+              <a href="tel:+14084599351" className="hover:text-[#299093] transition-colors duration-200">
+                408-459-9351
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <svg className="size-5 shrink-0" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="currentColor" d="M3.758 15.583q-.563 0-.951-.388a1.3 1.3 0 0 1-.389-.952V5.75q0-.564.389-.949a1.3 1.3 0 0 1 .95-.385h12.488q.563 0 .951.389.39.389.389.951v8.493q0 .563-.389.948a1.3 1.3 0 0 1-.951.385zM10 10.632 3.5 6.806v7.438a.25.25 0 0 0 .072.184.25.25 0 0 0 .185.072h12.487a.25.25 0 0 0 .184-.072.25.25 0 0 0 .072-.184V6.806zm0-1.403L16.373 5.5H3.63zM3.5 6.806V5.5v8.744a.25.25 0 0 0 .072.184.25.25 0 0 0 .185.072H3.5z" />
+              </svg>
+              <a href="mailto:press@mindrobotics.com" className="hover:text-[#299093] transition-colors duration-200">
+                press@mindrobotics.com
+              </a>
+            </li>
+          </ul>
 
-          {/* Phone */}
-          <div className="flex items-center gap-2">
-            <Phone className="size-4 text-[#ffbd00]" />
-            <a
-              href="tel:+14084599351"
-              className="hover:text-[#299093] transition-colors"
-            >
-              408-459-9351
-            </a>
+          <div className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col gap-3">
+            <nav>
+              <ul className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col gap-3">
+                <li>
+                  <Link href="#privacy" className="hover:text-[#299093] transition-colors duration-200">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#terms" className="hover:text-[#299093] transition-colors duration-200">
+                    Terms
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setPrivacyChoiceActive(!privacyChoiceActive)}
+                    className="hover:text-[#299093] cursor-pointer text-left transition-colors duration-200"
+                  >
+                    Your Privacy Choices
+                  </button>
+                </li>
+              </ul>
+            </nav>
+            <p>© Mind Robotics 2026</p>
           </div>
-
-          {/* Email */}
-          <div className="flex items-center gap-2">
-            <Mail className="size-4 text-[#ef6156]" />
-            <a
-              href="mailto:press@mindrobotics.com"
-              className="hover:text-[#299093] transition-colors"
-            >
-              press@mindrobotics.com
-            </a>
-          </div>
-        </div>
-
-        {/* Legal & Copyright Links */}
-        <div className="flex flex-wrap items-center justify-center gap-5 text-xs opacity-75 font-medium">
-          <Link href="#privacy" className="hover:text-[#299093] transition-colors">
-            Privacy
-          </Link>
-          <Link href="#terms" className="hover:text-[#299093] transition-colors">
-            Terms
-          </Link>
-          <button
-            type="button"
-            onClick={() => setPrivacyChoiceActive(!privacyChoiceActive)}
-            className="hover:text-[#299093] transition-colors flex items-center gap-1.5 cursor-pointer"
-          >
-            <span>Your Privacy Choices</span>
-            {privacyChoiceActive && <Check className="size-3 text-emerald-500" />}
-          </button>
-          <span className="opacity-60">© Mind Robotics 2026</span>
         </div>
       </div>
     </footer>

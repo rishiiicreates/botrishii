@@ -242,123 +242,136 @@ export default function HeroSection() {
       </section>
 
       {/* SECTION 1: Main Statement & Narrative Copy */}
-      <section className="layout-grid laptop:gap-y-14 gap-y-8 pt-20 md:pt-32 pb-16">
+      <section className="layout-grid laptop:gap-y-14 gap-y-8 pt-[6.4rem] tablet:pt-[11.2rem] pb-[6.4rem] tablet:pb-[11.2rem]">
         {/* Headline with Staggered Multi-Color Fan Tags */}
-        <h1 className="col-span-full md:col-span-11 lg:col-span-9 lg:col-start-2 text-heading-1 tracking-tight text-balance leading-[1.12]">
-          {/* Pill 1: Mind Robotics */}
-          <span className="grid-pile-inline h-[1.3em] overflow-hidden rounded-full align-middle mr-2.5">
-            <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
-            <span
-              className="tag-fan-layer rounded-full bg-[#061a1e]"
-              style={{ "--index": 0, "--delay": "0s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#ffbd00]"
-              style={{ "--index": 1, "--delay": "0s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#299093] flex items-center px-4 md:px-6 text-white font-bold"
-              style={{ "--index": 2, "--delay": "0s" } as React.CSSProperties}
-            >
-              Mind Robotics
+        <h1 className="text-heading-1 tablet:col-span-9 tablet:col-start-2 laptop:col-span-9 laptop:col-start-3 laptop:max-w-[100rem] col-span-6 col-start-1 text-balance">
+          <span role="text" aria-label="Mind Robotics is building universally capable robots to transform industrial work.">
+            {/* Pill 1: Mind Robotics */}
+            <span className="-ml-[var(--tag-padding-inline)] inline-block align-baseline">
+              <span className="grid-pile-inline h-[var(--tag-height)] overflow-hidden rounded-full align-middle whitespace-nowrap">
+                <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#061a1e]"
+                  style={{ "--index": 0, "--delay": "0s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ffbd00]"
+                  style={{ "--index": 1, "--delay": "0s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#299093] flex h-full items-center px-[var(--tag-padding-inline)] text-white font-bold leading-[var(--tag-height)]"
+                  style={{ "--index": 2, "--delay": "0s" } as React.CSSProperties}
+                >
+                  Mind Robotics
+                </span>
+              </span>
             </span>
-          </span>
-
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "0.2s" } as React.CSSProperties}
-          >
-            is
-          </span>
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "0.35s" } as React.CSSProperties}
-          >
-            building
-          </span>
-
-          {/* Pill 2: universally */}
-          <span className="grid-pile-inline h-[1.3em] overflow-hidden rounded-full align-middle mr-2.5">
-            <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
+            {" "}
             <span
-              className="tag-fan-layer rounded-full bg-[#ef6156]"
-              style={{ "--index": 0, "--delay": "0.5s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#299093]"
-              style={{ "--index": 1, "--delay": "0.5s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#ffbd00]"
-              style={{ "--index": 2, "--delay": "0.5s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-white text-black flex items-center px-4 md:px-6 font-bold"
-              style={{ "--index": 3, "--delay": "0.5s" } as React.CSSProperties}
+              className="headline-word"
+              style={{ "--delay": "0.2s" } as React.CSSProperties}
             >
-              universally
+              is
             </span>
-          </span>
-
-          {/* Pill 3: capable */}
-          <span className="grid-pile-inline h-[1.3em] overflow-hidden rounded-full align-middle mr-2.5">
-            <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
+            {" "}
             <span
-              className="tag-fan-layer rounded-full bg-[#ef6156]"
-              style={{ "--index": 0, "--delay": "0.7s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#299093]"
-              style={{ "--index": 1, "--delay": "0.7s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#ffbd00]"
-              style={{ "--index": 2, "--delay": "0.7s" } as React.CSSProperties}
-            />
-            <span
-              className="tag-fan-layer rounded-full bg-[#ef6156] text-white flex items-center px-4 md:px-6 font-bold"
-              style={{ "--index": 3, "--delay": "0.7s" } as React.CSSProperties}
+              className="headline-word mr-[var(--tag-padding-inline)]"
+              style={{ "--delay": "0.35s" } as React.CSSProperties}
             >
-              capable
+              building
             </span>
-          </span>
-
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "0.85s" } as React.CSSProperties}
-          >
-            robots
-          </span>
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "1.0s" } as React.CSSProperties}
-          >
-            to
-          </span>
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "1.15s" } as React.CSSProperties}
-          >
-            transform
-          </span>
-          <span
-            className="headline-word mr-3"
-            style={{ "--delay": "1.3s" } as React.CSSProperties}
-          >
-            industrial
-          </span>
-          <span
-            className="headline-word"
-            style={{ "--delay": "1.45s" } as React.CSSProperties}
-          >
-            work.
+            {" "}
+            {/* Pill 2: universally */}
+            <span className="-ml-[var(--tag-padding-inline)] mr-[var(--tag-padding-inline)] inline-block align-baseline">
+              <span className="grid-pile-inline h-[var(--tag-height)] overflow-hidden rounded-full align-middle whitespace-nowrap">
+                <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ef6156]"
+                  style={{ "--index": 0, "--delay": "0.5s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#299093]"
+                  style={{ "--index": 1, "--delay": "0.5s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ffbd00]"
+                  style={{ "--index": 2, "--delay": "0.5s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-white text-black flex h-full items-center px-[var(--tag-padding-inline)] font-bold leading-[var(--tag-height)]"
+                  style={{ "--index": 3, "--delay": "0.5s" } as React.CSSProperties}
+                >
+                  universally
+                </span>
+              </span>
+            </span>
+            {" "}
+            {/* Pill 3: capable */}
+            <span className="-ml-[var(--tag-padding-inline)] mr-[var(--tag-padding-inline)] inline-block align-baseline">
+              <span className="grid-pile-inline h-[var(--tag-height)] overflow-hidden rounded-full align-middle whitespace-nowrap">
+                <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ef6156]"
+                  style={{ "--index": 0, "--delay": "0.7s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#299093]"
+                  style={{ "--index": 1, "--delay": "0.7s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ffbd00]"
+                  style={{ "--index": 2, "--delay": "0.7s" } as React.CSSProperties}
+                />
+                <span
+                  className="tag-fan-layer rounded-full bg-[#ef6156] text-white flex h-full items-center px-[var(--tag-padding-inline)] font-bold leading-[var(--tag-height)]"
+                  style={{ "--index": 3, "--delay": "0.7s" } as React.CSSProperties}
+                >
+                  capable
+                </span>
+              </span>
+            </span>
+            {" "}
+            <span
+              className="headline-word"
+              style={{ "--delay": "0.85s" } as React.CSSProperties}
+            >
+              robots
+            </span>
+            {" "}
+            <span
+              className="headline-word"
+              style={{ "--delay": "1.0s" } as React.CSSProperties}
+            >
+              to
+            </span>
+            {" "}
+            <span
+              className="headline-word"
+              style={{ "--delay": "1.15s" } as React.CSSProperties}
+            >
+              transform
+            </span>
+            {" "}
+            <span
+              className="headline-word"
+              style={{ "--delay": "1.3s" } as React.CSSProperties}
+            >
+              industrial
+            </span>
+            {" "}
+            <span
+              className="headline-word"
+              style={{ "--delay": "1.45s" } as React.CSSProperties}
+            >
+              work.
+            </span>
           </span>
         </h1>
 
         {/* Supporting Narrative Paragraphs */}
-        <div className="col-span-full md:col-span-8 lg:col-span-6 lg:col-start-2 flex flex-col gap-6 text-paragraph-large opacity-90 leading-relaxed font-normal">
+        <div className="text-paragraph-large tablet:col-span-7 tablet:col-start-2 laptop:col-span-5 laptop:col-start-3 laptop:max-w-[60rem] col-span-6 col-start-1">
           <p>
-            <strong className="font-bold text-current">We&apos;re starting</strong> where the
+            <strong className="font-bold">We&apos;re starting</strong> where the
             problems are hardest and the standards are least forgiving: the factory floor. Mind is
             collecting video data at industrial scale, capturing live, high-variability work as it
             happens on the line, starting with automotive manufacturing.

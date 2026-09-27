@@ -2,8 +2,8 @@
 
 @theme {
   --breakpoint-tablet: 768px;
-  --breakpoint-laptop: 1024px;
-  --breakpoint-desktop: 1440px;
+  --breakpoint-laptop: 1280px;
+  --breakpoint-desktop: 1680px;
 }
 
 @layer base {
@@ -47,9 +47,15 @@
     --gutter-inner-tablet: 24px;
     --gutter-inner: var(--gutter-inner-mobile);
 
+    --header-height: 6.4rem;
     --header-padding-block: 2.4rem;
     --footer-padding-block: 2.4rem;
     --tag-padding-inline: 1.2rem;
+    --tag-height: 1.25em;
+
+    --spacer-small: 6.4rem;
+    --spacer-medium: 9.6rem;
+    --spacer-large: 16.8rem;
 
     --single-column-width: calc((100vw - var(--gutter-outer) * 2 - var(--gutter-inner) * (var(--columns) - 1)) / var(--columns));
     --single-column-width-with-gutter-inner: calc(var(--single-column-width) + var(--gutter-inner));
@@ -91,17 +97,26 @@
       --columns: var(--columns-tablet);
       --gutter-outer: var(--gutter-outer-tablet);
       --gutter-inner: var(--gutter-inner-tablet);
+      --header-height: 8rem;
       --header-padding-block: 3.2rem;
       --footer-padding-block: 2.0rem;
       --tag-padding-inline: 1.6rem;
+      --tag-height: 1.25em;
+      --spacer-small: 11.2rem;
+      --spacer-medium: 11.2rem;
     }
   }
 
   @media (min-width: 1280px) {
     :root {
+      --header-height: 8rem;
       --header-padding-block: 3.2rem;
       --footer-padding-block: 3.2rem;
       --tag-padding-inline: 2.0rem;
+      --tag-height: 1.3em;
+      --spacer-small: 11.2rem;
+      --spacer-medium: 20rem;
+      --spacer-large: 25.6rem;
     }
   }
 }
@@ -250,49 +265,120 @@ body {
 
 /* Typography styles matching original */
 .text-heading-1 {
-  font-size: clamp(3.2rem, 6vw, 8.0rem);
-  font-weight: 700;
-  line-height: 1.15;
+  font-family: var(--font-centra), sans-serif;
   letter-spacing: -0.04em;
+  font-size: 3.6rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+@media (min-width: 768px) {
+  .text-heading-1 {
+    font-size: 4.8rem;
+  }
+}
+@media (min-width: 1280px) {
+  .text-heading-1 {
+    font-size: 8rem;
+    line-height: 1.4;
+  }
 }
 
 .text-heading-2 {
-  font-size: clamp(2.4rem, 4.5vw, 5.6rem);
+  font-family: var(--font-centra), sans-serif;
+  letter-spacing: -0.03em;
+  font-size: 2.8rem;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.035em;
+}
+@media (min-width: 768px) {
+  .text-heading-2 {
+    font-size: 4rem;
+    line-height: 1.3;
+  }
+}
+@media (min-width: 1280px) {
+  .text-heading-2 {
+    letter-spacing: -0.04em;
+    font-size: 5.6rem;
+  }
 }
 
 .text-heading-3 {
-  font-size: clamp(2.2rem, 3.2vw, 4.4rem);
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.03em;
+  font-family: var(--font-centra), sans-serif;
+  font-size: 2.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+@media (min-width: 768px) {
+  .text-heading-3 {
+    letter-spacing: -0.03em;
+    font-size: 4rem;
+    line-height: 1.3;
+  }
+}
+@media (min-width: 1280px) {
+  .text-heading-3 {
+    font-size: 4.4rem;
+  }
 }
 
 .text-heading-4 {
-  font-size: clamp(1.8rem, 2.2vw, 3.2rem);
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
+  font-family: var(--font-centra), sans-serif;
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+@media (min-width: 768px) {
+  .text-heading-4 {
+    letter-spacing: -0.02em;
+    font-size: 2.8rem;
+  }
+}
+@media (min-width: 1280px) {
+  .text-heading-4 {
+    font-size: 3.2rem;
+  }
 }
 
 .text-paragraph-large {
-  font-size: clamp(1.6rem, 1.3vw, 2.0rem);
-  line-height: 1.6;
+  font-family: var(--font-centra), sans-serif;
+  font-size: 1.8rem;
   font-weight: 400;
+  line-height: 1.5;
+}
+@media (min-width: 768px) {
+  .text-paragraph-large {
+    font-size: 2rem;
+  }
+}
+.text-paragraph-large > :where(p + p) {
+  margin-top: 1em;
 }
 
 .text-paragraph-medium {
-  font-size: 1.6rem;
-  line-height: 1.5;
+  font-family: var(--font-centra), sans-serif;
+  font-size: 1.3rem;
   font-weight: 400;
+  line-height: 1.4;
+}
+@media (min-width: 1280px) {
+  .text-paragraph-medium {
+    font-size: 1.6rem;
+    line-height: 1.5;
+  }
+}
+.text-paragraph-medium > :where(p + p) {
+  margin-top: 1em;
 }
 
 .text-paragraph-small {
+  font-family: var(--font-centra), sans-serif;
   font-size: 1.3rem;
-  line-height: 1.45;
   font-weight: 400;
+  line-height: 1.4;
+}
+.text-paragraph-small > :where(p + p) {
+  margin-top: 1em;
 }
 
 .text-button {
@@ -308,10 +394,11 @@ body {
 }
 
 .text-poster {
-  font-size: clamp(4.5rem, 16vw, 24rem);
+  font-family: var(--font-centra), sans-serif;
+  font-size: clamp(8rem, 16.5vw, 24rem);
   font-weight: 700;
   letter-spacing: -0.04em;
-  line-height: 0.82;
+  line-height: 0.8;
 }
 
 /* Custom Scrollbar for sleek industrial feel */

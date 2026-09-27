@@ -208,18 +208,18 @@ export default function OutroSection() {
   const rightY = 40 - outroProgress * 40; // 40% to 0%
 
   return (
-    <section ref={sectionRef} className="relative min-h-[140vh] md:min-h-[160vh] flex flex-col justify-between py-24 md:py-36 overflow-hidden">
-      {/* Background 2D Pattern Canvas with Top/Bottom Edge Fading matching module 65578 */}
-      <PatternCanvas
-        seed={2}
-        density={0.5}
-        fade={["top", "bottom"]}
-        className="z-behind-content absolute inset-0 size-full pointer-events-none"
-      />
+    <section ref={sectionRef} className="tablet:h-[200svh] relative min-h-[160vh]">
+      <div className="grid-pile px-gutter-outer tablet:sticky tablet:top-0 tablet:h-svh tablet:grid-rows-[minmax(0,1fr)] tablet:py-6 desktop:py-14 py-10 overflow-hidden">
+        {/* Background 2D Pattern Canvas with Top/Bottom Edge Fading matching module 65578 */}
+        <PatternCanvas
+          seed={2}
+          density={0.5}
+          fade={["top", "bottom"]}
+          className="z-behind-content absolute inset-0 size-full pointer-events-none"
+        />
 
-      {/* Center Silhouette Geometry & Interactive Pong Ball matching mindrobotics.com */}
-      <div className="relative z-10 layout-grid my-auto w-full">
-        <div className="col-span-full flex justify-between items-center max-w-5xl mx-auto w-full px-4">
+        {/* Center Silhouette Geometry & Interactive Pong Ball layered in the center */}
+        <div className="flex justify-between w-full max-w-[85rem] tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center px-4">
           {/* Left Pill: Solid White */}
           <span
             className="w-[32%] rounded-full bg-white aspect-[2/5] transition-transform duration-75 ease-out shadow-sm"
@@ -233,7 +233,7 @@ export default function OutroSection() {
               setGameOpen(true);
               setGameStatus("playing");
             }}
-            className="group grid-pile relative w-[32%] mt-[9.6%] aspect-square rounded-full cursor-pointer items-center self-start overflow-hidden bg-white border-2 border-black/10 shadow-2xl transition-transform duration-100 hover:scale-105"
+            className="pong-ball group grid-pile relative w-[32%] mt-[9.6%] aspect-square rounded-full cursor-pointer items-center self-start overflow-hidden bg-white border-2 border-black/10 shadow-2xl transition-transform duration-100 hover:scale-105"
             style={{ transform: `translateY(${centerY}%)` }}
             aria-label="Play Mind Pong"
           >
@@ -243,7 +243,7 @@ export default function OutroSection() {
             <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[100ms]" />
             <span className="pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[180ms]" />
 
-            <span className="relative z-10 justify-self-center text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#061a1e] group-hover:text-white transition-colors duration-200">
+            <span className="relative z-10 self-center justify-self-center text-center font-bold text-3xl md:text-5xl lg:text-6xl text-[#061a1e] group-hover:text-white transition-colors duration-200">
               Play
             </span>
           </button>
@@ -254,14 +254,12 @@ export default function OutroSection() {
             style={{ transform: `translateY(${rightY}%)` }}
           />
         </div>
-      </div>
 
-      {/* Massive Poster Typography ("Get to know Mind") */}
-      <div className="relative z-10 px-6 md:px-12 select-none pointer-events-none mt-16 md:mt-24">
-        <p className="text-poster flex flex-col justify-center leading-[0.82] text-current">
-          <span className="text-left">Get to</span>
-          <span className="text-right">know</span>
-          <span className="text-left">Mind</span>
+        {/* Massive Poster Typography ("Get to know Mind") layered as z-above-content matching mindrobotics.com */}
+        <p className="text-poster tablet:flex z-above-content pointer-events-none hidden w-full flex-col justify-center gap-[0.15em] whitespace-nowrap self-center select-none text-[#061a1e]">
+          <span className="self-start">Get to</span>
+          <span className="self-end text-right">know</span>
+          <span className="self-start">Mind</span>
         </p>
       </div>
 

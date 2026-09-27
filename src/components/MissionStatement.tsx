@@ -10,36 +10,41 @@ const MissionHand3D = dynamic(() => import("./MissionHand3D"), {
 
 export default function MissionStatement() {
   return (
-    <section className="layout-grid lg:grid-cols-12 lg:grid-rows-[auto_1fr] py-[20rem] items-start relative z-20 overflow-visible">
+    <section className="layout-grid laptop:grid-rows-[auto_1fr] py-[9.6rem] tablet:py-[11.2rem] laptop:py-[20rem] items-start relative z-20 overflow-visible">
       {/* Left Column: Heading (Row 1) */}
-      <h2 className="col-span-full lg:col-span-6 lg:row-start-1 max-w-[70rem]">
-        <span className="flex flex-col gap-2 md:gap-3">
-          {/* Line 1: [Coral Pill: The work we] */}
-          <span className="flex flex-wrap gap-2">
-            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#ef6156] text-[#061a1e] items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0">
-              The work we
+      <h2 className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]">
+        <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
+          {/* Line 1: [Coral Dot] + [Coral Pill: The work we] + [Dark Pill: always imagined] */}
+          <span className="flex flex-wrap gap-[inherit]">
+            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full aspect-square">
+              <span className="flex h-full items-center leading-none self-stretch bg-[#ef6156]" />
+            </span>
+            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
+              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-[#ef6156] text-[#061a1e]">
+                The work we
+              </span>
+            </span>
+            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
+              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-[#061a1e] text-white">
+                always imagined
+              </span>
             </span>
           </span>
 
-          {/* Line 2: [Dark Pill: always imagined] */}
-          <span className="flex flex-wrap gap-2">
-            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-[#061a1e] text-white items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0 shadow-sm">
-              always imagined
-            </span>
-          </span>
-
-          {/* Line 3: [White Pill: machines could do] */}
-          <span className="flex flex-wrap gap-2">
-            <span className="inline-flex h-[4.4rem] sm:h-[6.2rem] lg:h-[8rem] w-fit rounded-full bg-white text-[#061a1e] items-center px-[2rem] sm:px-[2.8rem] lg:px-[3.6rem] whitespace-nowrap text-[2.4rem] sm:text-[3.8rem] lg:text-[5.6rem] font-bold tracking-tight shrink-0 shadow-sm border border-black/5">
-              machines could do
+          {/* Line 2: [White Pill: machines could do] */}
+          <span className="flex flex-wrap gap-[inherit]">
+            <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
+              <span className="flex h-full items-center leading-none px-[var(--tag-padding-inline)] self-stretch bg-white text-[#061a1e]">
+                machines could do
+              </span>
             </span>
           </span>
         </span>
       </h2>
 
       {/* Left Column: Narrative Copy (Row 2) */}
-      <div className="text-[1.8rem] sm:text-[2rem] leading-[1.5] text-[#061a1e] col-span-full lg:col-span-5 lg:row-start-2 lg:self-start max-w-[60rem] mt-10">
-        <p className="mb-6">
+      <div className="text-paragraph-large tablet:col-span-8 tablet:mt-16 laptop:col-span-5 laptop:row-start-2 laptop:self-start laptop:max-w-[60rem] col-span-6 col-start-1 mt-12">
+        <p>
           <strong className="font-bold">Our robots take on</strong> the intricate, often grueling
           work the world actually runs on, not the rigid, perfectly predictable motions that
           classical automation has already solved. By focusing on skills that require more reasoning,
@@ -52,10 +57,10 @@ export default function MissionStatement() {
         </p>
       </div>
 
-      {/* Right Column: 3D Cel-Shaded Robotic Hand Card (Row span 2 starting at row 1) */}
-      <div className="bg-[#dbd7ca] rounded-[3.2rem] lg:rounded-[4rem] border border-[#061a1e] relative aspect-[19/20] col-span-full lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1 lg:self-start lg:mt-0 mt-14 z-20 overflow-visible">
-        {/* Spill Container: extends down and left to let the hand fingers spill naturally without being clipped */}
-        <div className="pointer-events-none absolute top-0 right-0 -bottom-[38rem] lg:-bottom-[46rem] -left-[32rem] lg:-left-[40rem] [clip-path:inset(0_round_0_3.2rem_0_0)] lg:[clip-path:inset(0_round_0_4rem_0_0)] overflow-visible">
+      {/* Right Column: 3D Cel-Shaded Robotic Hand Card */}
+      <div className="bg-[#dbd7ca] rounded-[4rem] tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start z-20 relative col-span-5 col-start-2 mt-20 aspect-[19/20] border border-black overflow-visible">
+        {/* Spill Container: exact live site formula allowing hand to extend naturally into surrounding columns without being clipped */}
+        <div className="laptop:[--spill:calc(var(--single-column-width-with-gutter-inner)*3)] tablet:[--spill:calc(var(--single-column-width-with-gutter-inner)*2)] pointer-events-none absolute top-0 right-0 -bottom-[var(--spill)] -left-[var(--spill)] [--spill:var(--single-column-width-with-gutter-inner)] [clip-path:inset(0_round_0_var(--radius-medium)_0_0)] overflow-visible">
           <MissionHand3D />
         </div>
       </div>
