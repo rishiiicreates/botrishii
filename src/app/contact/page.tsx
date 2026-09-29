@@ -73,7 +73,7 @@ export default function ContactPage() {
           </svg>
         </Link>
 
-        {/* Center: Nav Pills with Active Contact Highlight */}
+        {/* Center: Nav Pills with Active Contact Highlight [ Home | Work | Contact ] */}
         <nav className="flex items-center bg-[#dbd7ca]/80 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
           <Link
             href="/"
@@ -81,15 +81,15 @@ export default function ContactPage() {
             onMouseEnter={() => playSound("hover")}
             className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
-            About
+            Home
           </Link>
           <Link
-            href="/projects"
+            href="/work"
             onClick={() => playSound("click")}
             onMouseEnter={() => playSound("hover")}
             className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
-            Projects
+            Work
           </Link>
           <span
             className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-white bg-[#299093] rounded-full shadow-sm"

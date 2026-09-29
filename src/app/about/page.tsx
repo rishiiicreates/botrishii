@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import UnifiedPortfolioPage from "@/app/page";
+import React, { useEffect } from "react";
+import WorkPage from "@/app/work/page";
 
 export default function AboutRoute() {
-  const router = useRouter();
-
   useEffect(() => {
     // Scroll smoothly to about section if navigating here directly
     const timer = setTimeout(() => {
@@ -14,9 +11,9 @@ export default function AboutRoute() {
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, []);
 
-  return <UnifiedPortfolioPage />;
+  return <WorkPage />;
 }

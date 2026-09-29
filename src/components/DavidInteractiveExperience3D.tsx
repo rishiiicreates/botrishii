@@ -5,20 +5,27 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface DavidInteractiveExperience3DProps {
-  scrollProgress: number; // 0 (Hero sitting) to 1 (About hologram pedestal)
+  scrollProgress: number; // 0 (Hero sitting) -> 1 (About standing on pedestal)
+  exitProgress?: number; // 0 (About active) -> 1 (Exiting into Projects)
   className?: string;
   onLoaded?: () => void;
 }
 
 export default function DavidInteractiveExperience3D({
   scrollProgress,
+  exitProgress = 0,
   className = "",
   onLoaded,
 }: DavidInteractiveExperience3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
+
+  // Store latest progress targets in refs for the 60fps render loop
   const targetProgressRef = useRef(scrollProgress);
   targetProgressRef.current = scrollProgress;
+
+  const targetExitRef = useRef(exitProgress);
+  targetExitRef.current = exitProgress;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -35,7 +42,7 @@ export default function DavidInteractiveExperience3D({
     const width = container.clientWidth || (typeof window !== "undefined" ? window.innerWidth : 1280);
     const height = container.clientHeight || (typeof window !== "undefined" ? window.innerHeight : 720);
 
-    // 1. Three.js Scene & Camera Setup
+    // 1. Scene & Camera Setup (38 FOV matching david-hckh.com bundle)
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(
@@ -64,15 +71,15 @@ export default function DavidInteractiveExperience3D({
 
     container.appendChild(renderer.domElement);
 
-    // 3. Color Definitions
+    // 3. Color Palettes
     const heroBgColor = new THREE.Color("#f5efe6");
     const aboutBgColor = new THREE.Color("#011c3d");
 
-    // 4. Textures
+    // 4. Asset Loaders
     const textureLoader = new THREE.TextureLoader();
     const gltfLoader = new GLTFLoader();
 
-    // Room textures
+    // Textures
     const roomTexture = textureLoader.load("/models/room-texture.webp");
     roomTexture.flipY = false;
     roomTexture.colorSpace = THREE.SRGBColorSpace;
@@ -84,7 +91,6 @@ export default function DavidInteractiveExperience3D({
     const roomShadowTexture = textureLoader.load("/models/room-shadow.webp");
     roomShadowTexture.flipY = false;
 
-    // Avatar textures & matcaps
     const faceTexture = textureLoader.load("/models/face-texture.png");
     faceTexture.generateMipmaps = false;
     faceTexture.colorSpace = THREE.SRGBColorSpace;
@@ -103,12 +109,8 @@ export default function DavidInteractiveExperience3D({
     const matcapWhite = textureLoader.load("/models/matcap-white.webp");
     matcapWhite.colorSpace = THREE.SRGBColorSpace;
 
-    // Numbers bitmap
-    const numbersTexture = textureLoader.load("/models/numbers-bitmap.webp");
-    numbersTexture.generateMipmaps = false;
-    numbersTexture.colorSpace = THREE.SRGBColorSpace;
-
     // 5. Room Grid Environment for About Mode (Glowing Cyan Floor & Wall)
+    // ONLY visible when in About section!
     const roomCorner = new THREE.Vector3(-16.0, 0.0, -2.0);
     const tileSize = 1.4;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -245,13 +247,13 @@ export default function DavidInteractiveExperience3D({
     let musicMesh: THREE.Mesh | null = null;
     let baseMusicY = 0;
 
-    let avatarTransform: THREE.Group | null = null;
+    let avatarGroup: THREE.Group | null = null;
     let mixer: THREE.AnimationMixer | null = null;
     let idleAction: THREE.AnimationAction | null = null;
     let tIdleAction: THREE.AnimationAction | null = null;
     let faceUniformFrame: { value: number } | null = null;
 
-    // Load Room Model
+    // Load Room Model (Desk, Monitor, Chair, Shelves)
     gltfLoader.load("/models/room-model.glb", (gltf) => {
       if (isDisposed) return;
       const roomScene = gltf.scene;
@@ -284,7 +286,7 @@ export default function DavidInteractiveExperience3D({
                 uniform vec3 uColorShadow;
                 void main() {
                   vec4 shadow = texture2D(uTexture, vUv);
-                  float shadowAlpha = (1.0 - shadow.r) * 0.40;
+                  float shadowAlpha = (1.0 - shadow.r) * 0.38;
                   gl_FragColor = vec4(uColorShadow, shadowAlpha);
                 }
               `,
@@ -303,7 +305,7 @@ export default function DavidInteractiveExperience3D({
       roomGroup.add(roomScene);
     });
 
-    // Load Lab Model (Hologram Pedestal)
+    // Load Lab Model (Hologram Pedestal & Cyan Glowing Ring Base)
     gltfLoader.load("/models/lab-model.glb", (gltf) => {
       if (isDisposed) return;
       const labScene = gltf.scene;
@@ -336,7 +338,7 @@ export default function DavidInteractiveExperience3D({
         }
       });
 
-      // Hologram vertical scanning cone
+      // Hologram vertical scanning cone beam
       const coneGeom = new THREE.CylinderGeometry(1.6, 1.1, 3.4, 32, 1, true);
       const coneMat = new THREE.ShaderMaterial({
         transparent: true,
@@ -400,32 +402,26 @@ export default function DavidInteractiveExperience3D({
       labGroup.add(labScene);
     });
 
-    // Load Avatar Model (Sitting & Standing animations blend)
+    // 7. Load Avatar Model (Direct gltf.scene root to preserve 100% bone hierarchy)
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
-      const rawArmature = gltf.scene.children[0];
-      if (!rawArmature) return;
+      // Use gltf.scene directly to avoid bone skew/distortion
+      avatarGroup = gltf.scene;
 
-      // Coordinate alignment from Blender
-      rawArmature.rotation.z = 0;
-
-      const brain = rawArmature.getObjectByName("brain");
-      if (brain) rawArmature.remove(brain);
-
-      avatarTransform = new THREE.Group();
-      avatarTransform.add(rawArmature);
+      const brain = avatarGroup.getObjectByName("brain");
+      if (brain) brain.visible = false;
 
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const startYaw = (landscape ? -2.3 : -2.1) + Math.PI / 2;
-      avatarTransform.position.set(baseRoomX, 0, 0);
-      avatarTransform.rotation.set(0, startYaw, 0);
+      avatarGroup.position.set(baseRoomX, 0, 0);
+      avatarGroup.rotation.set(0, startYaw, 0);
 
-      scene.add(avatarTransform);
+      scene.add(avatarGroup);
 
-      // Matcaps
-      rawArmature.traverse((child) => {
+      // Matcap Materials matching authentic David Heckhoff character
+      avatarGroup.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.SkinnedMesh;
           if (mesh.name === "black") {
@@ -441,15 +437,15 @@ export default function DavidInteractiveExperience3D({
       });
 
       // Head hair texture
-      const headMesh = rawArmature.getObjectByName("head") as THREE.SkinnedMesh;
+      const headMesh = avatarGroup.getObjectByName("head") as THREE.SkinnedMesh;
       if (headMesh && headTexture) {
         headMesh.material = new THREE.MeshBasicMaterial({ map: headTexture });
       }
 
-      // Blinking face shader
-      const faceMesh = rawArmature.getObjectByName("face") as THREE.SkinnedMesh;
+      // Blinking face shader with 4x4 sprite frame atlas
+      const faceMesh = avatarGroup.getObjectByName("face") as THREE.SkinnedMesh;
       if (faceMesh) {
-        faceUniformFrame = { value: 12 };
+        faceUniformFrame = { value: 12 }; // Frame 12 = eyes open
         faceMesh.material = new THREE.ShaderMaterial({
           transparent: true,
           depthWrite: false,
@@ -492,8 +488,8 @@ export default function DavidInteractiveExperience3D({
         });
       }
 
-      // Mixer with both clips
-      mixer = new THREE.AnimationMixer(rawArmature);
+      // Animation Mixer on avatarGroup
+      mixer = new THREE.AnimationMixer(avatarGroup);
 
       const idleClip = gltf.animations.find((a) => a.name === "idle");
       if (idleClip) {
@@ -513,7 +509,7 @@ export default function DavidInteractiveExperience3D({
       onLoaded?.();
     });
 
-    // 7. Blinking Loop
+    // 8. Natural Eye Blinking Loop
     let blinkTimeout: NodeJS.Timeout | null = null;
     const scheduleNextBlink = () => {
       const delay = 2600 + Math.random() * 3200;
@@ -537,7 +533,7 @@ export default function DavidInteractiveExperience3D({
     };
     scheduleNextBlink();
 
-    // 8. Interactive Mouse Parallax
+    // 9. Interactive Mouse Parallax
     const mousePos = { x: 0, y: 0 };
     const onMouseMove = (e: MouseEvent) => {
       mousePos.x = e.clientX / window.innerWidth - 0.5;
@@ -545,19 +541,20 @@ export default function DavidInteractiveExperience3D({
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
-    // 9. Resize Handler
+    // 10. Resize Handler
     const onResize = () => {
       if (!container) return;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      renderer.setSize(w, h);
     };
     window.addEventListener("resize", onResize);
 
-    // 10. Animation & Smooth Scrub Render Loop
+    // 11. 60fps Smooth Scrub Render Loop
     let currentProgress = targetProgressRef.current;
+    let currentExit = targetExitRef.current;
     const clock = new THREE.Clock();
 
     const animate = () => {
@@ -567,23 +564,32 @@ export default function DavidInteractiveExperience3D({
       const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
 
-      // Smooth scroll progress interpolation
+      // Smooth scroll progress interpolation (0.09 lerp factor)
       const targetP = Math.max(0, Math.min(1, targetProgressRef.current));
-      currentProgress += (targetP - currentProgress) * 0.09;
+      currentProgress += (targetP - currentProgress) * 0.1;
       const p = currentProgress;
+
+      const targetE = Math.max(0, Math.min(1, targetExitRef.current));
+      currentExit += (targetE - currentExit) * 0.1;
+      const exitP = currentExit;
 
       if (mixer) {
         mixer.update(delta);
       }
 
-      // Smoothstep easing for 3D elements transition
-      const easeT = p * p * (3 - 2 * p);
+      // Smooth easing matching GSAP power1.out (1 - (1 - p)^2)
+      const easeT = 1 - (1 - p) * (1 - p);
 
-      // Background color blend: Hero beige -> About deep space blue
-      const currentBg = heroBgColor.clone().lerp(aboutBgColor, easeT);
+      // Background color: Hero beige -> About deep space blue -> exit back to beige
+      let currentBg: THREE.Color;
+      if (exitP > 0) {
+        currentBg = aboutBgColor.clone().lerp(heroBgColor, exitP);
+      } else {
+        currentBg = heroBgColor.clone().lerp(aboutBgColor, easeT);
+      }
       renderer.setClearColor(currentBg, 1);
 
-      // Room group transition (scales down, swivels, flies up and away)
+      // Room group transition (desk swivels, flies up and away)
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const targetRoomX = landscape ? 4.5 : 0;
@@ -620,16 +626,18 @@ export default function DavidInteractiveExperience3D({
       }
 
       // Avatar transition from desk to pedestal
-      if (avatarTransform) {
+      if (avatarGroup) {
         const startYaw = (landscape ? -2.3 : -2.1) + Math.PI / 2;
         const targetYaw = -Math.PI;
 
-        avatarTransform.position.set(
+        const exitSinkY = exitP * 3.5;
+
+        avatarGroup.position.set(
           THREE.MathUtils.lerp(baseRoomX, 0, easeT),
-          0,
+          -exitSinkY,
           THREE.MathUtils.lerp(0, 6, easeT)
         );
-        avatarTransform.rotation.set(
+        avatarGroup.rotation.set(
           0,
           THREE.MathUtils.lerp(startYaw, targetYaw, easeT),
           0
@@ -637,16 +645,37 @@ export default function DavidInteractiveExperience3D({
 
         // Crossfade animations: idle -> t-idle
         if (idleAction && tIdleAction) {
-          const crossfadeT = Math.min(1, Math.max(0, (p - 0.08) / 0.7));
-          idleAction.weight = 1.0 - crossfadeT;
-          tIdleAction.weight = crossfadeT;
+          // Smooth power1.out blending
+          let blend = 0;
+          if (p <= 0.12) {
+            blend = 0;
+          } else if (p >= 0.85) {
+            blend = 1;
+          } else {
+            const raw = (p - 0.12) / 0.73;
+            blend = 1 - (1 - raw) * (1 - raw);
+          }
+          idleAction.weight = 1.0 - blend;
+          tIdleAction.weight = blend;
         }
+
+        avatarGroup.visible = exitP < 0.98;
       }
 
-      // Lab pedestal & Hologram Scanner appearance
-      labGroup.visible = p > 0.05;
-      gridGroup.visible = p > 0.05;
-      gridOpacityUniform.value = Math.min(1, Math.max(0, (p - 0.1) * 2.2));
+      // Lab pedestal & Hologram appearance
+      labGroup.visible = p > 0.05 && exitP < 0.98;
+      if (exitP > 0) {
+        labGroup.position.y = -exitP * 3.5;
+      } else {
+        labGroup.position.y = 0;
+      }
+
+      // Room Grid (cyan floor/wall lines)
+      // Completely hidden during Hero (p <= 0.05), fully visible during About, fades out on exit
+      gridGroup.visible = p > 0.05 && exitP < 0.99;
+      const inGridOpacity = Math.min(1, Math.max(0, (p - 0.15) * 1.8));
+      const finalGridOpacity = inGridOpacity * (1.0 - exitP);
+      gridOpacityUniform.value = finalGridOpacity;
 
       // Scanner cone animation
       const cone = labGroup.getObjectByName("scannerCone") as THREE.Mesh;
@@ -655,8 +684,9 @@ export default function DavidInteractiveExperience3D({
       }
 
       // Camera position & focus transition
-      // Hero: (0, 6, 10), focus (0, 3, 0)
-      // About: (0, 4.5, 15.5), focus (0, 2.2, 6)
+      // Exact coordinates from David Heckhoff bundle Nh:
+      // Landscape: hero (0, 6, 10) focus (0, 3, 0), about (0, 4.5, 15.5) focus (0, 2.2, 6)
+      // Portrait: hero (0, 8.2, 16) focus (0, 5.2, 0), about (0, 4.75, 19.5) focus (0, 0.8, 6)
       const baseCamY = landscape ? 6 : 8.2;
       const baseCamZ = landscape ? 10 : 16;
       const baseFocusY = landscape ? 3 : 5.2;
@@ -665,11 +695,9 @@ export default function DavidInteractiveExperience3D({
       const targetCamZ = landscape ? 15.5 : 19.5;
       const targetFocusY = landscape ? 2.2 : 0.8;
 
-      camera.position.set(
-        0,
-        THREE.MathUtils.lerp(baseCamY, targetCamY, easeT),
-        THREE.MathUtils.lerp(baseCamZ, targetCamZ, easeT)
-      );
+      const currentCamY = THREE.MathUtils.lerp(baseCamY, targetCamY, easeT) + exitP * 1.8;
+      const currentCamZ = THREE.MathUtils.lerp(baseCamZ, targetCamZ, easeT);
+      camera.position.set(0, currentCamY, currentCamZ);
 
       const currentFocusY = THREE.MathUtils.lerp(baseFocusY, targetFocusY, easeT);
       const currentFocusZ = THREE.MathUtils.lerp(0, 6, easeT);
