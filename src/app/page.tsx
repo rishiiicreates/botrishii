@@ -83,7 +83,11 @@ export default function UnifiedPortfolioPage() {
 
   const handleCopyEmail = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigator.clipboard.writeText("rishiicreates@gmail.com");
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText("rishiicreates@gmail.com").catch(() => {});
+      }
+    } catch {}
     setShowCopied(true);
     playSound("click");
     setTimeout(() => setShowCopied(false), 2200);
@@ -298,13 +302,13 @@ export default function UnifiedPortfolioPage() {
       {/* ========================================================================= */}
       {/* GLOBAL FIXED TOP NAVIGATION                                                */}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 sm:px-12 md:px-16 py-5 md:py-6 transition-colors duration-300 pointer-events-none">
+      <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-3 sm:px-12 md:px-16 py-3 sm:py-5 md:py-6 transition-colors duration-300 pointer-events-none">
         {/* Left: 3D Wireframe Cube Icon */}
         <div className="pointer-events-auto">
           <button
             type="button"
             onClick={scrollToTop}
-            className={`size-10 sm:size-11 flex items-center justify-center transition-colors cursor-pointer ${
+            className={`size-9 sm:size-11 flex items-center justify-center transition-colors cursor-pointer ${
               isDarkNav ? "text-white" : "text-[#1b1b1b]"
             }`}
             aria-label="Back to top"
@@ -316,7 +320,7 @@ export default function UnifiedPortfolioPage() {
               strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="size-8"
+              className="size-7 sm:size-8"
             >
               <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" />
               <line x1="16" y1="2" x2="16" y2="30" />
@@ -329,7 +333,7 @@ export default function UnifiedPortfolioPage() {
 
         {/* Center: Interactive Capsule Nav */}
         <nav
-          className={`pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-md ${
+          className={`pointer-events-auto flex items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-md ${
             isDarkNav
               ? "bg-[#021833]/85 border border-cyan-500/30 text-white"
               : "bg-[#ebe4d8]/90 border border-[#1b1b1b]/[0.06] text-[#1b1b1b]"
@@ -339,7 +343,7 @@ export default function UnifiedPortfolioPage() {
             type="button"
             onClick={scrollToAbout}
             onMouseEnter={() => playSound("hover")}
-            className={`px-4 sm:px-5 py-1.5 rounded-full text-xs sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            className={`px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
               activeSection === "about"
                 ? "bg-[#0090ff] text-white shadow-sm"
                 : isDarkNav
@@ -354,7 +358,7 @@ export default function UnifiedPortfolioPage() {
             type="button"
             onClick={scrollToProjects}
             onMouseEnter={() => playSound("hover")}
-            className={`px-4 sm:px-5 py-1.5 rounded-full text-xs sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            className={`px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
               activeSection === "projects"
                 ? "bg-[#fa8207] text-white shadow-sm"
                 : isDarkNav
@@ -369,7 +373,7 @@ export default function UnifiedPortfolioPage() {
             href="/contact"
             onClick={() => playSound("click")}
             onMouseEnter={() => playSound("hover")}
-            className={`px-4 sm:px-5 py-1.5 rounded-full text-xs sm:text-[13px] font-bold uppercase tracking-wider transition-colors ${
+            className={`px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-colors ${
               isDarkNav ? "text-white/80 hover:text-white" : "text-[#1b1b1b]/80 hover:text-[#1b1b1b]"
             }`}
           >
@@ -378,12 +382,12 @@ export default function UnifiedPortfolioPage() {
         </nav>
 
         {/* Right: GET IN TOUCH & Audio Button */}
-        <div className="pointer-events-auto flex items-center gap-3">
+        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
           <a
             href="mailto:rishiicreates@gmail.com"
             onClick={(e) => handleCopyEmail(e)}
             onMouseEnter={() => playSound("hover")}
-            className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#fa8207] hover:bg-[#e67503] text-white text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            className="hidden sm:inline-flex px-6 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#fa8207] hover:bg-[#e67503] text-white text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
           >
             {showCopied ? "Email Copied!" : "Get In Touch"}
           </a>
@@ -399,7 +403,7 @@ export default function UnifiedPortfolioPage() {
               }
             }}
             onMouseEnter={() => playSound("hover")}
-            className={`size-10 sm:size-11 rounded-full flex items-center justify-center transition-all shadow-sm focus:outline-none cursor-pointer ${
+            className={`size-9 sm:size-11 rounded-full flex items-center justify-center transition-all shadow-sm focus:outline-none cursor-pointer ${
               isDarkNav
                 ? "bg-white/[0.1] border border-white/[0.15] text-white hover:bg-white/[0.2]"
                 : "bg-[#dfd5c7] text-[#1b1b1b] hover:bg-[#d4c9b9]"
@@ -434,12 +438,12 @@ export default function UnifiedPortfolioPage() {
             }}
           >
             {/* Top spacing for header */}
-            <div className="h-24 w-full" />
+            <div className="h-20 sm:h-24 w-full" />
 
-            {/* Hero Left Content: Editorial Title + Tilted Role Badge */}
-            <div className="relative z-10 px-6 sm:px-14 md:px-20 lg:px-28 flex flex-col items-center md:items-start justify-center pb-8 md:pb-16 flex-1">
+            {/* Hero Content: Editorial Title + Tilted Role Badge */}
+            <div className="relative z-10 px-6 sm:px-14 md:px-20 lg:px-28 flex flex-col items-center md:items-start justify-start md:justify-center pt-2 sm:pt-0 pb-8 md:pb-16 flex-1">
               <div className="relative w-fit pointer-events-auto select-none">
-                <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[7.8rem] font-black tracking-tight text-[#1b1b1b] leading-[0.88] text-center md:text-left">
+                <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[7.8rem] font-black tracking-tight text-[#1b1b1b] leading-[0.88] text-center md:text-left">
                   Hrishikesh
                   <br />
                   Yadav
@@ -447,7 +451,7 @@ export default function UnifiedPortfolioPage() {
 
                 {/* Tilted Navy Role Badge positioned under name */}
                 <div className="absolute -bottom-3 sm:-bottom-4 right-1 sm:-right-4 md:-right-6">
-                  <div className="-rotate-[5deg] px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-md bg-[#233261] text-white font-mono font-bold text-xs sm:text-sm tracking-wider uppercase shadow-md">
+                  <div className="-rotate-[5deg] px-3 sm:px-4 py-1 sm:py-1.5 rounded-md bg-[#233261] text-white font-mono font-bold text-[11px] sm:text-sm tracking-wider uppercase shadow-md">
                     AI & SYSTEMS ENGINEER
                   </div>
                 </div>
