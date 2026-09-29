@@ -36,11 +36,11 @@ export default function MissionStatement() {
       {/* Left Column: Heading (Row 1) */}
       <h2
         ref={headingRef}
-        aria-label="The work we always imagined machines could do"
+        aria-label="The work I always wished software could do"
         className="laptop:col-span-6 laptop:row-start-1 col-span-full max-w-[70rem]"
       >
         <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
-          {/* Line 1: [Coral Dot] + [Coral Pill: The work we] + [Dark Pill: always imagined] */}
+          {/* Line 1: [Coral Dot] + [Coral Pill: The work I] + [Dark Pill: always wished] */}
           <span className="flex flex-wrap gap-[inherit]">
             <FanTag
               color="#ef6156"
@@ -49,7 +49,7 @@ export default function MissionStatement() {
               delay={0}
             />
             <FanTag
-              text="The work we"
+              text="The work I"
               color="#ef6156"
               textColor="text-[#061a1e]"
               size="medium"
@@ -57,7 +57,7 @@ export default function MissionStatement() {
               delay={0.15}
             />
             <FanTag
-              text="always imagined"
+              text="always wished"
               color="#061a1e"
               textColor="text-white"
               size="medium"
@@ -66,10 +66,10 @@ export default function MissionStatement() {
             />
           </span>
 
-          {/* Line 2: [White Pill: machines could do] */}
+          {/* Line 2: [White Pill: software could do] */}
           <span className="flex flex-wrap gap-[inherit]">
             <FanTag
-              text="machines could do"
+              text="software could do"
               color="#ffffff"
               textColor="text-[#061a1e]"
               size="medium"
@@ -83,19 +83,18 @@ export default function MissionStatement() {
       {/* Left Column: Narrative Copy (Row 2) */}
       <div className="text-paragraph-large tablet:col-span-8 tablet:mt-16 laptop:col-span-5 laptop:row-start-2 laptop:self-start laptop:max-w-[60rem] col-span-6 col-start-1 mt-12">
         <p>
-          <strong className="font-bold">Our robots take on</strong> the intricate, often grueling
-          work the world actually runs on, not the rigid, perfectly predictable motions that
-          classical automation has already solved. By focusing on skills that require more reasoning,
-          variability, and dexterity, Mind robots can finally help with tasks that have always
-          depended on human hands.
+          <strong className="font-bold">I go after</strong> the repetitive, error-prone
+          work that quietly eats a team&apos;s week, not the simple rule-based tasks old tools
+          already handle. Anything that needs context, judgment, and a little adaptability is
+          fair game. If a human keeps saying &apos;ugh, this again,&apos; it&apos;s on my list.
         </p>
         <p>
-          Our aim is to make manufacturing safer, more efficient, and more globally competitive by
-          augmenting human capability.
+          My aim is simple: small teams that feel bigger, because the busywork disappeared and
+          the interesting decisions stayed human.
         </p>
       </div>
 
-      {/* Right Column: 3D Cel-Shaded Robotic Hand Card */}
+      {/* Right Column: 3D Cel-Shaded Hand Card */}
       <div className="bg-[#dbd7ca] rounded-[4rem] tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start z-20 relative col-span-5 col-start-2 mt-20 aspect-[19/20] border border-black overflow-visible">
         {/* Spill Container: exact live site formula allowing hand to extend naturally into surrounding columns without being clipped */}
         <div className="laptop:[--spill:calc(var(--single-column-width-with-gutter-inner)*3)] tablet:[--spill:calc(var(--single-column-width-with-gutter-inner)*2)] pointer-events-none absolute top-0 right-0 -bottom-[var(--spill)] -left-[var(--spill)] [--spill:var(--single-column-width-with-gutter-inner)] [clip-path:inset(0_round_0_var(--radius-medium)_0_0)] overflow-visible">

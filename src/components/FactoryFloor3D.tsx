@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-// Exact parameters reverse-engineered from module 65675 & 87610 (mindrobotics.com)
+// 3D Scene configuration
 const FACTORY_CONFIG = {
   camera: {
     fieldOfView: 14,
@@ -98,7 +98,9 @@ export default function FactoryFloor3D({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const progressRef = useRef(scrollProgress);
-  progressRef.current = scrollProgress;
+  useEffect(() => {
+    progressRef.current = scrollProgress;
+  }, [scrollProgress]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

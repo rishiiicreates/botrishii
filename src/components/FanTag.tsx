@@ -13,7 +13,7 @@ interface FanTagProps {
   ariaHidden?: boolean;
 }
 
-// Exact trail colors reverse-engineered from live mindrobotics.com
+// Exact trail colors
 const TRAIL_MAP: Record<string, string[]> = {
   "#299093": ["#061a1e", "#ffbd00"],
   "#ffbd00": ["#299093", "#ef6156"],

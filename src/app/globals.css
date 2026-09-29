@@ -21,7 +21,7 @@
     --color-accent-secondary: #ffbd00;
     --color-accent-tertiary: #ef6156;
 
-    /* Theme defaults: Mind Robotics Warm Concrete Palette (live site default) */
+    /* Theme defaults: Warm Concrete Palette */
     --theme-bg: #e8e5e0;
     --theme-bg-subtle: #dbd7ca;
     --theme-card-bg: #ffffff;
@@ -131,7 +131,7 @@ html {
   font-size: 62.5%;
   background-color: var(--theme-bg);
   color: var(--theme-text);
-  font-family: var(--font-centra), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-centra), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
@@ -168,7 +168,7 @@ body {
   grid-area: 1 / 1;
 }
 
-/* Stacking context utilities matching mindrobotics.com */
+/* Stacking context utilities */
 .z-above-content {
   z-index: var(--z-index-above-content, 10);
 }
@@ -205,7 +205,7 @@ body {
   background-size: calc(100% + var(--gutter-inner)) 100%;
 }
 
-/* Wordmark line draw animation (authentic from mindrobotics.com with extended graceful load time) */
+/* Wordmark line draw animation (with extended graceful load time) */
 @keyframes wordmark-stroke-dashoffset {
   0% {
     stroke-dashoffset: 1.01px;
@@ -257,7 +257,7 @@ body {
     wordmark-stroke-fade 0.9s var(--ease-out) calc(1.3s + var(--letter-index) * 85ms) both;
 }
 
-/* Tag Fan Layer Animation matching mindrobotics.com */
+/* Tag Fan Layer Animation */
 @keyframes tag-opacity-to-one {
   to {
     opacity: 1;
@@ -481,14 +481,16 @@ body {
   }
 }
 
-/* Pong Ball Attract & Hover States (Module 40937) */
+/* Pong Ball Attract & Hover States */
 .pong-ball.attract-in .reveal-fan {
+  transform: translateX(0);
   translate: 0;
 }
 .pong-ball.attract-in .pong-play {
   opacity: 1;
 }
 .pong-ball.attract-out .reveal-fan {
+  transform: translateX(102%);
   translate: 102%;
 }
 .pong-ball.attract-out .pong-play {
@@ -496,6 +498,7 @@ body {
   transition-delay: 0s;
 }
 .pong-ball:hover .reveal-fan {
+  transform: translateX(0);
   translate: 0;
 }
 .pong-ball:hover .pong-play {

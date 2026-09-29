@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-// Reverse-engineered parameters from mindrobotics.com (module 43011)
+// 3D Hand configuration
 const HAND_CONFIG = {
   url: "/models/hand.glb",
   viewHeight: 0.8,
@@ -195,19 +195,6 @@ export default function MissionHand3D() {
 
           // Initial model orientation
           handModel.rotation.y = HAND_CONFIG.pose.flip;
-
-          // Expose to window for live calibration in debug/browser
-          if (typeof window !== "undefined") {
-            (window as any).__handState = {
-              handModel,
-              poseGroup,
-              outerGroup,
-              HAND_CONFIG,
-              scene,
-              camera,
-              renderer,
-            };
-          }
 
           // Animations
           if (gltf.animations && gltf.animations.length > 0) {

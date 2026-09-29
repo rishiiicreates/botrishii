@@ -6,21 +6,21 @@ import Image from "next/image";
 const CAROUSEL_SLIDES = [
   {
     id: 1,
-    title: "Rack with parts staging",
+    title: "The workflow, as documented",
     src: "/images/cap-carousel-1.png",
-    alt: "Rack with parts",
+    alt: "The workflow, as documented",
   },
   {
     id: 2,
-    title: "Factory overview",
+    title: "The workflow, as it actually is",
     src: "/images/cap-carousel-2.png",
-    alt: "Factory overview",
+    alt: "The workflow, as it actually is",
   },
   {
     id: 3,
-    title: "Trades tour and line routing",
+    title: "The workflow, after I'm done",
     src: "/images/cap-carousel-3.png",
-    alt: "Rack with parts",
+    alt: "The workflow, after I'm done",
   },
 ];
 

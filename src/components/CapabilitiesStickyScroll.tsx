@@ -6,27 +6,27 @@ import FactoryFloor3D from "./FactoryFloor3D";
 const STATIONS = [
   {
     id: "pick-and-place",
-    title: "Pick and place",
+    title: "Find the itch",
     description:
-      "Locating, grasping, and placing objects that vary in angle, occlusion, and orientation, with high precision.",
+      "Spotting the task everyone dreads, the one that eats hours and somehow gets done differently by every person.",
   },
   {
     id: "sorting",
-    title: "Sorting",
+    title: "Build it small",
     description:
-      "Making a real-time call on visually similar items and routing each one correctly, under line speed pressure.",
+      "Shipping the smallest version that works first, before anyone can suggest adding a chatbot to it.",
   },
   {
     id: "fastening",
-    title: "Fastening",
+    title: "Break it on purpose",
     description:
-      "Joining parts that don't always align, modulating force and sequence to seat them correctly, and recovering when they don't.",
+      "Feeding it messy inputs, weird formats, and every edge case I can think of, so real life doesn't get to do it first.",
   },
   {
     id: "connectors",
-    title: "Connectors",
+    title: "Hand over the keys",
     description:
-      "Achieving a secure, verified fit despite flexible harnesses, part variation, and tight tolerances.",
+      "Making it dull and dependable, so it runs without me and nobody has to ask what it does at 2am.",
   },
 ];
 
@@ -65,15 +65,13 @@ export default function CapabilitiesStickyScroll() {
     window.scrollTo({ top: targetScroll, behavior: "smooth" });
   };
 
-  const activeStation = STATIONS[activeStationIndex] || STATIONS[0];
-
   return (
     <section
       ref={containerRef}
       className="bg-[#dbd7ca] dark:bg-[#081a1e] relative h-[400lvh] border-t border-[#d3d0c5] dark:border-white/10"
     >
       <div className="grid-pile sticky top-0 h-lvh w-full overflow-clip">
-        {/* 3D Isometric Living Factory Floor Canvas */}
+        {/* 3D Isometric Interactive Canvas */}
         <FactoryFloor3D
           scrollProgress={scrollProgress}
           onStationChange={setActiveStationIndex}
@@ -84,30 +82,30 @@ export default function CapabilitiesStickyScroll() {
           {/* Top-Left Headline */}
           <h2 className="col-span-full select-none">
             <span className="tablet:gap-1.5 laptop:gap-2 flex flex-col gap-1">
-              {/* Line 1: [Teal Pill: Intelligence on] */}
+              {/* Line 1: [Teal Pill: My process,] */}
               <span className="flex flex-wrap gap-[inherit]">
                 <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
                   <span className="tag-fan-layer flex h-full items-center px-[var(--tag-padding-inline)] bg-[#299093] text-white font-bold leading-none">
-                    Intelligence on
+                    My process,
                   </span>
                 </span>
               </span>
 
-              {/* Line 2: [White Dot] + [White pill: the factory floor] */}
+              {/* Line 2: [White Dot] + [White pill: minus the buzzwords] */}
               <span className="flex flex-wrap gap-[inherit]">
                 <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full aspect-square">
                   <span className="tag-fan-layer flex h-full items-center leading-none self-stretch bg-white" />
                 </span>
                 <span className="grid-pile-inline h-[4rem] tablet:h-[6rem] laptop:h-[8rem] overflow-hidden rounded-full whitespace-nowrap text-heading-2">
                   <span className="tag-fan-layer flex h-full items-center px-[var(--tag-padding-inline)] bg-white text-[#061a1e] font-bold leading-none">
-                    the factory floor
+                    minus the buzzwords
                   </span>
                 </span>
               </span>
             </span>
           </h2>
 
-          {/* Bottom-Right Floating Telemetry Capability Card matching mindrobotics.com */}
+          {/* Bottom-Right Floating Telemetry Capability Card */}
           <div
             aria-live="polite"
             className="tablet:max-w-[40rem] rounded-[2.4rem] col-span-full flex w-full flex-col gap-8 justify-self-end bg-white p-8 pointer-events-auto text-[#061a1e]"
@@ -132,7 +130,7 @@ export default function CapabilitiesStickyScroll() {
               })}
             </div>
 
-            {/* 4-Dot Pill Indicator Bar matching mindrobotics.com */}
+            {/* 4-Dot Pill Indicator Bar */}
             <ul className="flex gap-2 items-center">
               {STATIONS.map((stn, idx) => {
                 const isActive = idx === activeStationIndex;

@@ -1,16 +1,15 @@
 "use client";
 
 import React from "react";
-import { ExternalLink } from "lucide-react";
 
 const DEPARTMENTS = [
-  "Research and modeling",
-  "ML infrastructure",
-  "Hardware",
-  "Engineering and design",
-  "Data",
-  "Robotics software",
-  "Application Engineer",
+  "Agent infrastructure",
+  "LLM pipelines",
+  "Data engineering",
+  "Full-stack development",
+  "Cloud & DevOps",
+  "Workflow automation",
+  "AI Integration Engineer",
 ];
 
 export default function CareersSection() {
@@ -18,7 +17,7 @@ export default function CareersSection() {
     <section className="layout-grid tablet:gap-y-20 laptop:gap-y-28 gap-y-12 py-[9.6rem] tablet:py-[11.2rem] laptop:py-[20rem] relative z-10 overflow-visible">
       {/* Centered Heading with Pill Fan Tags - direct grid child */}
       <h2 className="text-heading-1 laptop:max-w-[84rem] tablet:max-w-[52rem] col-span-full max-w-[40rem] place-self-center text-center text-balance leading-[1.3] tablet:leading-[1.3] laptop:leading-[1.4]">
-        <span role="text" aria-label="Hands on with hardware every day">
+        <span role="text" aria-label="Hands on with code every day">
           {/* Tag: Hands on */}
           <span className="grid-pile-inline h-[var(--tag-height)] overflow-hidden rounded-full align-middle whitespace-nowrap">
             <span className="bg-[#dbd7ca] dark:bg-[#11282d] rounded-full tag-base-reveal" />
@@ -43,7 +42,7 @@ export default function CareersSection() {
           </span>
           {" "}
           <span className="headline-word" style={{ "--delay": "0.35s" } as React.CSSProperties}>
-            hardware
+            code
           </span>
           {" "}
           {/* Tag: every day */}
@@ -67,11 +66,11 @@ export default function CareersSection() {
         </span>
       </h2>
 
-      {/* Flagship Careers Card matching mindrobotics.com */}
+      {/* Flagship Card */}
       <div className="tablet:col-span-12 desktop:col-span-10 desktop:col-start-2 tablet:gap-12 tablet:p-16 laptop:flex-row laptop:gap-32 rounded-[4rem] desktop:rounded-[7.2rem] col-span-6 col-start-1 flex flex-col gap-8 border border-black bg-white px-8 py-12 text-[#061a1e]">
         {/* Left Subhead */}
         <h3 className="text-heading-3 laptop:flex-1 text-[#061a1e]">
-          What you build on the bench today changes how factories run tomorrow.
+          What I automate today becomes tomorrow&apos;s &apos;wait, we used to do that by hand?&apos;
         </h3>
 
         {/* Right Content & Roles */}
@@ -79,9 +78,9 @@ export default function CareersSection() {
           <div className="tablet:gap-6 laptop:gap-8 flex flex-col gap-8">
             <div className="text-paragraph-large text-[#061a1e]">
               <p>
-                At Mind, we believe that being hands on with hardware can solve the hardest problems in AI.
+                I believe the hardest problems in automation get solved by staying hands on with the real thing, not by admiring the architecture diagram.
                 <br /><br />
-                Mind offers the agility of a startup with the resources, data, and built-in customer base of an industrial pioneer. Join us if you value ownership, humility, and want to move beyond digital intelligence to put code into motion.
+                I work like a solo builder with the range of a small team: full-stack, ML, and infra, all in one person and one very tired keyboard. Reach out if you value ownership, quick iteration, and systems that just run.
               </p>
             </div>
 
@@ -118,7 +117,7 @@ export default function CareersSection() {
                 aria-hidden="true"
               />
               <span className="relative justify-self-center px-4">
-                See open roles
+                See my work
               </span>
             </a>
           </div>

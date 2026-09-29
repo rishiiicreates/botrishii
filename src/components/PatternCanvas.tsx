@@ -284,10 +284,10 @@ export default function PatternCanvas({
 
       ctx.clearRect(0, 0, width, height);
 
-      // Check current theme colors: Light mode is default Mind Robotics warm concrete
+      // Check current theme colors: Light mode is default warm concrete
       const colorCircle = isLight ? "#f6f4f0" : "rgba(255, 255, 255, 0.30)";
       const colorSquare = isLight ? "#dbd7ca" : "rgba(219, 215, 202, 0.20)";
-      const colorCross = "#299093"; // Exact Mind Robotics Teal
+      const colorCross = "#299093"; // Exact Teal
 
       for (const cell of blooming) {
         cell.energy = Math.max(0, cell.energy - delta / 1000);

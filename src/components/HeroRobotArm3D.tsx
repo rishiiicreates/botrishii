@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
-// Exact parameters reverse-engineered from mindrobotics.com (module 78349)
+// 3D Arm configuration
 const CONFIG = {
   url: "/models/arm.glb",
   pivot: { x: 0.008, y: 0.371, z: 0.13 },
@@ -209,15 +209,6 @@ export default function HeroRobotArm3D() {
           }
 
           poseGroup.add(model);
-          if (typeof window !== "undefined") {
-            (window as any).__heroArm = {
-              model,
-              poseGroup,
-              outerGroup,
-              camera,
-              scene,
-            };
-          }
           setLoaded(true);
         },
         undefined,

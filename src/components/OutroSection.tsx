@@ -21,13 +21,11 @@ export default function OutroSection() {
   // Breakout State
   const [breakoutScore, setBreakoutScore] = useState(0);
   const [breakoutLives, setBreakoutLives] = useState(3);
-  const [breakoutHigh, setBreakoutHigh] = useState(0);
   const [breakoutBricksLeft, setBreakoutBricksLeft] = useState(32);
 
   // Snake State
   const [snakeScore, setSnakeScore] = useState(0);
   const [snakeLength, setSnakeLength] = useState(3);
-  const [snakeHigh, setSnakeHigh] = useState(0);
 
   // Playable Games Canvas Engine
   useEffect(() => {
@@ -76,7 +74,7 @@ export default function OutroSection() {
     };
 
     // ==========================================
-    // 1. ROBO BREAKOUT ENGINE
+    // 1. BUG BREAKOUT ENGINE
     // ==========================================
     const paddleW = 110;
     const paddleH = 14;
@@ -125,7 +123,7 @@ export default function OutroSection() {
     }
 
     // ==========================================
-    // 2. MIND PONG ENGINE
+    // 2. AGENT PONG ENGINE
     // ==========================================
     const pPaddleW = 14;
     const pPaddleH = 88;
@@ -139,12 +137,12 @@ export default function OutroSection() {
     const pTrails: { x: number; y: number; alpha: number }[] = [];
 
     // ==========================================
-    // 3. ASSEMBLY SNAKE ENGINE
+    // 3. PIPELINE SNAKE ENGINE
     // ==========================================
     const gridSize = 20;
     const sCols = Math.floor(width / gridSize);
     const sRows = Math.floor(height / gridSize);
-    let snake = [
+    const snake = [
       { x: Math.floor(sCols / 2), y: Math.floor(sRows / 2) },
       { x: Math.floor(sCols / 2) - 1, y: Math.floor(sRows / 2) },
       { x: Math.floor(sCols / 2) - 2, y: Math.floor(sRows / 2) },
@@ -217,8 +215,6 @@ export default function OutroSection() {
     window.addEventListener("keydown", handleKeyDown);
 
     // Main Animation Loop
-    let lastTime = performance.now();
-
     const loop = (currentTime: number) => {
       ctx.clearRect(0, 0, width, height);
 
@@ -310,11 +306,7 @@ export default function OutroSection() {
             brick.alive = false;
             bBallVy = -bBallVy;
             spawnParticles(brick.x + brick.w / 2, brick.y + brick.h / 2, brick.color, 12);
-            setBreakoutScore((s) => {
-              const next = s + brick.points;
-              setBreakoutHigh((h) => Math.max(h, next));
-              return next;
-            });
+            setBreakoutScore((s) => s + brick.points);
             remaining--;
             break;
           }
@@ -373,7 +365,7 @@ export default function OutroSection() {
         ctx.arc(bBallX, bBallY, bBallRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Render Paddle (Styled as Mind Robotics Pill Tag)
+        // Render Paddle (Styled as Pill Tag)
         ctx.fillStyle = "#299093";
         ctx.beginPath();
         ctx.roundRect(bPaddleX, paddleY, paddleW, paddleH, 8);
@@ -396,7 +388,7 @@ export default function OutroSection() {
       }
 
       // ----------------------------------------------------
-      // MODE B: MIND PONG
+      // MODE B: AGENT PONG
       // ----------------------------------------------------
       else if (activeGame === "pong") {
         // AI tracking
@@ -504,7 +496,7 @@ export default function OutroSection() {
       }
 
       // ----------------------------------------------------
-      // MODE C: ASSEMBLY SNAKE
+      // MODE C: PIPELINE SNAKE
       // ----------------------------------------------------
       else if (activeGame === "snake") {
         if (currentTime - sLastTick > sTickRate) {
@@ -533,11 +525,7 @@ export default function OutroSection() {
                 sFood.type.color,
                 12
               );
-              setSnakeScore((s) => {
-                const next = s + sFood.type.points;
-                setSnakeHigh((h) => Math.max(h, next));
-                return next;
-              });
+              setSnakeScore((s) => s + sFood.type.points);
               setSnakeLength(snake.length);
               const randType = foodTypes[Math.floor(Math.random() * foodTypes.length)];
               sFood = {
@@ -650,7 +638,9 @@ export default function OutroSection() {
     const isFine = window.matchMedia("(pointer: fine)").matches;
     const prefersMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (isFine && prefersMotion && C.get() >= 1) {
-      setAttractActive(true);
+      queueMicrotask(() => {
+        setAttractActive(true);
+      });
     }
   }, [C]);
 
@@ -669,11 +659,13 @@ export default function OutroSection() {
       fans.forEach((el) => {
         el.style.transition = "none";
         el.style.translate = "-102% 0";
+        el.style.transform = "translateX(-102%)";
       });
       void btn.offsetWidth;
       fans.forEach((el) => {
         el.style.transition = "";
         el.style.translate = "";
+        el.style.transform = "";
       });
     };
 
@@ -782,22 +774,25 @@ export default function OutroSection() {
             ref={ballRef}
             type="button"
             onClick={handlePlayClick}
-            className="pong-ball group grid-pile max-tablet:pointer-coarse:bg-black @container mt-[9.6%] aspect-square w-[32%] cursor-pointer items-center self-start overflow-clip rounded-full bg-white will-change-transform"
+            className="pong-ball group grid-pile max-tablet:pointer-coarse:bg-black @container mt-[9.6%] aspect-square w-[32%] cursor-pointer items-center self-start overflow-hidden rounded-full bg-white [clip-path:circle(50%_at_50%_50%)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] [transform:translateZ(0)] isolate will-change-transform"
             style={{ y: centerY }}
-            aria-label="Play Mind Pong"
+            aria-label="Play Agent Pong"
           >
-            {/* 4-Layer Radial Fan Hover Wipe */}
-            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#299093] delay-0" aria-hidden="true" />
-            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ef6156] delay-50" aria-hidden="true" />
-            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ffbd00] delay-100" aria-hidden="true" />
-            <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#061a1e] delay-180" aria-hidden="true" />
+            {/* Inner clipping container for 100% WebKit/Safari boundary compliance */}
+            <div className="size-full rounded-full overflow-hidden [clip-path:circle(50%_at_50%_50%)] [-webkit-mask-image:-webkit-radial-gradient(white,black)] [transform:translateZ(0)] grid-pile items-center pointer-events-none">
+              {/* 4-Layer Radial Fan Hover Wipe */}
+              <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#299093] delay-0" aria-hidden="true" />
+              <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ef6156] delay-50" aria-hidden="true" />
+              <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ffbd00] delay-100" aria-hidden="true" />
+              <span className="reveal-fan max-tablet:pointer-coarse:hidden pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#061a1e] delay-180" aria-hidden="true" />
 
-            <span
-              ref={textRef}
-              className="pong-play max-tablet:pointer-coarse:opacity-100 relative justify-self-center text-[25cqw] leading-none font-bold tracking-[-0.02em] text-white opacity-0 transition-opacity delay-300 duration-200 group-hover:opacity-100 motion-reduce:transition-none"
-            >
-              Play
-            </span>
+              <span
+                ref={textRef}
+                className="pong-play max-tablet:pointer-coarse:opacity-100 relative justify-self-center text-[25cqw] leading-none font-bold tracking-[-0.02em] text-white opacity-0 transition-opacity delay-300 duration-200 group-hover:opacity-100 motion-reduce:transition-none"
+              >
+                Play
+              </span>
+            </div>
           </motion.button>
 
           {/* Right Pill: Solid White */}
@@ -809,14 +804,14 @@ export default function OutroSection() {
           />
         </div>
 
-        {/* Massive Poster Typography ("Get to know Mind") layered as z-above-content matching mindrobotics.com */}
+        {/* Massive Poster Typography ("Get to know Rishii") layered as z-above-content */}
         <motion.p
           style={{ transform: textTransform }}
           className="text-poster tablet:flex z-above-content relative pointer-events-none hidden w-full flex-col justify-center gap-[0.15em] whitespace-nowrap self-center select-none text-[#061a1e]"
         >
           <span className="even:text-right">Get to</span>
           <span className="even:text-right">know</span>
-          <span className="even:text-right">Mind</span>
+          <span className="even:text-right">Rishii</span>
         </motion.p>
       </div>
 
@@ -831,49 +826,54 @@ export default function OutroSection() {
             {/* Header / Game Selector & Actions */}
             <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-white/10">
               {/* Game Selector Tabs (Pill Tag Design) */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveGame("breakout");
-                    setGameStatus("playing");
-                  }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
-                    activeGame === "breakout"
-                      ? "bg-[#ef6156] text-[#061a1e] font-bold shadow-md"
-                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  Robo Breakout
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveGame("pong");
-                    setGameStatus("playing");
-                  }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
-                    activeGame === "pong"
-                      ? "bg-[#299093] text-white font-bold shadow-md"
-                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  Mind Pong
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveGame("snake");
-                    setGameStatus("playing");
-                  }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
-                    activeGame === "snake"
-                      ? "bg-[#ffbd00] text-[#061a1e] font-bold shadow-md"
-                      : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  Assembly Snake
-                </button>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveGame("breakout");
+                      setGameStatus("playing");
+                    }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                      activeGame === "breakout"
+                        ? "bg-[#ef6156] text-[#061a1e] font-bold shadow-md"
+                        : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    Bug Breakout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveGame("pong");
+                      setGameStatus("playing");
+                    }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                      activeGame === "pong"
+                        ? "bg-[#299093] text-white font-bold shadow-md"
+                        : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    Agent Pong
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveGame("snake");
+                      setGameStatus("playing");
+                    }}
+                    className={`px-4 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                      activeGame === "snake"
+                        ? "bg-[#ffbd00] text-[#061a1e] font-bold shadow-md"
+                        : "border border-white/20 text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    Pipeline Snake
+                  </button>
+                </div>
+                <p className="text-[11px] font-mono text-white/50 tracking-wider">
+                  Built between deploys. High scores are purely anecdotal.
+                </p>
               </div>
 
               {/* Window Controls */}
@@ -908,7 +908,7 @@ export default function OutroSection() {
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="size-2.5 rounded-full bg-[#ffbd00]" />
-                      <span>MODULES LEFT: {breakoutBricksLeft}</span>
+                      <span>BUGS LEFT: {breakoutBricksLeft}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -934,7 +934,7 @@ export default function OutroSection() {
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="size-2.5 rounded-full bg-[#ef6156]" />
-                      <span>MIND AI: {aiScore}</span>
+                      <span>MY AGENT: {aiScore}</span>
                     </span>
                   </div>
                   <span className="text-white/50">FIRST TO 5 POINTS</span>
@@ -950,10 +950,10 @@ export default function OutroSection() {
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="size-2.5 rounded-full bg-[#299093]" />
-                      <span>CIRCUIT LENGTH: {snakeLength}</span>
+                      <span>PIPELINE LENGTH: {snakeLength}</span>
                     </span>
                   </div>
-                  <span className="text-white/50">COLLECT SENSOR CHIPS</span>
+                  <span className="text-white/50">COLLECT DATA PACKETS</span>
                 </>
               )}
             </div>
@@ -972,21 +972,21 @@ export default function OutroSection() {
                   />
                   <h4 className="text-2xl md:text-3xl font-bold tracking-tight">
                     {gameStatus === "victory"
-                      ? "Calibration Complete!"
-                      : "Telemetry Interrupted"}
+                      ? "Deployed Successfully!"
+                      : "Build Failed"}
                   </h4>
                   <p className="text-sm text-white/70 max-w-md">
                     {gameStatus === "victory"
                       ? activeGame === "breakout"
-                        ? "Flawless kinematic execution. All 32 production modules calibrated."
+                        ? "Clean deploy. All 32 bugs squashed before production."
                         : activeGame === "pong"
-                        ? "Human agility prevails over the reinforcement model."
-                        : "Circuit trace fully routed with zero continuity breaks."
+                        ? "Human instinct beats the automation agent."
+                        : "Pipeline fully routed with zero dropped packets."
                       : activeGame === "breakout"
-                      ? "Manipulator lost telemetry tracking. Recalibrate and try again."
+                      ? "Too many bugs slipped through. Patch it up and try again."
                       : activeGame === "pong"
-                      ? "The foundation model adapted to your trajectory across production cycles."
-                      : "Trace collided with existing bus topology."}
+                      ? "The agent learned your moves across every rally. Retrain and go again."
+                      : "Pipeline collided with itself. Check the logs and retry."}
                   </p>
                   <button
                     type="button"
@@ -1001,9 +1001,9 @@ export default function OutroSection() {
 
             {/* Control Instructions */}
             <p className="text-xs font-mono text-center text-white/40 mt-4 tracking-wider">
-              {activeGame === "breakout" && "MOVE MOUSE OR USE ← / → KEYS TO STEER THE MANIPULATOR PADDLE"}
-              {activeGame === "pong" && "MOVE MOUSE OR TOUCH UP / DOWN TO ENGAGE AI DEFENSE"}
-              {activeGame === "snake" && "USE ARROW KEYS OR W / A / S / D TO ROUTE THE CIRCUIT TRACE"}
+              {activeGame === "breakout" && "Move mouse horizontally to control the paddle"}
+              {activeGame === "pong" && "Move mouse vertically to control left paddle • First to 5 points"}
+              {activeGame === "snake" && "Use Arrow keys or WASD to steer the pipeline"}
             </p>
           </div>
         </div>

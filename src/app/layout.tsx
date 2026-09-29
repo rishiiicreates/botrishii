@@ -25,21 +25,22 @@ const centraNo2 = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Mind Robotics — Universally Capable Industrial Robots",
+  metadataBase: new URL("https://nacreous-one.vercel.app"),
+  title: "Rishii — AI Automation Built for Real Work",
   description:
-    "Mind Robotics builds intelligent, broadly capable robots for industrial deployment in high-impact environments, learning from live production line work.",
+    "Rishii builds AI agents, LLM pipelines, and workflow automation that take over repetitive work, so teams can get back to the interesting parts.",
   keywords: [
-    "Mind Robotics",
-    "Physical Intelligence",
-    "Industrial Robotics",
-    "Foundation Models",
-    "Factory Automation",
-    "Automotive AI",
+    "Rishii",
+    "AI Automation",
+    "AI Agents",
+    "LLM Pipelines",
+    "Workflow Automation",
+    "Full-Stack AI",
   ],
   openGraph: {
-    title: "Mind Robotics — Universally Capable Robots",
+    title: "Rishii — AI Automation Built for Real Work",
     description:
-      "Mind Robotics builds intelligent, broadly capable robots for industrial deployment in high-impact environments.",
+      "Rishii builds AI agents, LLM pipelines, and workflow automation that take over repetitive work, so teams can get back to the interesting parts.",
     images: ["/share-image.png"],
     type: "website",
   },
