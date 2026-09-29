@@ -21,7 +21,11 @@ export default function ContactPage() {
 
   const handleCopyEmail = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigator.clipboard.writeText("rishiicreates@gmail.com");
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText("rishiicreates@gmail.com").catch(() => {});
+      }
+    } catch {}
     setShowCopied(true);
     playSound("click");
     setTimeout(() => setShowCopied(false), 2200);
@@ -38,7 +42,7 @@ export default function ContactPage() {
       <DavidContactScene3D className="z-0" />
 
       {/* 2. Top Navigation Bar */}
-      <header className="relative z-20 flex items-center justify-between px-6 md:px-12 py-6 md:py-8 w-full">
+      <header className="relative z-20 flex items-center justify-between px-4 sm:px-12 py-3 sm:py-6 md:py-8 w-full">
         {/* Left: Monogram / Logo */}
         <Link
           href="/"
@@ -48,7 +52,7 @@ export default function ContactPage() {
           aria-label="Rishii Home"
         >
           <svg
-            className="h-9 md:h-11 w-auto text-[#061a1e] transition-transform duration-300 group-hover:scale-105"
+            className="h-8 sm:h-9 md:h-11 w-auto text-[#061a1e] transition-transform duration-300 group-hover:scale-105"
             viewBox="0 0 80 64"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -70,12 +74,12 @@ export default function ContactPage() {
         </Link>
 
         {/* Center: Nav Pills with Active Contact Highlight */}
-        <nav className="flex items-center bg-[#dbd7ca]/80 backdrop-blur-md border border-[#061a1e]/[0.08] p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
+        <nav className="flex items-center bg-[#dbd7ca]/80 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
           <Link
             href="/"
             onClick={() => playSound("click")}
             onMouseEnter={() => playSound("hover")}
-            className="px-4 md:px-5 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
+            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
             About
           </Link>
@@ -83,24 +87,24 @@ export default function ContactPage() {
             href="/projects"
             onClick={() => playSound("click")}
             onMouseEnter={() => playSound("hover")}
-            className="px-4 md:px-5 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
+            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
             Projects
           </Link>
           <span
-            className="px-4 md:px-5 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-white bg-[#299093] rounded-full shadow-sm"
+            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-white bg-[#299093] rounded-full shadow-sm"
           >
             Contact
           </span>
         </nav>
 
         {/* Right: Get In Touch CTA & Sound Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="mailto:rishiicreates@gmail.com"
             onClick={(e) => handleCopyEmail(e)}
             onMouseEnter={() => playSound("hover")}
-            className="group grid-pile h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm"
+            className="hidden sm:inline-flex group grid-pile h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm"
           >
             <span
               className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
