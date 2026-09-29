@@ -104,7 +104,7 @@ export default function ContactPage() {
             href="mailto:rishiicreates@gmail.com"
             onClick={(e) => handleCopyEmail(e)}
             onMouseEnter={() => playSound("hover")}
-            className="hidden sm:inline-flex group grid-pile h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm"
+            className="!hidden sm:!inline-flex group grid-pile h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm"
           >
             <span
               className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
