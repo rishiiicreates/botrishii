@@ -4,7 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function Header() {
+interface HeaderProps {
+  isDark?: boolean;
+}
+
+export default function Header({ isDark = false }: HeaderProps) {
   const pathname = usePathname();
 
   const isHome = pathname === "/";
@@ -12,7 +16,7 @@ export default function Header() {
   const isContact = pathname === "/contact";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between py-4 sm:py-6 px-4 sm:px-8 md:px-12 pointer-events-none transition-all duration-300">
+    <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between py-4 sm:py-6 px-4 sm:px-8 md:px-12 pointer-events-none transition-colors duration-300">
       {/* Monogram Logo */}
       <Link
         href="/"
@@ -20,7 +24,9 @@ export default function Header() {
         aria-label="Rishii Home"
       >
         <svg
-          className="h-9 md:h-11 w-auto text-current transition-transform duration-300 group-hover:scale-105"
+          className={`h-9 md:h-11 w-auto transition-all duration-300 group-hover:scale-105 ${
+            isDark ? "text-white" : "text-[#061a1e]"
+          }`}
           viewBox="0 0 80 64"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -43,11 +49,21 @@ export default function Header() {
 
       {/* Center: Unified Navigation Capsule (Hidden on main homepage per user instruction) */}
       {!isHome && (
-        <nav className="pointer-events-auto flex items-center bg-[#dbd7ca]/85 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
+        <nav
+          className={`pointer-events-auto flex items-center p-1 sm:p-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_4px_20px_rgba(6,26,30,0.06)] ${
+            isDark
+              ? "bg-[#021833]/85 border border-cyan-500/30 text-white"
+              : "bg-[#dbd7ca]/85 border border-[#061a1e]/[0.08] text-[#061a1e]"
+          }`}
+        >
           {/* Home Toggle */}
           <Link
             href="/"
-            className="px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 text-[#061a1e]/75 hover:text-[#061a1e]"
+            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
+              isDark
+                ? "text-white/80 hover:text-white"
+                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+            }`}
           >
             Home
           </Link>
@@ -58,6 +74,8 @@ export default function Header() {
             className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
               isWork
                 ? "bg-[#299093] text-white shadow-sm"
+                : isDark
+                ? "text-white/80 hover:text-white"
                 : "text-[#061a1e]/75 hover:text-[#061a1e]"
             }`}
           >
@@ -70,6 +88,8 @@ export default function Header() {
             className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
               isContact
                 ? "bg-[#299093] text-white shadow-sm"
+                : isDark
+                ? "text-white/80 hover:text-white"
                 : "text-[#061a1e]/75 hover:text-[#061a1e]"
             }`}
           >
@@ -78,12 +98,11 @@ export default function Header() {
         </nav>
       )}
 
-      {/* Right: Contact button (styled like Join me) + Join me */}
+      {/* Right: Signature Waterfall CTA Button */}
       <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
-        {/* Contact CTA with authentic 3-layer slide-in hover waterfall */}
         <Link
           href="/contact"
-          className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
+          className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
         >
           <span
             className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -97,30 +116,10 @@ export default function Header() {
             className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
             aria-hidden="true"
           />
-          <span className="relative z-10 px-5 text-center leading-none">Contact</span>
+          <span className="relative z-10 px-5 text-center leading-none">
+            {isContact ? "Get In Touch" : "Contact"}
+          </span>
         </Link>
-
-        {/* Join me CTA */}
-        <a
-          href="https://nacreous-one.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
-        >
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
-            aria-hidden="true"
-          />
-          <span className="relative z-10 px-5 text-center leading-none">Join me</span>
-        </a>
       </div>
     </header>
   );

@@ -1008,11 +1008,12 @@ export default function DavidInteractiveExperience3D({
 
       laserPlaneMesh.scale.x = planeScale;
       laserPlaneMat.opacity = planeOpacity;
-      laserPlaneMesh.visible = planeOpacity > 0 && hOut >= 0.85;
 
       const tAboutOut = Math.max(0, Math.min(1, targetsRef.current.aboutOut));
       currentAboutOut += (tAboutOut - currentAboutOut) * 0.28;
       const aOut = currentAboutOut;
+
+      laserPlaneMesh.visible = planeOpacity > 0 && hOut >= 0.85 && aOut < 0.99;
 
       if (mixer) {
         mixer.update(delta);
@@ -1103,7 +1104,7 @@ export default function DavidInteractiveExperience3D({
           0
         );
 
-        avatarGroup.visible = true;
+        avatarGroup.visible = aOut < 0.99;
       }
 
       // Lab pedestal at (0, 0, 6): only visible once room has lifted away (hOut >= 0.82)

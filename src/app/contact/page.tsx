@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Header from "@/components/Header";
 import DavidContactScene3D from "@/components/DavidContactScene3D";
 import { ArrowUp } from "lucide-react";
 
@@ -28,82 +29,8 @@ export default function ContactPage() {
       {/* 1. Interactive 3D Canvas Background (Exact David Heckhoff Scene) */}
       <DavidContactScene3D className="z-0" />
 
-      {/* 2. Top Navigation Bar */}
-      <header className="relative z-20 flex items-center justify-between px-4 sm:px-12 py-3 sm:py-6 md:py-8 w-full">
-        {/* Left: Monogram / Logo */}
-        <Link
-          href="/"
-          className="group flex items-center gap-2 focus:outline-none"
-          aria-label="Rishii Home"
-        >
-          <svg
-            className="h-8 sm:h-9 md:h-11 w-auto text-[#061a1e] transition-transform duration-300 group-hover:scale-105"
-            viewBox="0 0 80 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              fill="currentColor"
-              d="M25.6 51.2V12.8C25.6 5.73 19.87 0 12.8 0S0 5.73 0 12.8v38.4C0 58.27 5.73 64 12.8 64s12.8-5.73 12.8-12.8Z"
-            />
-            <path
-              fill="currentColor"
-              d="M27.2 32c0 7.07 5.73 12.8 12.8 12.8s12.8-5.73 12.8-12.8-5.73-12.8-12.8-12.8-12.8 5.73-12.8 12.8Z"
-            />
-            <path
-              fill="currentColor"
-              d="M80 51.2V12.8C80 5.73 74.27 0 67.2 0c-7.069 0-12.8 5.73-12.8 12.8v38.4c0 7.07 5.731 12.8 12.8 12.8C74.27 64 80 58.27 80 51.2Z"
-            />
-          </svg>
-        </Link>
-
-        {/* Center: Nav Pills with Active Contact Highlight [ Home | Work | Contact ] */}
-        <nav className="flex items-center bg-[#dbd7ca]/80 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
-          <Link
-            href="/"
-            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/work"
-            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
-          >
-            Work
-          </Link>
-          <span
-            className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-white bg-[#299093] rounded-full shadow-sm"
-          >
-            Contact
-          </span>
-        </nav>
-
-        {/* Right: Get In Touch CTA */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <a
-            href="mailto:rishiicreates@gmail.com"
-            onClick={(e) => handleCopyEmail(e)}
-            className="group grid-pile hidden sm:grid h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm transition-transform active:scale-95"
-          >
-            <span
-              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
-              aria-hidden="true"
-            />
-            <span
-              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
-              aria-hidden="true"
-            />
-            <span
-              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
-              aria-hidden="true"
-            />
-            <span className="relative z-10 leading-none">
-              {showCopied ? "Email Copied!" : "Get In Touch"}
-            </span>
-          </a>
-        </div>
-      </header>
+      {/* 2. Top Navigation Bar (Unified Header Component) */}
+      <Header />
 
       {/* 3. Hero Editorial Content (Exact Headline & Social Links) */}
       <div className="relative z-10 px-6 sm:px-10 md:px-16 lg:px-24 flex-1 flex flex-col justify-start pt-12 md:pt-20 pointer-events-none">
