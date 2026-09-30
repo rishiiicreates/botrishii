@@ -9,25 +9,25 @@ const HERO_SLIDES = [
   {
     id: 1,
     title: "Where the busywork lives",
-    src: "/images/hero-busywork-queue.png",
+    src: "/images/real-busywork-spreadsheet.jpg",
     alt: "Where the busywork lives",
   },
   {
     id: 2,
     title: "Where the copy-paste happens",
-    src: "/images/hero-copypaste-schema.png",
+    src: "/images/real-copypaste-multimonitor.jpg",
     alt: "Where the copy-paste happens",
   },
   {
     id: 3,
     title: "Where things quietly break",
-    src: "/images/hero-pipeline-traceback.png",
+    src: "/images/real-pipeline-debug.jpg",
     alt: "Where things quietly break",
   },
   {
     id: 4,
     title: "Where automation steps in",
-    src: "/images/hero-automation-orchestration.png",
+    src: "/images/real-automation-servers.jpg",
     alt: "Where automation steps in",
   },
 ];
