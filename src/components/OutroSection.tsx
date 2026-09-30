@@ -81,19 +81,19 @@ export default function OutroSection() {
           >
             {/* 4-Layer Radial Fan Hover Wipe */}
             <span
-              className="reveal-fan pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#299093] delay-0"
+              className="reveal-fan pointer-events-none size-full rounded-full bg-[#299093]"
               aria-hidden="true"
             />
             <span
-              className="reveal-fan pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ef6156] delay-50"
+              className="reveal-fan pointer-events-none size-full rounded-full bg-[#ef6156]"
               aria-hidden="true"
             />
             <span
-              className="reveal-fan pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#ffbd00] delay-100"
+              className="reveal-fan pointer-events-none size-full rounded-full bg-[#ffbd00]"
               aria-hidden="true"
             />
             <span
-              className="reveal-fan pointer-events-none size-full -translate-x-[102%] rounded-full transition-transform duration-600 ease-in-out group-hover:translate-x-0 motion-reduce:transition-none bg-[#061a1e] delay-180"
+              className="reveal-fan pointer-events-none size-full rounded-full bg-[#061a1e]"
               aria-hidden="true"
             />
 

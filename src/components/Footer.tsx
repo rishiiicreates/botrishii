@@ -66,10 +66,28 @@ export default function Footer() {
 
           <div className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col gap-3">
             <nav>
-              <ul className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col gap-3">
+              <ul className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col items-start laptop:items-center gap-3">
                 <li>
-                  <Link href="/work" className="hover:text-[#299093] font-bold transition-colors duration-200">
-                    Work
+                  <Link
+                    href="/work"
+                    className="group grid-pile h-8 sm:h-8.5 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[11px] sm:text-xs font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
+                    aria-label="Work"
+                  >
+                    <span
+                      className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+                      aria-hidden="true"
+                    />
+                    <span className="relative z-10 px-3.5 sm:px-4 text-center leading-none">
+                      Work
+                    </span>
                   </Link>
                 </li>
                 <li>

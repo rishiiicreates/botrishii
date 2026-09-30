@@ -47,12 +47,12 @@ export default function Header({ isDark = false }: HeaderProps) {
         </svg>
       </Link>
 
-      {/* Main Page: ONLY Contact CTA button; Other Pages: Navbar Capsule [ Home | Work | Contact ] on the right */}
+      {/* Main Page: ONLY Contact CTA button; Other Pages: Separate buttons [ Home ] [ Work ] [ Contact ] */}
       {isHome ? (
         <div className="flex items-center pointer-events-auto">
           <Link
             href="/contact"
-            className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
+            className="group grid-pile h-9 sm:h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
             aria-label="Contact"
           >
             <span
@@ -67,58 +67,101 @@ export default function Header({ isDark = false }: HeaderProps) {
               className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
               aria-hidden="true"
             />
-            <span className="relative z-10 px-5 text-center leading-none">
+            <span className="relative z-10 px-4 sm:px-5 text-center leading-none">
               Contact
             </span>
           </Link>
         </div>
       ) : (
         <nav
-          className={`pointer-events-auto flex items-center p-1 sm:p-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_4px_20px_rgba(6,26,30,0.06)] ${
-            isDark
-              ? "bg-[#021833]/85 border border-cyan-500/30 text-white"
-              : "bg-[#dbd7ca]/85 border border-[#061a1e]/[0.08] text-[#061a1e]"
-          }`}
+          className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5"
           aria-label="Main Navigation"
         >
-          {/* Home Link */}
+          {/* Home Button */}
           <Link
             href="/"
-            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
-              isDark
-                ? "text-white/80 hover:text-white hover:bg-white/10"
-                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
+            className={`group grid-pile h-8 sm:h-9 md:h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-sm transition-all duration-200 active:scale-95 ${
+              isHome
+                ? "bg-[#299093] text-white"
+                : isDark
+                ? "bg-white/10 text-white/90 border border-white/20 hover:border-transparent backdrop-blur-md"
+                : "bg-[#061a1e]/5 text-[#061a1e] border border-[#061a1e]/15 hover:border-transparent backdrop-blur-md"
             }`}
+            aria-label="Home"
           >
-            Home
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-3 sm:px-4 md:px-5 text-center leading-none group-hover:text-white transition-colors duration-300">
+              Home
+            </span>
           </Link>
 
-          {/* Work Link */}
+          {/* Work Button */}
           <Link
             href="/work"
-            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
+            className={`group grid-pile h-8 sm:h-9 md:h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-sm transition-all duration-200 active:scale-95 ${
               isWork
-                ? "bg-[#299093] text-white shadow-sm"
+                ? "bg-[#299093] text-white"
                 : isDark
-                ? "text-white/80 hover:text-white hover:bg-white/10"
-                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
+                ? "bg-white/10 text-white/90 border border-white/20 hover:border-transparent backdrop-blur-md"
+                : "bg-[#061a1e]/5 text-[#061a1e] border border-[#061a1e]/15 hover:border-transparent backdrop-blur-md"
             }`}
+            aria-label="Work"
           >
-            Work
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-3 sm:px-4 md:px-5 text-center leading-none group-hover:text-white transition-colors duration-300">
+              Work
+            </span>
           </Link>
 
-          {/* Contact Link */}
+          {/* Contact Button */}
           <Link
             href="/contact"
-            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
+            className={`group grid-pile h-8 sm:h-9 md:h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-sm transition-all duration-200 active:scale-95 ${
               isContact
-                ? "bg-[#299093] text-white shadow-sm"
+                ? "bg-[#299093] text-white"
                 : isDark
-                ? "text-white/80 hover:text-white hover:bg-white/10"
-                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
+                ? "bg-white/10 text-white/90 border border-white/20 hover:border-transparent backdrop-blur-md"
+                : "bg-[#061a1e]/5 text-[#061a1e] border border-[#061a1e]/15 hover:border-transparent backdrop-blur-md"
             }`}
+            aria-label="Contact"
           >
-            Contact
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-3 sm:px-4 md:px-5 text-center leading-none group-hover:text-white transition-colors duration-300">
+              Contact
+            </span>
           </Link>
         </nav>
       )}
