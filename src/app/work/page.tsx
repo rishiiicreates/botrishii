@@ -4,8 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import DavidInteractiveExperience3D from "@/components/DavidInteractiveExperience3D";
 import {
-  Volume2,
-  VolumeX,
   MapPin,
   ArrowRight,
   ChevronDown,
@@ -22,7 +20,6 @@ interface ProjectItem {
 }
 
 export default function WorkPage() {
-  const [audioEnabled, setAudioEnabled] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [activeSection, setActiveSection] = useState<"hero" | "about" | "projects">("hero");
 
@@ -87,15 +84,6 @@ export default function WorkPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const playSound = (sound: "click" | "hover") => {
-    if (!audioEnabled) return;
-    try {
-      const audio = new Audio(`/audio/${sound}.ogg`);
-      audio.volume = 0.4;
-      audio.play().catch(() => {});
-    } catch {}
-  };
-
   const handleCopyEmail = (e: React.MouseEvent) => {
     e.preventDefault();
     try {
@@ -104,17 +92,14 @@ export default function WorkPage() {
       }
     } catch {}
     setShowCopied(true);
-    playSound("click");
     setTimeout(() => setShowCopied(false), 2200);
   };
 
   const scrollToAbout = () => {
-    playSound("click");
     window.scrollTo({ top: 1200, behavior: "smooth" });
   };
 
   const scrollToProjects = () => {
-    playSound("click");
     const el = document.getElementById("projects");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
@@ -122,7 +107,6 @@ export default function WorkPage() {
   };
 
   const scrollToTop = () => {
-    playSound("click");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -142,8 +126,8 @@ export default function WorkPage() {
 
           <div className="relative z-10 flex flex-col items-center">
             <div className="bg-white/95 px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 border-2 border-white transform -rotate-2 group-hover:scale-105 group-hover:rotate-0 transition-transform duration-300">
-              <span className="size-4 rounded-full bg-[#fa8207]" />
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-[#1b1b1b] font-sans">
+              <span className="size-4 rounded-full bg-[#299093]" />
+              <span className="text-2xl sm:text-3xl font-black tracking-tight text-[#061a1e] font-sans">
                 SHIRO RAG
               </span>
             </div>
@@ -152,7 +136,7 @@ export default function WorkPage() {
             </span>
           </div>
 
-          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#fa8207] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#e67503] transition-all duration-300 z-20">
+          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#299093] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#207577] transition-all duration-300 z-20">
             <ArrowRight className="size-5 sm:size-6" />
           </div>
         </div>
@@ -185,7 +169,7 @@ export default function WorkPage() {
             </span>
           </div>
 
-          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#fa8207] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#e67503] transition-all duration-300 z-20">
+          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#299093] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#207577] transition-all duration-300 z-20">
             <ArrowRight className="size-5 sm:size-6" />
           </div>
         </div>
@@ -214,7 +198,7 @@ export default function WorkPage() {
             </div>
           </div>
 
-          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#fa8207] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#e67503] transition-all duration-300 z-20">
+          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#299093] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#207577] transition-all duration-300 z-20">
             <ArrowRight className="size-5 sm:size-6" />
           </div>
         </div>
@@ -243,7 +227,7 @@ export default function WorkPage() {
             </span>
           </div>
 
-          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#fa8207] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#e67503] transition-all duration-300 z-20">
+          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#299093] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#207577] transition-all duration-300 z-20">
             <ArrowRight className="size-5 sm:size-6" />
           </div>
         </div>
@@ -265,7 +249,7 @@ export default function WorkPage() {
           <div className="relative z-10 flex flex-col items-center">
             <div className="bg-white/95 px-6 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 transform group-hover:scale-105 transition-transform duration-300">
               <span className="size-3.5 rounded-full bg-[#ea2027] animate-ping" />
-              <span className="text-2xl sm:text-3xl font-black text-[#1b1b1b] tracking-tight">
+              <span className="text-2xl sm:text-3xl font-black text-[#061a1e] tracking-tight">
                 DoubtSolver
               </span>
             </div>
@@ -274,7 +258,7 @@ export default function WorkPage() {
             </span>
           </div>
 
-          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#fa8207] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#e67503] transition-all duration-300 z-20">
+          <div className="absolute right-6 sm:right-8 size-12 sm:size-14 rounded-full bg-[#299093] text-white flex items-center justify-center font-bold text-xl shadow-xl group-hover:scale-110 group-hover:bg-[#207577] transition-all duration-300 z-20">
             <ArrowRight className="size-5 sm:size-6" />
           </div>
         </div>
@@ -285,35 +269,39 @@ export default function WorkPage() {
   const isDarkNav = activeSection === "about";
 
   return (
-    <div className="relative w-full min-h-screen bg-[#f5efe6] text-[#1b1b1b] flex flex-col select-none overflow-x-clip">
+    <div className="relative w-full min-h-screen bg-[#e8e5e0] text-[#061a1e] flex flex-col select-none overflow-x-clip">
       {/* ========================================================================= */}
       {/* GLOBAL FIXED TOP NAVIGATION: [ Home | Work | Contact ]                    */}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-3 sm:px-12 md:px-16 py-3 sm:py-5 md:py-6 transition-colors duration-300 pointer-events-none">
-        {/* Left: 3D Wireframe Cube Icon */}
+        {/* Left: Mind Robotics Authentic Monogram */}
         <div className="pointer-events-auto">
           <Link
             href="/"
-            onClick={() => playSound("click")}
-            className={`size-9 sm:size-11 flex items-center justify-center transition-colors cursor-pointer ${
-              isDarkNav ? "text-white" : "text-[#1b1b1b]"
-            }`}
+            className="group flex items-center gap-2 cursor-pointer transition-colors"
             aria-label="Back to Home"
           >
             <svg
-              viewBox="0 0 32 32"
+              className={`h-8 sm:h-9 w-auto transition-transform duration-300 group-hover:scale-105 ${
+                isDarkNav ? "text-white" : "text-[#061a1e]"
+              }`}
+              viewBox="0 0 80 64"
               fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-7 sm:size-8"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
-              <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" />
-              <line x1="16" y1="2" x2="16" y2="30" />
-              <line x1="2" y1="10" x2="30" y2="10" />
-              <polyline points="10,18 7,20 10,22" />
-              <polyline points="22,18 25,20 22,22" />
+              <path
+                fill="currentColor"
+                d="M25.6 51.2V12.8C25.6 5.73 19.87 0 12.8 0S0 5.73 0 12.8v38.4C0 58.27 5.73 64 12.8 64s12.8-5.73 12.8-12.8Z"
+              />
+              <path
+                fill="currentColor"
+                d="M27.2 32c0 7.07 5.73 12.8 12.8 12.8s12.8-5.73 12.8-12.8-5.73-12.8-12.8-12.8-12.8 5.73-12.8 12.8Z"
+              />
+              <path
+                fill="currentColor"
+                d="M80 51.2V12.8C80 5.73 74.27 0 67.2 0c-7.069 0-12.8 5.73-12.8 12.8v38.4c0 7.07 5.731 12.8 12.8 12.8C74.27 64 80 58.27 80 51.2Z"
+              />
             </svg>
           </Link>
         </div>
@@ -323,18 +311,16 @@ export default function WorkPage() {
           className={`pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-md ${
             isDarkNav
               ? "bg-[#021833]/85 border border-cyan-500/30 text-white"
-              : "bg-[#ebe4d8]/90 border border-[#1b1b1b]/[0.06] text-[#1b1b1b]"
+              : "bg-[#dbd7ca]/85 border border-[#061a1e]/[0.08] text-[#061a1e]"
           }`}
         >
           {/* Home Toggle */}
           <Link
             href="/"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className={`px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
               isDarkNav
                 ? "text-white/80 hover:text-white"
-                : "text-[#1b1b1b]/80 hover:text-[#1b1b1b]"
+                : "text-[#061a1e]/75 hover:text-[#061a1e]"
             }`}
           >
             Home
@@ -344,7 +330,6 @@ export default function WorkPage() {
           <button
             type="button"
             onClick={scrollToTop}
-            onMouseEnter={() => playSound("hover")}
             className="px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer bg-[#299093] text-white shadow-sm"
           >
             Work
@@ -353,51 +338,36 @@ export default function WorkPage() {
           {/* Contact Toggle */}
           <Link
             href="/contact"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className={`px-3 sm:px-5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-[13px] font-bold uppercase tracking-wider transition-colors ${
-              isDarkNav ? "text-white/80 hover:text-white" : "text-[#1b1b1b]/80 hover:text-[#1b1b1b]"
+              isDarkNav ? "text-white/80 hover:text-white" : "text-[#061a1e]/75 hover:text-[#061a1e]"
             }`}
           >
             Contact
           </Link>
         </nav>
 
-        {/* Right: GET IN TOUCH & Audio Button */}
+        {/* Right: Signature Mind Robotics Waterfall CTA Button (No Sound Controls) */}
         <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
-          <a
-            href="mailto:rishiicreates@gmail.com"
-            onClick={(e) => handleCopyEmail(e)}
-            onMouseEnter={() => playSound("hover")}
-            className="hidden sm:inline-flex px-6 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#fa8207] hover:bg-[#e67503] text-white text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          <Link
+            href="/contact"
+            className="group grid-pile hidden sm:grid h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-all"
           >
-            {showCopied ? "Email Copied!" : "Get In Touch"}
-          </a>
-
-          <button
-            type="button"
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled) {
-                const audio = new Audio("/audio/click.ogg");
-                audio.volume = 0.4;
-                audio.play().catch(() => {});
-              }
-            }}
-            onMouseEnter={() => playSound("hover")}
-            className={`size-9 sm:size-11 rounded-full flex items-center justify-center transition-all shadow-sm focus:outline-none cursor-pointer ${
-              isDarkNav
-                ? "bg-white/[0.1] border border-white/[0.15] text-white hover:bg-white/[0.2]"
-                : "bg-[#dfd5c7] text-[#1b1b1b] hover:bg-[#d4c9b9]"
-            }`}
-            aria-label={audioEnabled ? "Mute audio" : "Enable audio"}
-          >
-            {audioEnabled ? (
-              <Volume2 className="size-4 sm:size-5" />
-            ) : (
-              <VolumeX className="size-4 sm:size-5" />
-            )}
-          </button>
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-5 sm:px-6 text-center leading-none">
+              Get In Touch
+            </span>
+          </Link>
         </div>
       </header>
 
@@ -430,7 +400,7 @@ export default function WorkPage() {
             {/* Hero Content: Editorial Title + Tilted Role Badge */}
             <div className="relative z-10 px-6 sm:px-14 md:px-20 lg:px-28 flex flex-col items-center md:items-start justify-start md:justify-center pt-2 sm:pt-0 pb-8 md:pb-16 flex-1">
               <div className="relative w-fit pointer-events-auto select-none">
-                <h1 className="text-[2.6rem] sm:text-7xl md:text-8xl lg:text-[7.8rem] font-black tracking-tight text-[#1b1b1b] leading-[0.92] text-center md:text-left">
+                <h1 className="text-[2.6rem] sm:text-7xl md:text-8xl lg:text-[7.8rem] font-black tracking-tight text-[#061a1e] leading-[0.92] text-center md:text-left">
                   Hrishikesh
                   <br />
                   Yadav
@@ -438,7 +408,7 @@ export default function WorkPage() {
 
                 {/* Tilted Navy Role Badge positioned under name */}
                 <div className="flex justify-center md:block md:absolute -bottom-5 sm:-bottom-4 right-1 sm:-right-4 md:-right-6 mt-3 md:mt-0">
-                  <div className="-rotate-[4deg] px-3 sm:px-4 py-1 sm:py-1.5 rounded-md bg-[#233261] text-white font-mono font-bold text-[10px] sm:text-sm tracking-wider uppercase shadow-md">
+                  <div className="-rotate-[4deg] px-3 sm:px-4 py-1 sm:py-1.5 rounded-md bg-[#061a1e] text-white font-mono font-bold text-[10px] sm:text-sm tracking-wider uppercase shadow-md">
                     AI & SYSTEMS ENGINEER
                   </div>
                 </div>
@@ -450,8 +420,7 @@ export default function WorkPage() {
               <button
                 type="button"
                 onClick={scrollToAbout}
-                onMouseEnter={() => playSound("hover")}
-                className="flex flex-col items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-[#1b1b1b]/60 hover:text-[#1b1b1b] transition-colors cursor-pointer group"
+                className="flex flex-col items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-[#061a1e]/60 hover:text-[#061a1e] transition-colors cursor-pointer group"
               >
                 <span>Scroll to About</span>
                 <ChevronDown className="size-4 animate-bounce group-hover:translate-y-0.5 transition-transform" />
@@ -507,7 +476,7 @@ export default function WorkPage() {
                 <div className="flex items-center">
                   <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md max-w-[340px] sm:max-w-[370px]">
                     <p className="text-xs sm:text-[13px] text-white leading-relaxed font-mono font-medium">
-                      Architects enterprise RAG pipelines, autonomous AI agent tooling, and high-performance WebGL systems.
+                      Founder at Operant & Systems Engineer. Architects 3-tier enterprise RAG systems, autonomous agent perception layers (Rawfy MCP), and OpenEnv benchmarking environments.
                     </p>
                   </div>
                   {/* Exact horizontal connector line pinned to 3D anchor */}
@@ -532,30 +501,30 @@ export default function WorkPage() {
                   {/* Exact horizontal connector line pinned to 3D anchor */}
                   <div className="size-[11px] rounded-full bg-[#34bffd] shadow-[0_0_8px_#34bffd] -ml-[5.5px]" />
                   <div className="w-10 lg:w-12 h-[1px] bg-[#34bffd]" />
-                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[220px] max-w-[300px]">
+                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[240px] max-w-[320px]">
                     <h3 className="text-sm font-bold text-white tracking-wider mb-2 font-mono uppercase">
                       Skills & Tech
                     </h3>
                     <ul className="space-y-1.5 text-xs font-mono text-white/90">
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Python, TypeScript & C++</span>
+                        <span>Python, TypeScript, Java & C++</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Enterprise RAG & pgvector</span>
+                        <span>Enterprise RAG & pgvector (95k+ Chunks)</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>FastAPI & Spring Boot SSE</span>
+                        <span>FastAPI & Spring Boot (WebFlux/SSE)</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Agent Tooling, MCP & Playwright</span>
+                        <span>MCP Servers, Playwright & Agent Tools</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Next.js, Three.js & Docker</span>
+                        <span>Docker, Supabase, Next.js & Three.js</span>
                       </li>
                     </ul>
                   </div>
@@ -568,7 +537,6 @@ export default function WorkPage() {
               <button
                 type="button"
                 onClick={scrollToProjects}
-                onMouseEnter={() => playSound("hover")}
                 className="flex flex-col items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider text-cyan-300/70 hover:text-cyan-300 transition-colors cursor-pointer group"
               >
                 <span>Scroll to Projects</span>
@@ -584,22 +552,22 @@ export default function WorkPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. SELECTED PROJECTS SECTION: 2-Column Bento Grid (Clean Warm Beige)       */}
+      {/* 3. SELECTED PROJECTS SECTION: 2-Column Bento Grid (Clean Concrete Canvas) */}
       {/* ========================================================================= */}
       <section
         id="projects"
-        className="relative z-20 w-full px-6 sm:px-12 md:px-20 lg:px-24 py-24 sm:py-28 bg-[#f5efe6]"
+        className="relative z-20 w-full px-6 sm:px-12 md:px-20 lg:px-24 py-24 sm:py-28 bg-[#e8e5e0]"
       >
         <div className="max-w-6xl mx-auto">
           {/* Section Header with Tilted "SELECTED" Badge */}
           <div className="mb-14 sm:mb-16">
-            <div className="-rotate-[4deg] inline-block px-3 py-1 bg-[#233261] text-white font-mono text-xs font-black uppercase rounded shadow-sm tracking-widest">
+            <div className="-rotate-[4deg] inline-block px-3 py-1 bg-[#061a1e] text-white font-mono text-xs font-black uppercase rounded shadow-sm tracking-widest">
               SELECTED
             </div>
-            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black text-[#1b1b1b] tracking-tight mt-1">
+            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black text-[#061a1e] tracking-tight mt-1">
               Projects
             </h2>
-            <p className="mt-3 text-sm md:text-base text-[#1b1b1b]/70 max-w-xl font-medium">
+            <p className="mt-3 text-sm md:text-base text-[#061a1e]/70 max-w-xl font-medium">
               High-throughput production RAG engines, autonomous agent perception environments, and interactive WebGL systems.
             </p>
           </div>
@@ -609,10 +577,8 @@ export default function WorkPage() {
             {PROJECTS.map((proj) => (
               <article
                 key={proj.id}
-                onMouseEnter={() => playSound("hover")}
                 className="group flex flex-col cursor-pointer"
                 onClick={() => {
-                  playSound("click");
                   window.open(proj.link, "_blank");
                 }}
               >
@@ -623,10 +589,10 @@ export default function WorkPage() {
 
                 {/* Title & Subtitle below banner */}
                 <div className="mt-4 flex flex-col">
-                  <h3 className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#1b1b1b] group-hover:text-[#fa8207] transition-colors">
+                  <h3 className="text-2xl sm:text-[1.75rem] font-black tracking-tight text-[#061a1e] group-hover:text-[#299093] transition-colors">
                     {proj.title}
                   </h3>
-                  <p className="text-sm sm:text-base text-[#666666] font-medium mt-0.5">
+                  <p className="text-sm sm:text-base text-[#061a1e]/70 font-medium mt-0.5">
                     {proj.description}
                   </p>
                 </div>
@@ -639,11 +605,11 @@ export default function WorkPage() {
       {/* ========================================================================= */}
       {/* 4. FOOTER: Start a new project / Let's work together!                      */}
       {/* ========================================================================= */}
-      <footer className="relative z-20 w-full px-6 md:px-16 py-12 flex flex-col items-center justify-center text-center bg-[#ede7df] border-t border-[#1b1b1b]/10">
-        <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1b1b1b] tracking-tight">
+      <footer className="relative z-20 w-full px-6 md:px-16 py-12 flex flex-col items-center justify-center text-center bg-[#e0dcd6] border-t border-[#061a1e]/10">
+        <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#061a1e] tracking-tight">
           Let&apos;s build something exceptional.
         </h3>
-        <p className="text-sm sm:text-base text-[#666666] max-w-md mt-2">
+        <p className="text-sm sm:text-base text-[#061a1e]/70 max-w-md mt-2">
           Available for autonomous AI agent infrastructure, enterprise RAG development, and high-performance WebGL engineering.
         </p>
 
@@ -651,20 +617,20 @@ export default function WorkPage() {
           <a
             href="mailto:rishiicreates@gmail.com"
             onClick={(e) => handleCopyEmail(e)}
-            className="px-6 py-2.5 rounded-full bg-[#fa8207] hover:bg-[#e67503] text-white font-bold text-sm tracking-wider uppercase shadow-sm transition-transform hover:scale-105 active:scale-95"
+            className="px-6 py-2.5 rounded-full bg-[#299093] hover:bg-[#207577] text-white font-bold text-sm tracking-wider uppercase shadow-sm transition-transform hover:scale-105 active:scale-95"
           >
             {showCopied ? "Email Copied!" : "rishiicreates@gmail.com"}
           </a>
 
           <Link
             href="/contact"
-            className="px-6 py-2.5 rounded-full bg-[#061a1e] hover:bg-[#1b1b1b] text-white font-bold text-sm tracking-wider uppercase shadow-sm transition-transform hover:scale-105 active:scale-95"
+            className="px-6 py-2.5 rounded-full bg-[#061a1e] hover:bg-[#061a1e]/85 text-white font-bold text-sm tracking-wider uppercase shadow-sm transition-transform hover:scale-105 active:scale-95"
           >
             3D Contact Room
           </Link>
         </div>
 
-        <p className="text-xs text-[#999999] font-mono mt-8">
+        <p className="text-xs text-[#061a1e]/50 font-mono mt-8">
           © {new Date().getFullYear()} Hrishikesh Yadav. Built with Next.js, Three.js & Tailwind CSS.
         </p>
       </footer>

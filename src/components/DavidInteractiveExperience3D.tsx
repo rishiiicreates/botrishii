@@ -69,7 +69,7 @@ export default function DavidInteractiveExperience3D({
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setClearColor(0x011c3d, 1);
+    renderer.setClearColor(0xe8e5e0, 1);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -730,8 +730,9 @@ export default function DavidInteractiveExperience3D({
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const startYaw = landscape ? -2.3 : -2.1;
+      const startAvatarYaw = startYaw + Math.PI / 2;
       avatarGroup.position.set(baseRoomX, 0, 0);
-      avatarGroup.rotation.set(0, startYaw, 0);
+      avatarGroup.rotation.set(0, startAvatarYaw, 0);
 
       scene.add(avatarGroup);
 
@@ -891,14 +892,14 @@ export default function DavidInteractiveExperience3D({
       const idleClip = gltf.animations.find((a) => a.name === "idle");
       if (idleClip) {
         idleAction = mixer.clipAction(idleClip);
-        idleAction.weight = 1.0;
+        idleAction.setEffectiveWeight(1.0);
         idleAction.play();
       }
 
       const tIdleClip = gltf.animations.find((a) => a.name === "t-idle");
       if (tIdleClip) {
         tIdleAction = mixer.clipAction(tIdleClip);
-        tIdleAction.weight = 0.0;
+        tIdleAction.setEffectiveWeight(0.0);
         tIdleAction.play();
       }
 
@@ -1054,10 +1055,10 @@ export default function DavidInteractiveExperience3D({
         musicMesh.rotation.z = Math.sin(elapsed * 1.8) * 0.04;
       }
 
-      // Dynamic background color lerp: #f5efe6 (Hero) -> #001738 (About) -> #f5efe6 (Projects)
-      const heroBgColor = new THREE.Color("#f5efe6");
+      // Dynamic background color lerp: #e8e5e0 (Hero) -> #001738 (About) -> #e8e5e0 (Projects)
+      const heroBgColor = new THREE.Color("#e8e5e0");
       const aboutBgColor = new THREE.Color("#001738");
-      const projectsBgColor = new THREE.Color("#f5efe6");
+      const projectsBgColor = new THREE.Color("#e8e5e0");
 
       const curBg = heroBgColor.clone();
       if (hOut < 1.0) {
@@ -1069,40 +1070,32 @@ export default function DavidInteractiveExperience3D({
 
       // Avatar transition from desk to pedestal:
       if (avatarGroup) {
-        const targetYaw = Math.PI / 2;
+        const startAvatarYaw = startYaw + Math.PI / 2;
+        const targetAvatarYaw = Math.PI / 2;
 
-        if (hOut < 0.05) {
-          avatarGroup.position.set(baseRoomX, 0, 0);
-          avatarGroup.rotation.set(0, startYaw, 0);
-          if (idleAction && tIdleAction) {
-            idleAction.weight = 1.0;
-            tIdleAction.weight = 0.0;
-          }
-        } else {
-          // Standing crossfade starts immediately when scrolling begins:
-          // Chair swivels back, and avatar smoothly stands up into t-idle
-          const standT = Math.min(1, Math.max(0, hOut / 0.45));
-          const easeStand = 1 - (1 - standT) * (1 - standT);
-          if (idleAction && tIdleAction) {
-            idleAction.weight = 1.0 - easeStand;
-            tIdleAction.weight = easeStand;
-          }
-
-          // Smooth step-forward from desk to pedestal (0, 0, 6)
-          const moveT = Math.min(1, Math.max(0, (hOut - 0.08) / 0.92));
-          const easeMove = 1 - (1 - moveT) * (1 - moveT);
-
-          avatarGroup.position.set(
-            THREE.MathUtils.lerp(baseRoomX, 0, easeMove),
-            0,
-            THREE.MathUtils.lerp(0, 6, easeMove)
-          );
-          avatarGroup.rotation.set(
-            0,
-            THREE.MathUtils.lerp(startYaw, targetYaw, easeMove),
-            0
-          );
+        // Smooth crossfade: sitting in chair at desk (hOut < 0.05),
+        // standing up smoothly into t-idle as the room starts lifting
+        const standT = Math.min(1, Math.max(0, hOut / 0.45));
+        const easeStand = 1 - (1 - standT) * (1 - standT);
+        if (idleAction && tIdleAction) {
+          idleAction.setEffectiveWeight(1.0 - easeStand);
+          tIdleAction.setEffectiveWeight(easeStand);
         }
+
+        // Smooth step-forward from desk to pedestal (0, 0, 6)
+        const moveT = Math.min(1, Math.max(0, (hOut - 0.08) / 0.92));
+        const easeMove = 1 - (1 - moveT) * (1 - moveT);
+
+        avatarGroup.position.set(
+          THREE.MathUtils.lerp(baseRoomX, 0, easeMove),
+          0,
+          THREE.MathUtils.lerp(0, 6, easeMove)
+        );
+        avatarGroup.rotation.set(
+          0,
+          THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeMove),
+          0
+        );
 
         avatarGroup.visible = true;
       }
@@ -1199,7 +1192,7 @@ export default function DavidInteractiveExperience3D({
     >
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="size-8 rounded-full border-2 border-[#fa8207]/30 border-t-[#fa8207] animate-spin" />
+          <div className="size-8 rounded-full border-2 border-[#299093]/30 border-t-[#299093] animate-spin" />
         </div>
       )}
     </div>

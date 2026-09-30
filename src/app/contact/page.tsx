@@ -3,21 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import DavidContactScene3D from "@/components/DavidContactScene3D";
-import { Volume2, VolumeX, ArrowUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 export default function ContactPage() {
-  const [audioEnabled, setAudioEnabled] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
-
-  // Sound feedback helper
-  const playSound = (sound: "click" | "hover") => {
-    if (!audioEnabled) return;
-    try {
-      const audio = new Audio(`/audio/${sound}.ogg`);
-      audio.volume = 0.4;
-      audio.play().catch(() => {});
-    } catch {}
-  };
 
   const handleCopyEmail = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,12 +16,10 @@ export default function ContactPage() {
       }
     } catch {}
     setShowCopied(true);
-    playSound("click");
     setTimeout(() => setShowCopied(false), 2200);
   };
 
   const scrollToTop = () => {
-    playSound("click");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -46,8 +33,6 @@ export default function ContactPage() {
         {/* Left: Monogram / Logo */}
         <Link
           href="/"
-          onClick={() => playSound("click")}
-          onMouseEnter={() => playSound("hover")}
           className="group flex items-center gap-2 focus:outline-none"
           aria-label="Rishii Home"
         >
@@ -77,16 +62,12 @@ export default function ContactPage() {
         <nav className="flex items-center bg-[#dbd7ca]/80 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
           <Link
             href="/"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
             Home
           </Link>
           <Link
             href="/work"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className="px-3 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider text-[#061a1e]/70 hover:text-[#061a1e] rounded-full transition-colors"
           >
             Work
@@ -98,13 +79,12 @@ export default function ContactPage() {
           </span>
         </nav>
 
-        {/* Right: Get In Touch CTA & Sound Toggle */}
+        {/* Right: Get In Touch CTA */}
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="mailto:rishiicreates@gmail.com"
             onClick={(e) => handleCopyEmail(e)}
-            onMouseEnter={() => playSound("hover")}
-            className="!hidden sm:!inline-flex group grid-pile h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm"
+            className="group grid-pile hidden sm:grid h-9 md:h-11 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs md:text-sm font-bold uppercase tracking-wider px-5 shadow-sm transition-transform active:scale-95"
           >
             <span
               className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -122,28 +102,6 @@ export default function ContactPage() {
               {showCopied ? "Email Copied!" : "Get In Touch"}
             </span>
           </a>
-
-          {/* Sound Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled) {
-                const audio = new Audio("/audio/click.ogg");
-                audio.volume = 0.4;
-                audio.play().catch(() => {});
-              }
-            }}
-            onMouseEnter={() => playSound("hover")}
-            className="size-9 md:size-11 rounded-full bg-[#061a1e] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-sm focus:outline-none cursor-pointer"
-            aria-label={audioEnabled ? "Mute audio" : "Enable audio"}
-          >
-            {audioEnabled ? (
-              <Volume2 className="size-4 md:size-5" />
-            ) : (
-              <VolumeX className="size-4 md:size-5" />
-            )}
-          </button>
         </div>
       </header>
 
@@ -162,8 +120,6 @@ export default function ContactPage() {
             {/* Mail */}
             <a
               href="mailto:rishiicreates@gmail.com"
-              onClick={() => playSound("click")}
-              onMouseEnter={() => playSound("hover")}
               className="size-11 md:size-13 rounded-full bg-white/95 hover:bg-[#299093] text-[#061a1e] hover:text-white border border-[#061a1e]/[0.08] shadow-[0_4px_16px_rgba(6,26,30,0.08)] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
               aria-label="Send email"
               title="rishiicreates@gmail.com"
@@ -179,8 +135,6 @@ export default function ContactPage() {
               href="https://github.com/rishiicreates"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => playSound("click")}
-              onMouseEnter={() => playSound("hover")}
               className="size-11 md:size-13 rounded-full bg-white/95 hover:bg-[#061a1e] text-[#061a1e] hover:text-white border border-[#061a1e]/[0.08] shadow-[0_4px_16px_rgba(6,26,30,0.08)] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
               aria-label="GitHub profile"
             >
@@ -194,8 +148,6 @@ export default function ContactPage() {
               href="https://www.linkedin.com/in/rishiicreates/"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => playSound("click")}
-              onMouseEnter={() => playSound("hover")}
               className="size-11 md:size-13 rounded-full bg-white/95 hover:bg-[#299093] text-[#061a1e] hover:text-white border border-[#061a1e]/[0.08] shadow-[0_4px_16px_rgba(6,26,30,0.08)] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
               aria-label="LinkedIn profile"
             >
@@ -211,8 +163,6 @@ export default function ContactPage() {
               href="https://x.com/rishiicreates"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => playSound("click")}
-              onMouseEnter={() => playSound("hover")}
               className="size-11 md:size-13 rounded-full bg-white/95 hover:bg-[#061a1e] text-[#061a1e] hover:text-white border border-[#061a1e]/[0.08] shadow-[0_4px_16px_rgba(6,26,30,0.08)] flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
               aria-label="X (Twitter) profile"
             >
@@ -230,8 +180,6 @@ export default function ContactPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className="hover:text-[#061a1e] transition-colors"
           >
             Privacy
@@ -239,8 +187,6 @@ export default function ContactPage() {
           <span>•</span>
           <Link
             href="/"
-            onClick={() => playSound("click")}
-            onMouseEnter={() => playSound("hover")}
             className="hover:text-[#061a1e] transition-colors"
           >
             Legal Notice
@@ -256,7 +202,6 @@ export default function ContactPage() {
           <button
             type="button"
             onClick={scrollToTop}
-            onMouseEnter={() => playSound("hover")}
             className="size-9 rounded-full bg-white/95 border border-[#061a1e]/[0.1] shadow-sm flex items-center justify-center text-[#061a1e] hover:bg-[#061a1e] hover:text-white transition-all hover:scale-105 active:scale-95 focus:outline-none cursor-pointer"
             aria-label="Scroll to top"
           >
