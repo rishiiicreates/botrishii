@@ -10,6 +10,11 @@ interface DavidInteractiveExperience3DProps {
   aboutOut: number; // 0 (About active) -> 1 (About exiting into Projects)
   className?: string;
   onLoaded?: () => void;
+  onProjectPoints?: (points: {
+    details: { x: number; y: number };
+    desc: { x: number; y: number };
+    services: { x: number; y: number };
+  }) => void;
 }
 
 export default function DavidInteractiveExperience3D({
@@ -18,6 +23,7 @@ export default function DavidInteractiveExperience3D({
   aboutOut,
   className = "",
   onLoaded,
+  onProjectPoints,
 }: DavidInteractiveExperience3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -103,125 +109,111 @@ export default function DavidInteractiveExperience3D({
     const matcapWhite = textureLoader.load("/models/matcap-white.webp");
     matcapWhite.colorSpace = THREE.SRGBColorSpace;
 
-    // 4. Room Grid Environment for About Mode (Curved Cyan Lines on Floor & Wall)
-    const roomCorner = new THREE.Vector3(-16.0, 0.0, -2.0);
-    const tileSize = 1.4;
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const diffuseMap = textureLoader.load("/models/diffuse-map.png");
+    diffuseMap.colorSpace = THREE.SRGBColorSpace;
+    diffuseMap.generateMipmaps = false;
+    diffuseMap.flipY = false;
+
+    const hologramPlaneTex = textureLoader.load("/models/hologram-plane-texture.webp");
+    hologramPlaneTex.colorSpace = THREE.SRGBColorSpace;
+    hologramPlaneTex.generateMipmaps = false;
+    hologramPlaneTex.flipY = false;
+
+    const numbersBitmapTex = textureLoader.load("/models/numbers-bitmap.webp");
+    numbersBitmapTex.generateMipmaps = false;
+
+    // 4. David Heckhoff Spherical Curved Dome Grid (tz vertex + nz fragment shader)
+    const gridPlaneGeom = new THREE.PlaneGeometry(18, 18, 24, 24);
+    gridPlaneGeom.rotateX(-Math.PI / 2);
 
     const gridVertexShader = `
-      varying vec3 vWorldPos;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+
+      #define CURVE 0.04
+
       void main() {
-        vec4 worldPos = modelMatrix * vec4(position, 1.0);
-        vWorldPos = worldPos.xyz;
-        gl_Position = projectionMatrix * viewMatrix * worldPos;
+        vUv = uv;
+        vNormal = normal;
+
+        vec3 transformed = position;
+        float dist = distance(transformed.xz, vec2(0.0));
+        transformed.y += pow(dist, 2.0) * CURVE;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
       }
     `;
 
     const gridFragmentShader = `
-      uniform vec3 uBaseColor;
-      uniform vec3 uLineColor;
-      uniform vec3 uAccentColor;
-      uniform float uTileSize;
-      uniform float uLineWidth;
-      uniform float uPixelRatio;
-      uniform vec3 uCorner;
-      uniform int uPlaneType;
-      uniform float uOpacity;
+      varying vec2 vUv;
+      varying vec3 vNormal;
 
-      varying vec3 vWorldPos;
+      uniform vec3 uColor;
+      uniform vec3 uLineColor;
+      uniform float uOpacity;
+      uniform float uTime;
+      uniform float uProgress;
+
+      #define CELLS 18.0
+      #define LINE_WIDTH 0.012
+      #define FOG_START 0.25
+      #define SHADOW_COLOR vec3(0.0, 0.0, 0.075)
 
       void main() {
-        vec2 coord;
-        float seamDist = 100.0;
-        float edgeFade = 1.0;
+        vec2 coord = vUv * CELLS;
+        coord.y += uTime * 0.25;
+        vec2 grid = abs(fract(coord) - 0.5);
 
-        if (uPlaneType == 0) {
-          coord = vec2(vWorldPos.x - uCorner.x, vWorldPos.z - uCorner.z);
-          float distBack = max(0.0, vWorldPos.z - uCorner.z);
-          float distLeft = max(0.0, vWorldPos.x - uCorner.x);
-          seamDist = min(distBack, distLeft);
-          
-          float fadeZ = 1.0 - smoothstep(12.0, 26.0, vWorldPos.z);
-          float fadeX = 1.0 - smoothstep(14.0, 28.0, vWorldPos.x);
-          edgeFade = fadeZ * fadeX;
-        } else {
-          coord = vec2(vWorldPos.x - uCorner.x, vWorldPos.y - uCorner.y);
-          float distFloor = max(0.0, vWorldPos.y - uCorner.y);
-          float distLeft = max(0.0, vWorldPos.x - uCorner.x);
-          seamDist = min(distFloor, distLeft);
+        float lineX = smoothstep(0.0, 0.5, grid.x);
+        float lineY = smoothstep(0.0, 0.5, grid.y);
+        float dots = lineX * lineY;
+        dots = smoothstep(LINE_WIDTH - 0.005, LINE_WIDTH, 1.0 - dots);
+        dots = 1.0 - dots;
 
-          float fadeY = 1.0 - smoothstep(8.0, 18.0, vWorldPos.y);
-          float fadeX = 1.0 - smoothstep(14.0, 28.0, vWorldPos.x);
-          edgeFade = fadeY * fadeX;
-        }
+        float halfLineWidth = LINE_WIDTH * 0.5;
+        float lines = max(lineX, lineY);
+        lines = smoothstep(halfLineWidth - 0.005, halfLineWidth, 1.0 - lines);
+        lines = 1.0 - lines;
+        lines *= 0.15;
 
-        vec2 cell = coord / uTileSize;
-        vec2 perPixel = max(fwidth(cell), vec2(1e-5));
-        float halfW = uLineWidth * 0.5 * uPixelRatio;
+        float pattern = max(dots, lines);
+        
+        float distToCenter = distance(vUv, vec2(0.5));
+        float fadeProgress = mix(0.28, 0.52, uProgress);
+        float alpha = 1.0 - smoothstep(FOG_START * 0.5, fadeProgress, distToCenter);
 
-        vec2 distToLine = abs(fract(cell - 0.5) - 0.5) / perPixel;
-        float lineAlpha = 1.0 - clamp(min(distToLine.x, distToLine.y) / halfW, 0.0, 1.0);
+        vec2 center = vec2(0.5);
+        float centerDist = distance(vUv, center);
+        float centerAlpha = smoothstep(0.08, 0.055, centerDist) * 0.45;
 
-        vec2 majorCell = coord / (uTileSize * 4.0);
-        vec2 majorPerPixel = max(fwidth(majorCell), vec2(1e-5));
-        vec2 distToMajor = abs(fract(majorCell - 0.5) - 0.5) / majorPerPixel;
-        float majorAlpha = 1.0 - clamp(min(distToMajor.x, distToMajor.y) / (halfW * 1.3), 0.0, 1.0);
+        vec3 finalColor = mix(uColor, uLineColor, pattern);
+        finalColor = mix(finalColor, SHADOW_COLOR, centerAlpha);
 
-        vec2 cellFract = abs(fract(cell - 0.5) - 0.5) * uTileSize;
-        float dotAlpha = 1.0 - smoothstep(0.018, 0.045, length(cellFract));
-
-        float ao = 1.0 - (1.0 - smoothstep(0.0, 2.5, seamDist)) * 0.15;
-        float seamHighlight = (1.0 - smoothstep(0.0, 0.08, seamDist)) * 0.40;
-
-        float minorOpacity = 0.22;
-        float majorOpacity = 0.45;
-        float combinedLines = clamp(lineAlpha * minorOpacity + majorAlpha * majorOpacity + dotAlpha * 0.45 + seamHighlight, 0.0, 1.0);
-
-        vec3 lineCol = mix(uLineColor, uAccentColor, majorAlpha * 0.7 + dotAlpha * 0.5);
-        vec3 baseCol = uBaseColor * ao;
-
-        vec3 finalCol = mix(baseCol, lineCol, combinedLines * edgeFade);
-
-        gl_FragColor = vec4(finalCol, uOpacity);
+        gl_FragColor = vec4(finalColor, alpha * uOpacity);
       }
     `;
 
-    const gridOpacityUniform = { value: 0 };
-    const createGridMaterial = (planeType: number) => {
-      return new THREE.ShaderMaterial({
-        transparent: true,
-        vertexShader: gridVertexShader,
-        fragmentShader: gridFragmentShader,
-        side: THREE.DoubleSide,
-        uniforms: {
-          uBaseColor: { value: new THREE.Color("#011c3d") },
-          uLineColor: { value: new THREE.Color("#00d2ff") },
-          uAccentColor: { value: new THREE.Color("#00f0ff") },
-          uTileSize: { value: tileSize },
-          uLineWidth: { value: 1.25 },
-          uPixelRatio: { value: pixelRatio },
-          uCorner: { value: roomCorner },
-          uPlaneType: { value: planeType },
-          uOpacity: gridOpacityUniform,
-        },
-      });
+    const gridUniforms = {
+      uColor: { value: new THREE.Color("#0157A0") },
+      uLineColor: { value: new THREE.Color("#34BCFD") },
+      uOpacity: { value: 0 },
+      uTime: { value: 0 },
+      uProgress: { value: 0 },
     };
 
-    const gridGroup = new THREE.Group();
-    scene.add(gridGroup);
+    const gridMaterial = new THREE.ShaderMaterial({
+      vertexShader: gridVertexShader,
+      fragmentShader: gridFragmentShader,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      uniforms: gridUniforms,
+    });
 
-    const floorGeom = new THREE.PlaneGeometry(44, 38);
-    const floorMesh = new THREE.Mesh(floorGeom, createGridMaterial(0));
-    floorMesh.rotation.x = -Math.PI / 2;
-    floorMesh.position.set(roomCorner.x + 22, roomCorner.y - 0.01, roomCorner.z + 19);
-    floorMesh.renderOrder = -20;
-    gridGroup.add(floorMesh);
-
-    const backWallGeom = new THREE.PlaneGeometry(44, 24);
-    const backWallMesh = new THREE.Mesh(backWallGeom, createGridMaterial(1));
-    backWallMesh.position.set(roomCorner.x + 22, roomCorner.y + 12, roomCorner.z);
-    backWallMesh.renderOrder = -20;
-    gridGroup.add(backWallMesh);
+    const gridMesh = new THREE.Mesh(gridPlaneGeom, gridMaterial);
+    gridMesh.position.set(0, -0.4, 6);
+    gridMesh.renderOrder = -100;
+    scene.add(gridMesh);
 
     // 5. Interactive Groups & Mesh Handles
     const roomGroup = new THREE.Group();
@@ -247,30 +239,6 @@ export default function DavidInteractiveExperience3D({
     // Scan progress uniform for the hologram beam
     const scanUniform = { value: 0 };
     const timeUniform = { value: 0 };
-
-    // Dynamic Pedestal Display Canvas ("000" to "100")
-    const numCanvas = document.createElement("canvas");
-    numCanvas.width = 128;
-    numCanvas.height = 64;
-    const numCtx = numCanvas.getContext("2d");
-    const numTexture = new THREE.CanvasTexture(numCanvas);
-    numTexture.generateMipmaps = false;
-    numTexture.colorSpace = THREE.SRGBColorSpace;
-
-    const updatePedestalNumber = (count: number) => {
-      if (!numCtx) return;
-      numCtx.clearRect(0, 0, 128, 64);
-      numCtx.fillStyle = "#011c3d";
-      numCtx.fillRect(0, 0, 128, 64);
-      numCtx.fillStyle = "#00f0ff";
-      numCtx.font = "bold 38px monospace";
-      numCtx.textAlign = "center";
-      numCtx.textBaseline = "middle";
-      const str = Math.min(100, Math.max(0, Math.floor(count))).toString().padStart(3, "0");
-      numCtx.fillText(str, 64, 32);
-      numTexture.needsUpdate = true;
-    };
-    updatePedestalNumber(0);
 
     // Load Room Model
     gltfLoader.load("/models/room-model.glb", (gltf) => {
@@ -324,7 +292,234 @@ export default function DavidInteractiveExperience3D({
       roomGroup.add(roomScene);
     });
 
-    // Load Lab Pedestal Model
+    // 6. Laser Slice Plane (horizontal scanning slice ring, 1:1 David Heckhoff Zd)
+    const laserPlaneGeom = new THREE.PlaneGeometry(1.5, 1);
+    laserPlaneGeom.rotateX(-Math.PI / 2);
+    const laserPlaneMat = new THREE.MeshBasicMaterial({
+      map: hologramPlaneTex,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const laserPlaneMesh = new THREE.Mesh(laserPlaneGeom, laserPlaneMat);
+    laserPlaneMesh.renderOrder = 27;
+    labGroup.add(laserPlaneMesh);
+
+    // 7. Dynamic Digital 3-Digit Counter on Front of Pedestal (1:1 David Heckhoff VB)
+    const numberGeom = new THREE.PlaneGeometry(1, 1);
+    const numUniforms = {
+      uTexture: { value: numbersBitmapTex },
+      uColor: { value: new THREE.Color("#bae9ff") },
+    };
+    const numberMat = new THREE.ShaderMaterial({
+      transparent: true,
+      uniforms: numUniforms,
+      vertexShader: `
+        attribute float frame;
+        varying vec2 vFrameUv;
+        #define TOTAL_COLS 4.0
+        #define TOTAL_ROWS 3.0
+        #define UV_PADDING 0.01
+
+        void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+          float column = mod(frame, TOTAL_COLS);
+          float row = floor(frame / TOTAL_COLS);
+          row = (TOTAL_ROWS - 1.0) - row;
+          float frameWidth = 1.0 / TOTAL_COLS;
+          float frameHeight = 1.0 / TOTAL_ROWS;
+          float frameLeft = column * frameWidth;
+          float frameBottom = row * frameHeight;
+          vec2 paddedUv = uv * (1.0 - UV_PADDING * 2.0) + UV_PADDING;
+          vFrameUv.x = frameLeft + paddedUv.x * frameWidth;
+          vFrameUv.y = frameBottom + paddedUv.y * frameHeight;
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vFrameUv;
+        uniform sampler2D uTexture;
+        uniform vec3 uColor;
+        void main() {
+          vec4 tex = texture2D(uTexture, vFrameUv);
+          gl_FragColor = vec4(tex.rgb * uColor, tex.a);
+        }
+      `,
+    });
+
+    const numberMesh = new THREE.InstancedMesh(numberGeom, numberMat, 3);
+    const frameArray = new Float32Array(3);
+    const frameAttribute = new THREE.InstancedBufferAttribute(frameArray, 1);
+    numberGeom.setAttribute("frame", frameAttribute);
+
+    const digitMatrix = new THREE.Matrix4();
+    for (let i = 0; i < 3; i++) {
+      const xOffset = (i - 1) * 0.92;
+      digitMatrix.makeTranslation(xOffset, 0, 0);
+      numberMesh.setMatrixAt(i, digitMatrix);
+    }
+    numberMesh.instanceMatrix.needsUpdate = true;
+    numberMesh.scale.set(0.17, 0.17, 0.17);
+    numberMesh.position.set(0, -0.23, 1.07);
+    numberMesh.renderOrder = 22;
+    labGroup.add(numberMesh);
+
+    const updateDigitDisplay = (val: number) => {
+      const str = Math.min(100, Math.max(0, Math.floor(val))).toString().padStart(3, "0");
+      for (let i = 0; i < 3; i++) {
+        frameAttribute.setX(i, parseInt(str[i], 10));
+      }
+      frameAttribute.needsUpdate = true;
+    };
+    updateDigitDisplay(0);
+
+    // 8. Load Lab Pedestal Model with Authentic Shaders (TA, SA, IA)
+    const baseUniforms = {
+      uDiffuseMap: { value: diffuseMap },
+      uProgress: scanUniform,
+    };
+
+    const baseMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      uniforms: baseUniforms,
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vPosition;
+        void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vPosition = position;
+          vUv = uv;
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        varying vec3 vPosition;
+        uniform sampler2D uDiffuseMap;
+        uniform float uProgress;
+
+        #define COLOR_CYAN vec3(0.27, 1.0, 1.0)
+        #define SHADOW_START -0.4
+        #define SHADOW_END 0.0
+        #define SHADOW_COLOR vec3(0.0, 0.0, 0.1)
+        #define SHADOW_OPACITY 0.5
+        #define RADIUS 2.11
+        #define INNER_RADIUS 0.435
+        #define OUTER_RADIUS 0.455
+        #define RING_WIDTH 0.005
+        #define RIGHT_BLOOM_WIDTH 0.045
+
+        void main() {
+          vec4 diffuse = texture2D(uDiffuseMap, vUv);
+          float dist = length(vPosition.xz) / RADIUS;
+          float ring = smoothstep(INNER_RADIUS, INNER_RADIUS + RING_WIDTH, dist) * 
+                       smoothstep(OUTER_RADIUS + RING_WIDTH, OUTER_RADIUS, dist);
+          float ringBloom = smoothstep(INNER_RADIUS, INNER_RADIUS + RIGHT_BLOOM_WIDTH, dist) *
+                       smoothstep(OUTER_RADIUS + RIGHT_BLOOM_WIDTH, OUTER_RADIUS, dist);
+          ring += ringBloom * 0.5;
+          float centerCircle = smoothstep(0.4, 0.1, dist);
+          ring += centerCircle * 0.5;
+          ring = min(1.0, ring);
+          float shadow = smoothstep(SHADOW_END, SHADOW_START, vPosition.y);
+          vec3 color = mix(diffuse.rgb, COLOR_CYAN, ring * (0.1 + 0.9 * uProgress));
+          color = mix(color, SHADOW_COLOR, shadow * SHADOW_OPACITY);
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+    });
+
+    const lightConeMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: false,
+      uniforms: {
+        uTime: timeUniform,
+        uProgress: scanUniform,
+      },
+      vertexShader: `
+        varying float vLightY;
+        varying float vWave;
+        uniform float uTime;
+        uniform float uProgress;
+
+        void main() {
+          vec3 transformed = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+          float waveX = sin(position.x * 10.0 + uTime * 2.0);
+          float waveZ = sin(position.z * 10.0 + uTime * 2.5);
+          float wave = (waveX + waveZ) * 0.5 * 0.2;
+          vWave = wave * -1.0;
+          vLightY = position.y * (2.0 - uProgress) * 0.5 - wave;
+        }
+      `,
+      fragmentShader: `
+        varying float vLightY;
+        varying float vWave;
+        uniform float uProgress;
+        #define COLOR vec3(0.1, 0.808, 1.0)
+
+        void main() {
+          float waveOpacity = 1.0 - smoothstep(0.0, 0.25, vWave);
+          gl_FragColor = vec4(COLOR, (1.0 - vLightY) * 0.3 * waveOpacity * uProgress);
+        }
+      `,
+    });
+
+    const electricMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      uniforms: {
+        uTime: timeUniform,
+        uOpacity: { value: 1.0 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vUv = uv;
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uTime;
+        uniform float uOpacity;
+
+        #define LINE_WIDTH 0.05
+        #define WAVE_COUNT 50.0
+        #define PI 3.14159265359
+        #define MIN_LINE_STRENGTH 0.1
+        #define LINE_STRENGTH_SPEED 6.0
+        #define COLOR vec3(0.3, 1.0, 1.0)
+
+        void main() {
+          float baseStrength1 = smoothstep(LINE_WIDTH, 0.0, abs(vUv.y - 0.25));
+          float baseStrength2 = smoothstep(LINE_WIDTH, 0.0, abs(vUv.y - 0.5));
+          float baseStrength3 = smoothstep(LINE_WIDTH, 0.0, abs(vUv.y - 0.75));
+
+          float strengthPattern1 = sin(vUv.x * WAVE_COUNT * 0.5 + uTime * LINE_STRENGTH_SPEED) * 0.5 + 0.5;
+          float strengthPattern2 = sin(vUv.x * WAVE_COUNT * 0.5 + uTime * LINE_STRENGTH_SPEED + PI * 0.33) * 0.5 + 0.5;
+          float strengthPattern3 = sin(vUv.x * WAVE_COUNT * 0.5 + uTime * LINE_STRENGTH_SPEED + PI * 0.66) * 0.5 + 0.5;
+
+          strengthPattern1 = smoothstep(0.0, 0.5, strengthPattern1);
+          strengthPattern2 = smoothstep(0.0, 0.5, strengthPattern2);
+          strengthPattern3 = smoothstep(0.0, 0.5, strengthPattern3);
+
+          float animatedPart1 = (1.0 - MIN_LINE_STRENGTH) * strengthPattern1;
+          float animatedPart2 = (1.0 - MIN_LINE_STRENGTH) * strengthPattern2;
+          float animatedPart3 = (1.0 - MIN_LINE_STRENGTH) * strengthPattern3;
+
+          float multiplier1 = MIN_LINE_STRENGTH + animatedPart1 * uOpacity;
+          float multiplier2 = MIN_LINE_STRENGTH + animatedPart2 * uOpacity;
+          float multiplier3 = MIN_LINE_STRENGTH + animatedPart3 * uOpacity;
+
+          float strength = baseStrength1 * multiplier1 + baseStrength2 * multiplier2 + baseStrength3 * multiplier3;
+          gl_FragColor = vec4(COLOR, strength);
+        }
+      `,
+    });
+
     gltfLoader.load("/models/lab-model.glb", (gltf) => {
       if (isDisposed) return;
       const labScene = gltf.scene;
@@ -332,53 +527,107 @@ export default function DavidInteractiveExperience3D({
       labScene.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
-          if (mesh.name === "base") {
-            mesh.material = new THREE.MeshBasicMaterial({ color: new THREE.Color("#0c2340") });
-            mesh.renderOrder = 20;
-          } else if (mesh.name === "display") {
-            mesh.material = new THREE.MeshBasicMaterial({ color: new THREE.Color("#00f0ff") });
-            mesh.renderOrder = 21;
+          if (mesh.name === "base" || mesh.name === "display") {
+            mesh.material = baseMaterial;
+            mesh.renderOrder = mesh.name === "base" ? 20 : 21;
           } else if (mesh.name === "electric") {
-            mesh.material = new THREE.MeshBasicMaterial({
-              color: new THREE.Color("#00d2ff"),
-              transparent: true,
-              opacity: 0.85,
-            });
+            mesh.material = electricMaterial;
             mesh.renderOrder = 25;
           } else if (mesh.name === "shine") {
-            mesh.material = new THREE.MeshBasicMaterial({
-              color: new THREE.Color("#00d2ff"),
-              transparent: true,
-              opacity: 0.08,
-              blending: THREE.AdditiveBlending,
-              depthWrite: false,
-            });
-            mesh.renderOrder = 10;
+            mesh.material = lightConeMaterial;
+            mesh.renderOrder = 30;
           }
         }
       });
 
-
-
-      // Number display on pedestal
-      const numberGeom = new THREE.PlaneGeometry(0.7, 0.35);
-      const numberMat = new THREE.MeshBasicMaterial({
-        map: numTexture,
-        transparent: true,
-      });
-      const numberMesh = new THREE.Mesh(numberGeom, numberMat);
-      numberMesh.position.set(0, 0.22, 1.15);
-      labGroup.add(numberMesh);
-
       labGroup.add(labScene);
     });
 
-    // 6. Hologram Laser Scanner Shaders (Replicating exact david-hckh.com m4/g4 shaders)
+    // 9. Floating Particle Field (David Heckhoff CA/RB points generator)
+    const particleCount = 45;
+    const pGeom = new THREE.BufferGeometry();
+    const pPos = new Float32Array(particleCount * 3);
+    const pAngles = new Float32Array(particleCount);
+    const pRadii = new Float32Array(particleCount);
+    const pSpeeds = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 0.2 + Math.random() * 0.75;
+      pAngles[i] = angle;
+      pRadii[i] = radius;
+      pSpeeds[i] = 0.4 + Math.random() * 0.6;
+      pPos[i * 3] = Math.cos(angle) * radius;
+      pPos[i * 3 + 1] = Math.random() * 3.5;
+      pPos[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+    pGeom.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+    pGeom.setAttribute("angle", new THREE.BufferAttribute(pAngles, 1));
+    pGeom.setAttribute("radius", new THREE.BufferAttribute(pRadii, 1));
+    pGeom.setAttribute("speed", new THREE.BufferAttribute(pSpeeds, 1));
+
+    const particleMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: timeUniform,
+        uProgress: scanUniform,
+      },
+      vertexShader: `
+        attribute float angle;
+        attribute float radius;
+        attribute float speed;
+        uniform float uTime;
+        uniform float uProgress;
+        varying float vAlpha;
+
+        void main() {
+          vec3 pos = position;
+          pos.y = mod(pos.y + uTime * speed * 0.4, 3.5);
+          float curAngle = angle + uTime * 0.3;
+          pos.x = cos(curAngle) * radius;
+          pos.z = sin(curAngle) * radius;
+
+          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = (14.0 / -mvPosition.z) * (0.8 + 0.5 * sin(uTime * 2.0 + angle));
+          gl_Position = projectionMatrix * mvPosition;
+
+          float fadeBottom = smoothstep(0.0, 0.4, pos.y);
+          float fadeTop = 1.0 - smoothstep(2.5, 3.5, pos.y);
+          vAlpha = fadeBottom * fadeTop * uProgress * 0.75;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        void main() {
+          vec2 coord = gl_PointCoord - vec2(0.5);
+          float dist = length(coord);
+          if (dist > 0.5) discard;
+          float strength = 1.0 - smoothstep(0.0, 0.5, dist);
+          gl_FragColor = vec4(vec3(0.0, 0.92, 1.0), strength * vAlpha);
+        }
+      `,
+    });
+
+    const particles = new THREE.Points(pGeom, particleMaterial);
+    particles.renderOrder = 22;
+    labGroup.add(particles);
+
+    // 10. Hologram Skinned Shaders (David Heckhoff m4 and g4)
     const hologramVertexShader = `
       #include <skinning_pars_vertex>
       varying float vModelProgress;
       varying vec3 vNormal;
       varying vec3 vWorldPos;
+
+      uniform float uTime;
+      uniform float uProgress;
+
+      float getModelProgress(vec3 position) {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        return (worldPosition.y + 0.2) / 4.7;
+      }
 
       void main() {
         #include <skinbase_vertex>
@@ -396,7 +645,7 @@ export default function DavidInteractiveExperience3D({
         vNormal = skinnedNormal.xyz;
 
         vWorldPos = worldPosition.xyz;
-        vModelProgress = clamp((worldPosition.y + 0.1) / 3.4, 0.0, 1.0);
+        vModelProgress = getModelProgress(transformed);
       }
     `;
 
@@ -409,36 +658,42 @@ export default function DavidInteractiveExperience3D({
       uniform vec3 uColor;
       uniform float uTime;
 
-      #define SMOOTH_WIDTH 0.005
-      #define LINE_WIDTH 0.009
-      #define FADE_WIDTH 0.035
+      #define SMOOTH_WIDTH 0.002
+      #define LINE_WIDTH 0.003
+      #define FADE_WIDTH 0.02
+
+      float getProgress() {
+        float s = smoothstep(uProgress, uProgress + SMOOTH_WIDTH, vModelProgress);
+        return mix(s, 1.0, step(uProgress, 0.001));
+      }
 
       void main() {
-        if (vModelProgress > uProgress + FADE_WIDTH) {
-          discard;
-        }
+        if (uProgress <= 0.001) discard;
 
         vec3 normal = normalize(vNormal);
         if (!gl_FrontFacing) normal *= -1.0;
 
-        float s = smoothstep(uProgress, uProgress + SMOOTH_WIDTH, vModelProgress);
-        float progress = 1.0 - mix(s, 1.0, step(uProgress, 0.0));
+        float progress = 1.0 - getProgress();
+        if (progress <= 0.001) discard;
 
         // Scanning horizontal wireframe stripes
-        float stripes = mod((vWorldPos.y - uTime * 0.1) * 32.0, 1.0);
+        float stripes = mod((vWorldPos.y - uTime * 0.1) * 25.0, 1.0);
         stripes = pow(stripes, 3.0);
 
         vec3 viewDir = normalize(cameraPosition - vWorldPos);
+
         float fresnel = pow(1.0 - max(0.0, dot(viewDir, normal)), 2.0);
-        float falloff = smoothstep(0.85, 0.35, fresnel);
+        float falloff = smoothstep(0.8, 0.4, fresnel);
 
-        float holographic = (stripes * fresnel + fresnel * 0.8 + stripes * 0.15) * falloff;
+        float holographic = stripes * fresnel;
+        holographic += fresnel;
+        holographic += stripes * 0.05;
+        holographic *= falloff;
 
-        // Glowing cyan laser ring at boundary
         float dist = abs(vModelProgress - uProgress);
         float lineStrength = 1.0 - smoothstep(LINE_WIDTH - FADE_WIDTH, LINE_WIDTH + FADE_WIDTH, dist);
 
-        holographic += lineStrength * 2.8;
+        holographic += lineStrength * 2.0;
 
         if (!gl_FrontFacing) holographic *= 0.4;
 
@@ -446,7 +701,7 @@ export default function DavidInteractiveExperience3D({
       }
     `;
 
-    const hologramMaterial = new THREE.ShaderMaterial({
+    const holoMaterial = new THREE.ShaderMaterial({
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false,
@@ -456,11 +711,11 @@ export default function DavidInteractiveExperience3D({
       uniforms: {
         uProgress: scanUniform,
         uTime: timeUniform,
-        uColor: { value: new THREE.Color("#00f0ff") },
+        uColor: { value: new THREE.Color("rgb(0, 234, 255)") },
       },
     });
 
-    // 7. Load Avatar Model
+    // 11. Load Avatar Model (Solid Skinned Meshes + Hologram Clones)
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
@@ -471,99 +726,86 @@ export default function DavidInteractiveExperience3D({
 
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
-      const startYaw = (landscape ? -2.3 : -2.1) + Math.PI / 2;
+      const startYaw = landscape ? -2.3 : -2.1;
       avatarGroup.position.set(baseRoomX, 0, 0);
       avatarGroup.rotation.set(0, startYaw, 0);
 
       scene.add(avatarGroup);
 
-      // Shared onBeforeCompile modifier that handles BOTH solid matcap AND hologram laser scan
-      const applyHologramScanShader = (mat: THREE.Material) => {
+      // A. Solid Skinned Mesh onBeforeCompile (clipping away where scanned)
+      const applySolidScanShader = (mat: THREE.Material) => {
         mat.transparent = true;
         mat.onBeforeCompile = (shader) => {
           shader.uniforms.uScan = scanUniform;
-          shader.uniforms.uTime = timeUniform;
           shader.vertexShader = `
-            varying float vWorldY;
-            varying vec3 vWorldPos;
+            varying float vModelProgress;
+            float getModelProgress(vec3 position) {
+              vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+              return (worldPosition.y + 0.2) / 4.7;
+            }
             ${shader.vertexShader}
           `.replace(
-            `#include <begin_vertex>`,
-            `#include <begin_vertex>
-             vec4 wPos = modelMatrix * vec4(transformed, 1.0);
-             vWorldY = (wPos.y + 0.1) / 3.4;
-             vWorldPos = wPos.xyz;
+            `#include <project_vertex>`,
+            `#include <project_vertex>
+             vModelProgress = getModelProgress(transformed);
             `
           );
           shader.fragmentShader = `
             uniform float uScan;
-            uniform float uTime;
-            varying float vWorldY;
-            varying vec3 vWorldPos;
+            varying float vModelProgress;
+            #define SMOOTH_WIDTH 0.002
+            float getProgress() {
+              float s = smoothstep(uScan, uScan + SMOOTH_WIDTH, vModelProgress);
+              return mix(s, 1.0, step(uScan, 0.001));
+            }
             ${shader.fragmentShader}
           `.replace(
             `#include <dithering_fragment>`,
             `#include <dithering_fragment>
-             if (uScan > 0.001 && vWorldY < uScan) {
-               // Below laser scan line: Glowing Cyan Hologram
-               float distToLine = abs(vWorldY - uScan);
-               float laserLine = 1.0 - smoothstep(0.001, 0.02, distToLine);
-
-               // Horizontal scanline stripes
-               float stripes = mod((vWorldPos.y - uTime * 0.12) * 44.0, 1.0);
-               stripes = smoothstep(0.2, 0.8, stripes);
-
-               vec3 viewDir = normalize(cameraPosition - vWorldPos);
-               float fresnel = 0.4;
-               #ifdef USE_NORMAL
-                 vec3 n = normalize(vNormal);
-                 fresnel = pow(1.0 - max(0.0, dot(viewDir, n)), 2.5);
-               #endif
-
-               vec3 holoColor = mix(vec3(0.0, 0.75, 1.0), vec3(0.0, 1.0, 0.95), stripes);
-               float holoIntensity = stripes * 0.45 + fresnel * 0.55 + laserLine * 2.5;
-
-               gl_FragColor = vec4(holoColor * holoIntensity, 0.85);
-             } else if (uScan > 0.001) {
-               // Above laser scan line: Solid Matcap with Glowing Cyan Laser Beam at the slice
-               float distToLine = abs(vWorldY - uScan);
-               if (distToLine < 0.025) {
-                 float laserLine = 1.0 - smoothstep(0.0, 0.025, distToLine);
-                 gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), laserLine * 0.95);
-               }
+             float solidProg = getProgress();
+             if (uScan > 0.001 && solidProg <= 0.001) {
+               discard;
              }
+             gl_FragColor.a *= solidProg;
             `
           );
         };
       };
 
-      // Matcap Materials with unified solid + hologram shader
+      const holoEligibleNames = ["black", "gray", "skin", "white", "head"];
+      const meshesToCloneForHolo: THREE.SkinnedMesh[] = [];
+
       avatarGroup.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.SkinnedMesh;
+          if (holoEligibleNames.includes(mesh.name)) {
+            meshesToCloneForHolo.push(mesh);
+          }
+
           let matcapTex = matcapSkin;
           if (mesh.name === "black") matcapTex = matcapBlack;
           else if (mesh.name === "gray") matcapTex = matcapGray;
           else if (mesh.name === "white") matcapTex = matcapWhite;
 
           const mat = new THREE.MeshMatcapMaterial({ matcap: matcapTex });
-          applyHologramScanShader(mat);
+          applySolidScanShader(mat);
           mesh.material = mat;
+          mesh.renderOrder = 24;
         }
       });
 
-      // Head hair texture with neutral white matcap and unified scanline shader
+      // Head hair texture
       const headMesh = avatarGroup.getObjectByName("head") as THREE.SkinnedMesh;
       if (headMesh && headTexture) {
         const headMat = new THREE.MeshMatcapMaterial({
           matcap: matcapWhite,
           map: headTexture,
         });
-        applyHologramScanShader(headMat);
+        applySolidScanShader(headMat);
         headMesh.material = headMat;
       }
 
-      // Blinking face shader with scanline clipping
+      // Blinking face shader with scanline clipping (disappears completely when scanned)
       const faceMesh = avatarGroup.getObjectByName("face") as THREE.SkinnedMesh;
       if (faceMesh) {
         faceUniformFrame = { value: 0 };
@@ -573,32 +815,40 @@ export default function DavidInteractiveExperience3D({
           vertexShader: `
             #include <skinning_pars_vertex>
             varying vec2 vUv;
-            varying float vWorldY;
+            varying float vModelProgress;
+            float getModelProgress(vec3 position) {
+              vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+              return (worldPosition.y + 0.2) / 4.7;
+            }
             void main() {
               #include <skinbase_vertex>
               #include <begin_vertex>
               #include <skinning_vertex>
               #include <project_vertex>
               vUv = uv;
-              vec4 wPos = modelMatrix * vec4(transformed, 1.0);
-              vWorldY = (wPos.y + 0.1) / 3.4;
+              vModelProgress = getModelProgress(transformed);
             }
           `,
           fragmentShader: `
             varying vec2 vUv;
-            varying float vWorldY;
+            varying float vModelProgress;
             uniform sampler2D uTexture;
             uniform float uFrame;
             uniform float uScan;
 
             #define ROWS 4.0
             #define COLUMNS 4.0
+            #define SMOOTH_WIDTH 0.002
+
+            float getProgress() {
+              float s = smoothstep(uScan, uScan + SMOOTH_WIDTH, vModelProgress);
+              return mix(s, 1.0, step(uScan, 0.001));
+            }
 
             void main() {
-              if (uScan > 0.001 && vWorldY < uScan) {
-                // If scanned past face, render holographic eye glow or discard
-                gl_FragColor = vec4(0.0, 0.9, 1.0, 0.85);
-                return;
+              float progress = getProgress();
+              if (uScan > 0.001 && progress <= 0.001) {
+                discard;
               }
 
               float column = mod(uFrame, COLUMNS);
@@ -610,7 +860,7 @@ export default function DavidInteractiveExperience3D({
               uv.y = (uv.y + row) / ROWS;
 
               vec4 color = texture2D(uTexture, uv);
-              gl_FragColor = color;
+              gl_FragColor = vec4(color.rgb, color.a * progress);
             }
           `,
           uniforms: {
@@ -620,7 +870,17 @@ export default function DavidInteractiveExperience3D({
           },
         });
         faceMesh.material = faceMat;
+        faceMesh.renderOrder = 25;
       }
+
+      // B. Create Holographic Clones for each body mesh sharing the exact skeleton
+      meshesToCloneForHolo.forEach((sourceMesh) => {
+        const holoMesh = new THREE.SkinnedMesh(sourceMesh.geometry, holoMaterial);
+        holoMesh.bind(sourceMesh.skeleton, sourceMesh.bindMatrix);
+        holoMesh.frustumCulled = false;
+        holoMesh.renderOrder = 26;
+        avatarGroup?.add(holoMesh);
+      });
 
       // Animation Mixer
       mixer = new THREE.AnimationMixer(avatarGroup);
@@ -643,7 +903,7 @@ export default function DavidInteractiveExperience3D({
       onLoaded?.();
     });
 
-    // 8. Natural Eye Blinking Loop
+    // 12. Eye Blinking Loop
     let blinkTimeout: NodeJS.Timeout | null = null;
     const scheduleNextBlink = () => {
       const delay = 2600 + Math.random() * 3200;
@@ -667,7 +927,7 @@ export default function DavidInteractiveExperience3D({
     };
     scheduleNextBlink();
 
-    // 9. Interactive Mouse Parallax
+    // 13. Interactive Mouse Parallax
     const mousePos = { x: 0, y: 0 };
     const onMouseMove = (e: MouseEvent) => {
       mousePos.x = e.clientX / window.innerWidth - 0.5;
@@ -675,7 +935,7 @@ export default function DavidInteractiveExperience3D({
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
-    // 10. Resize Handler
+    // 14. Resize Handler
     const onResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -686,7 +946,7 @@ export default function DavidInteractiveExperience3D({
     };
     window.addEventListener("resize", onResize);
 
-    // 11. 60fps Smooth Scrub Render Loop
+    // 15. 60fps Smooth Scrub Render Loop
     let currentHeroOut = targetsRef.current.heroOut;
     let currentScan = targetsRef.current.scanProgress;
     let currentAboutOut = targetsRef.current.aboutOut;
@@ -702,17 +962,36 @@ export default function DavidInteractiveExperience3D({
 
       // Smooth progress interpolation
       const tHero = Math.max(0, Math.min(1, targetsRef.current.heroOut));
-      currentHeroOut += (tHero - currentHeroOut) * 0.12;
+      currentHeroOut += (tHero - currentHeroOut) * 0.28;
       const hOut = currentHeroOut;
 
       const tScan = Math.max(0, Math.min(1, targetsRef.current.scanProgress));
-      currentScan += (tScan - currentScan) * 0.12;
+      currentScan += (tScan - currentScan) * 0.28;
       const sProg = currentScan;
       scanUniform.value = sProg;
-      updatePedestalNumber(sProg * 100);
+      updateDigitDisplay(sProg * 100);
+
+      // Animate Laser Slice Plane (Zd)
+      const laserY = -0.2 + sProg * 4.7;
+      laserPlaneMesh.position.set(0, laserY + 0.01, 0);
+
+      let planeOpacity = 0;
+      if (sProg <= 0.05) planeOpacity = 0;
+      else if (sProg <= 0.15) planeOpacity = (sProg - 0.05) / 0.1;
+      else if (sProg <= 0.85) planeOpacity = 1;
+      else if (sProg <= 0.98) planeOpacity = 1 - (sProg - 0.85) / 0.13;
+      else planeOpacity = 0;
+
+      let planeScale = 1;
+      if (sProg <= 0.5) planeScale = 1 + (sProg / 0.5) * 0.5;
+      else planeScale = 1.5 - ((sProg - 0.5) / 0.5) * 0.5;
+
+      laserPlaneMesh.scale.x = planeScale;
+      laserPlaneMat.opacity = planeOpacity;
+      laserPlaneMesh.visible = planeOpacity > 0;
 
       const tAboutOut = Math.max(0, Math.min(1, targetsRef.current.aboutOut));
-      currentAboutOut += (tAboutOut - currentAboutOut) * 0.12;
+      currentAboutOut += (tAboutOut - currentAboutOut) * 0.28;
       const aOut = currentAboutOut;
 
       if (mixer) {
@@ -740,7 +1019,7 @@ export default function DavidInteractiveExperience3D({
       );
       const roomScale = THREE.MathUtils.lerp(1, 0.85, easeHero);
       roomGroup.scale.set(roomScale, roomScale, roomScale);
-      roomGroup.visible = hOut < 0.99;
+      roomGroup.visible = hOut < 0.88;
 
       // Chair swivel on scroll
       if (chairMesh) {
@@ -758,9 +1037,9 @@ export default function DavidInteractiveExperience3D({
         musicMesh.rotation.z = Math.sin(elapsed * 1.8) * 0.04;
       }
 
-      // Dynamic background color lerp: #f5efe6 (Hero) -> #011c3d (About) -> #f5efe6 (Projects)
+      // Dynamic background color lerp: #f5efe6 (Hero) -> #001738 (About) -> #f5efe6 (Projects)
       const heroBgColor = new THREE.Color("#f5efe6");
-      const aboutBgColor = new THREE.Color("#011c3d");
+      const aboutBgColor = new THREE.Color("#001738");
       const projectsBgColor = new THREE.Color("#f5efe6");
 
       const curBg = heroBgColor.clone();
@@ -773,7 +1052,7 @@ export default function DavidInteractiveExperience3D({
 
       // Avatar transition from desk to pedestal
       if (avatarGroup) {
-        const startYaw = (landscape ? -2.3 : -2.1) + Math.PI / 2;
+        const startYaw = landscape ? -2.3 : -2.1;
         const targetYaw = Math.PI / 2;
 
         avatarGroup.position.set(
@@ -801,10 +1080,14 @@ export default function DavidInteractiveExperience3D({
       labGroup.visible = hOut > 0.05;
       labGroup.position.y = 0;
 
-      // Cyan room grid opacity (active during About, fades out on exit)
-      gridGroup.visible = hOut > 0.05;
-      const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.1) * 2.0));
-      gridOpacityUniform.value = inGridOpacity * (1.0 - aOut);
+      // Authentic curved dome grid uniforms & visibility
+      if (gridMesh) {
+        gridMesh.visible = hOut > 0.05 && aOut < 0.99;
+        gridUniforms.uTime.value = elapsed;
+        gridUniforms.uProgress.value = sProg;
+        const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.1) * 2.0));
+        gridUniforms.uOpacity.value = (0.2 + 0.8 * inGridOpacity) * (1.0 - aOut);
+      }
 
       // Camera coordinates matching David Heckhoff points:
       // Hero: (0, 6, 10) focus (0, 3, 0)
@@ -830,6 +1113,31 @@ export default function DavidInteractiveExperience3D({
       const targetCamGroupY = -mousePos.y * 0.45;
       cameraGroup.position.x += (targetCamGroupX - cameraGroup.position.x) * 0.06;
       cameraGroup.position.y += (targetCamGroupY - cameraGroup.position.y) * 0.06;
+
+      // Project 3D callout anchor points for HUD cards (David Heckhoff 1:1)
+      if (onProjectPoints && hOut > 0.05 && aOut < 0.99) {
+        const pDetails = new THREE.Vector3(-0.76, 3.6, 6.75).project(camera);
+        const pDesc = new THREE.Vector3(-0.9, 2.0, 6.75).project(camera);
+        const pServices = new THREE.Vector3(0.75, 2.75, 6.75).project(camera);
+
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        onProjectPoints({
+          details: {
+            x: (pDetails.x * 0.5 + 0.5) * w,
+            y: (-(pDetails.y * 0.5) + 0.5) * h,
+          },
+          desc: {
+            x: (pDesc.x * 0.5 + 0.5) * w,
+            y: (-(pDesc.y * 0.5) + 0.5) * h,
+          },
+          services: {
+            x: (pServices.x * 0.5 + 0.5) * w,
+            y: (-(pServices.y * 0.5) + 0.5) * h,
+          },
+        });
+      }
 
       renderer.render(scene, camera);
     };
