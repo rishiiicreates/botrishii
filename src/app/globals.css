@@ -467,17 +467,17 @@ body {
 }
 @media (min-width: 768px) {
   .text-poster {
-    font-size: calc(100vw * (180 / var(--target-window-width, 1600)));
+    font-size: calc(100vw * (160 / var(--target-window-width, 1600)));
   }
 }
 @media (min-width: 1280px) {
   .text-poster {
-    font-size: calc(100vw * (300 / var(--target-window-width, 1600)));
+    font-size: calc(100vw * (220 / var(--target-window-width, 1600)));
   }
 }
 @media (min-width: 1680px) {
   .text-poster {
-    font-size: calc(100vw * (360 / var(--target-window-width, 1600)));
+    font-size: calc(100vw * (220 / var(--target-window-width, 1600)));
   }
 }
 

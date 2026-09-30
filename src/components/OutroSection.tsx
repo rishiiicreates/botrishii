@@ -19,7 +19,7 @@ export default function OutroSection() {
 
   // Second half of scroll progress maps to 0 -> 1 (matching live site module 40937)
   const C = useTransform(scrollYProgress, [0.5, 1], [0, 1]);
-  const textTransform = useTransform(C, (v) => `translateY(${-105 * v}%)`);
+  const textTransform = useTransform(C, (v) => `translateY(${4 + 8 * v}%)`);
   const leftY = useTransform(C, [0, 1], ["20%", "0%"]);
   const centerY = useTransform(C, [0, 1], ["50%", "0%"]);
   const rightY = useTransform(C, [0, 1], ["40%", "0%"]);
@@ -145,22 +145,22 @@ export default function OutroSection() {
   }, [attractActive]);
 
   return (
-    <section ref={sectionRef} className="tablet:h-[200svh] relative min-h-[160vh]">
+    <section ref={sectionRef} className="tablet:h-[200svh] relative">
       <div className="grid-pile px-gutter-outer tablet:sticky tablet:top-0 tablet:h-svh tablet:grid-rows-[minmax(0,1fr)] tablet:py-6 desktop:py-14 py-10 overflow-hidden">
         {/* Center Silhouette Geometry & Interactive Work Ball layered in the center */}
-        <div className="flex justify-between w-columns-5/4 tablet:w-columns-10/9 desktop:w-columns-9/8 tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center relative z-0">
-          {/* Left Pill: Solid White */}
+        <div className="flex justify-between w-columns-5/4 tablet:w-columns-10/9 desktop:w-columns-9/8 tablet:max-w-[calc((100svh-4.8rem)*5/4)] desktop:max-w-[calc((100svh-11.2rem)*5/4)] self-center justify-self-center pointer-events-none">
+          {/* Left Pill: Solid White (Layer 0) */}
           <motion.span
             ref={leftRef}
-            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform"
+            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform relative z-0"
             style={{ y: leftY }}
             aria-hidden="true"
           />
 
-          {/* Center Interactive Work Ball linking to /work */}
+          {/* Center Interactive Work Ball linking to /work (Layer 20 - above text) */}
           <motion.div
             style={{ y: centerY }}
-            className="mt-[9.6%] aspect-square w-[32%] self-start isolate will-change-transform flex items-center justify-center"
+            className="mt-[9.6%] aspect-square w-[32%] self-start isolate will-change-transform flex items-center justify-center relative z-20 pointer-events-auto"
           >
             <Link
               ref={ballRef}
@@ -198,10 +198,10 @@ export default function OutroSection() {
             </Link>
           </motion.div>
 
-          {/* Right Pill: Solid White */}
+          {/* Right Pill: Solid White (Layer 0) */}
           <motion.span
             ref={rightRef}
-            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform"
+            className="aspect-2/5 w-[32%] rounded-full bg-white will-change-transform relative z-0"
             style={{ y: rightY }}
             aria-hidden="true"
           />
