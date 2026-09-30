@@ -7,9 +7,6 @@ import {
   Volume2,
   VolumeX,
   MapPin,
-  GraduationCap,
-  Code2,
-  Award,
   ArrowRight,
   ChevronDown,
 } from "lucide-react";
@@ -29,47 +26,49 @@ export default function WorkPage() {
   const [showCopied, setShowCopied] = useState(false);
   const [activeSection, setActiveSection] = useState<"hero" | "about" | "projects">("hero");
 
-  // Continuous 3D scroll progress & opacity states
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [exitProgress, setExitProgress] = useState(0);
+  // Scroll states for continuous 3D WebGL timeline
+  const [scrollY, setScrollY] = useState(0);
+  const [heroOut, setHeroOut] = useState(0);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [aboutOut, setAboutOut] = useState(0);
   const [heroOpacity, setHeroOpacity] = useState(1);
   const [aboutOpacity, setAboutOpacity] = useState(0);
 
   // Synchronize scroll position with continuous 3D WebGL timeline
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
+      const sy = window.scrollY;
+      setScrollY(sy);
 
-      // 0 to 900px: Continuous 3D animation (sitting mannequin -> standing hologram on pedestal)
-      const transitionDistance = 900;
-      const progress = Math.max(0, Math.min(1, scrollY / transitionDistance));
-      setScrollProgress(progress);
+      // Hero transition: 0px to 650px
+      const hOut = Math.max(0, Math.min(1, sy / 650));
+      setHeroOut(hOut);
 
-      // Hero editorial text fades out smoothly between 0 and 240px
-      const hOpacity = Math.max(0, Math.min(1, 1 - scrollY / 240));
+      // Hero editorial text fades out smoothly between 0 and 220px
+      const hOpacity = Math.max(0, Math.min(1, 1 - sy / 220));
       setHeroOpacity(hOpacity);
 
-      // About HUD cards fade in between 500px and 900px, stay fully visible until 1850px, then fade out
+      // Scan progress: 700px to 1950px sweeps from 0% to 100%
+      const sProg = Math.max(0, Math.min(1, (sy - 700) / 1250));
+      setScanProgress(sProg);
+
+      // About HUD overlay opacity: fades in between 600px and 900px, stays until 2050px, fades out
       let aOpacity = 0;
-      if (scrollY >= 500 && scrollY < 1850) {
-        aOpacity = Math.max(0, Math.min(1, (scrollY - 500) / 350));
-      } else if (scrollY >= 1850) {
-        aOpacity = Math.max(0, Math.min(1, 1 - (scrollY - 1850) / 250));
+      if (sy >= 600 && sy < 2050) {
+        aOpacity = Math.max(0, Math.min(1, (sy - 600) / 300));
+      } else if (sy >= 2050) {
+        aOpacity = Math.max(0, Math.min(1, 1 - (sy - 2050) / 300));
       }
       setAboutOpacity(aOpacity);
 
-      // Exit transition into projects section (1850px to 2300px)
-      if (scrollY > 1850) {
-        const exitP = Math.max(0, Math.min(1, (scrollY - 1850) / 450));
-        setExitProgress(exitP);
-      } else {
-        setExitProgress(0);
-      }
+      // About exit into Projects: 2050px to 2600px
+      const aOut = sy > 2050 ? Math.max(0, Math.min(1, (sy - 2050) / 550)) : 0;
+      setAboutOut(aOut);
 
       // Navigation state tracking
-      if (scrollY >= 1850) {
+      if (sy >= 2050) {
         setActiveSection("projects");
-      } else if (scrollY >= 500) {
+      } else if (sy >= 600) {
         setActiveSection("about");
       } else {
         setActiveSection("hero");
@@ -397,18 +396,19 @@ export default function WorkPage() {
 
       {/* ========================================================================= */}
       {/* CONTINUOUS 3D INTRO WRAPPER (HERO -> ABOUT CONTINUOUS SCROLL ANIMATION)   */}
-      {/* Exact David Heckhoff Architecture: Single Canvas in Sticky Container     */}
+      {/* Exact David Heckhoff Architecture: Sticky Container with rounded-b-48px  */}
       {/* ========================================================================= */}
-      <div className="relative w-full h-[2800px]">
+      <div className="relative w-full h-[3200px]">
         {/* Sticky 100vh viewport hosting the single WebGL canvas & overlays */}
-        <div className="sticky top-0 w-full h-screen overflow-hidden">
+        <div className="sticky top-0 w-full h-screen overflow-hidden rounded-b-[48px] shadow-2xl">
           {/* 1. Single Unified 3D WebGL Canvas */}
           <DavidInteractiveExperience3D
-            scrollProgress={scrollProgress}
-            exitProgress={exitProgress}
+            heroOut={heroOut}
+            scanProgress={scanProgress}
+            aboutOut={aboutOut}
           />
 
-          {/* 2. HERO DOM OVERLAY (Fades out smoothly between scroll 0 and 240px) */}
+          {/* 2. HERO DOM OVERLAY (Fades out smoothly between scroll 0 and 220px) */}
           <div
             className="absolute inset-0 pointer-events-none flex flex-col justify-between"
             style={{
@@ -451,7 +451,7 @@ export default function WorkPage() {
             </div>
           </div>
 
-          {/* 3. ABOUT DOM HUD CARDS (Fades in smoothly between 500px and 900px) */}
+          {/* 3. ABOUT DOM HUD CARDS (Authentic 1:1 David Heckhoff Callouts with Connector Lines) */}
           <div
             className="absolute inset-0 pointer-events-none flex flex-col justify-between py-24 sm:py-28"
             style={{
@@ -459,92 +459,95 @@ export default function WorkPage() {
               visibility: aboutOpacity <= 0.01 ? "hidden" : "visible",
             }}
           >
-            {/* Top Row Callouts */}
+            {/* Top Row / Upper Area Callouts */}
             <div className="w-full flex-1 px-6 sm:px-12 md:px-16 flex flex-col justify-between">
               <div className="w-full flex flex-col md:flex-row justify-between items-start gap-6 pointer-events-auto">
-                {/* Box 1: Identity & Role */}
-                <div className="relative max-w-sm rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-500/30 p-5 shadow-[0_8px_32px_rgba(0,240,255,0.15)]">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-[11px] font-bold text-cyan-400 tracking-wider uppercase">
-                      AGENT_ID {"//"} 042
-                    </span>
-                    <span className="size-2 rounded-full bg-cyan-400 animate-pulse" />
+                {/* Box 1: Identity & Location (Top-Left) */}
+                <div
+                  className="relative flex items-center transition-all duration-300"
+                  style={{
+                    opacity: scrollY >= 700 ? Math.min(1, (scrollY - 700) / 150) : 0,
+                    transform: `translateX(${scrollY >= 700 ? 0 : -30}px)`,
+                  }}
+                >
+                  <div className="rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-400/35 px-5 py-3.5 shadow-[0_8px_32px_rgba(0,240,255,0.18)] min-w-[200px]">
+                    <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">Hrishikesh</h3>
+                    <div className="flex items-center gap-1.5 text-xs text-cyan-300 font-mono mt-1">
+                      <MapPin className="size-3.5 text-cyan-400 shrink-0" />
+                      <span>Delhi NCR, India • Remote</span>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-black text-white tracking-tight">Hrishikesh Yadav</h2>
-                  <div className="flex items-center gap-1.5 text-xs text-cyan-300/80 mt-1 font-mono">
-                    <MapPin className="size-3.5 text-cyan-400" />
-                    <span>Delhi NCR, India • Remote</span>
+                  {/* Horizontal connector line extending right to avatar */}
+                  <div className="hidden sm:block w-12 h-[1px] bg-cyan-400/80 relative">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 size-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
                   </div>
-                  <p className="text-xs text-white/75 mt-3 leading-relaxed">
-                    Founder & FDE @ Operant. Systems engineer building autonomous AI agents, enterprise RAG pipelines, and high-performance WebGL environments.
-                  </p>
                 </div>
 
-                {/* Box 2: Core Technical Matrix */}
-                <div className="relative max-w-sm rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-500/30 p-5 shadow-[0_8px_32px_rgba(0,240,255,0.15)]">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Code2 className="size-4 text-cyan-400" />
-                    <h3 className="font-mono text-xs font-bold text-cyan-300 tracking-wider uppercase">
-                      Technical Matrix
+                {/* Box 3: Skills Matrix (Right) */}
+                <div
+                  className="relative flex items-center flex-row-reverse transition-all duration-300 pointer-events-auto"
+                  style={{
+                    opacity: scrollY >= 1350 ? Math.min(1, (scrollY - 1350) / 150) : 0,
+                    transform: `translateX(${scrollY >= 1350 ? 0 : 30}px)`,
+                  }}
+                >
+                  <div className="rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-400/35 p-5 shadow-[0_8px_32px_rgba(0,240,255,0.18)] min-w-[240px]">
+                    <h3 className="text-base font-black text-white tracking-tight mb-2.5 font-mono uppercase">
+                      Skills
                     </h3>
+                    <ul className="space-y-1.5 text-xs font-mono text-white/85">
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>Three.js & WebGL</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>Python & FastAPI</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>TypeScript & Next.js</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>RAG, ChromaDB & Qdrant</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>Autonomous Agents & MCP</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                        <span>Docker & Distributed Systems</span>
+                      </li>
+                    </ul>
                   </div>
-                  <ul className="space-y-1.5 text-xs font-mono text-white/80">
-                    <li className="flex items-center gap-2">
-                      <span className="size-1.5 rounded-full bg-cyan-400" />
-                      <span>Python, TypeScript, Java, C++, SQL</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="size-1.5 rounded-full bg-cyan-400" />
-                      <span>FastAPI, Spring Boot WebFlux, Next.js</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="size-1.5 rounded-full bg-cyan-400" />
-                      <span>RAG, ChromaDB, pgvector, FastEmbed</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="size-1.5 rounded-full bg-cyan-400" />
-                      <span>MCP Protocols, Playwright, Docker, Redis</span>
-                    </li>
-                  </ul>
+                  {/* Horizontal connector line extending left to avatar */}
+                  <div className="hidden sm:block w-12 h-[1px] bg-cyan-400/80 relative">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 size-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
+                  </div>
                 </div>
               </div>
 
-              {/* Bottom Row Callouts */}
-              <div className="w-full flex flex-col md:flex-row justify-between items-end gap-6 mt-12 pointer-events-auto">
-                {/* Box 3: Academics (SRM IST & IIT Guwahati) */}
-                <div className="relative max-w-sm rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-500/30 p-5 shadow-[0_8px_32px_rgba(0,240,255,0.15)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <GraduationCap className="size-4 text-cyan-400" />
-                    <h3 className="font-mono text-xs font-bold text-cyan-300 tracking-wider uppercase">
-                      Education & Dual Degree
-                    </h3>
+              {/* Bottom Row / Lower Area Callouts */}
+              <div className="w-full flex flex-col md:flex-row justify-between items-end gap-6 mt-8 pointer-events-auto">
+                {/* Box 2: Bio & Systems Philosophy (Bottom-Left) */}
+                <div
+                  className="relative flex items-center transition-all duration-300"
+                  style={{
+                    opacity: scrollY >= 1000 ? Math.min(1, (scrollY - 1000) / 150) : 0,
+                    transform: `translateX(${scrollY >= 1000 ? 0 : -30}px)`,
+                  }}
+                >
+                  <div className="rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-400/35 p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,240,255,0.18)] max-w-sm">
+                    <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-mono">
+                      Founder & FDE @ Operant. Builds autonomous AI agents, enterprise RAG pipelines, and interactive 3D WebGL experiences that are fast, responsive, and reliable.
+                    </p>
                   </div>
-                  <div className="text-xs text-white/80 space-y-2 mt-2">
-                    <div>
-                      <p className="font-bold text-white">SRM IST — B.Tech Computer Science</p>
-                      <p className="text-[11px] font-mono text-cyan-300/80">2023 - 2027 • CGPA 9.17</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-white">IIT Guwahati — BS Data Science & AI</p>
-                      <p className="text-[11px] font-mono text-cyan-300/80">2024 - 2028 • CGPA 9.0</p>
-                    </div>
+                  {/* Horizontal connector line extending right to avatar */}
+                  <div className="hidden sm:block w-12 h-[1px] bg-cyan-400/80 relative">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 size-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
                   </div>
-                </div>
-
-                {/* Box 4: Honors & National Competitions */}
-                <div className="relative max-w-sm rounded-2xl bg-[#021833]/85 backdrop-blur-md border border-cyan-500/30 p-5 shadow-[0_8px_32px_rgba(0,240,255,0.15)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Award className="size-4 text-cyan-400" />
-                    <h3 className="font-mono text-xs font-bold text-cyan-300 tracking-wider uppercase">
-                      National Honors
-                    </h3>
-                  </div>
-                  <p className="text-xs font-bold text-white">
-                    Winner — Smart India Hackathon (SIH 2026)
-                  </p>
-                  <p className="text-xs text-white/70 mt-1">
-                    Built BIS Standards Recommendation Engine indexing 20,000+ national compliance documents with hybrid sub-200ms semantic search.
-                  </p>
                 </div>
               </div>
             </div>
@@ -570,14 +573,14 @@ export default function WorkPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. SELECTED PROJECTS SECTION: 2-Column Bento Grid (Clean Beige, Zero Grid)*/}
+      {/* 3. SELECTED PROJECTS SECTION: 2-Column Bento Grid (Clean Warm Beige)       */}
       {/* ========================================================================= */}
       <section
         id="projects"
-        className="relative z-20 w-full px-6 sm:px-12 md:px-20 lg:px-24 py-24 sm:py-28 border-t border-[#1b1b1b]/10 bg-[#f5efe6]"
+        className="relative z-20 w-full px-6 sm:px-12 md:px-20 lg:px-24 py-24 sm:py-28 bg-[#f5efe6]"
       >
         <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
+          {/* Section Header with Tilted "SELECTED" Badge */}
           <div className="mb-14 sm:mb-16">
             <div className="-rotate-[4deg] inline-block px-3 py-1 bg-[#233261] text-white font-mono text-xs font-black uppercase rounded shadow-sm tracking-widest">
               SELECTED

@@ -41,54 +41,72 @@ export default function Header() {
         </svg>
       </Link>
 
-      {/* Center: Unified Navigation Capsule [ Home | Work | Contact ] */}
-      <nav className="pointer-events-auto flex items-center bg-[#dbd7ca]/85 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
-        {/* Home Toggle */}
-        <Link
-          href="/"
-          className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
-            isHome
-              ? "bg-[#299093] text-white shadow-sm"
-              : "text-[#061a1e]/75 hover:text-[#061a1e]"
-          }`}
-        >
-          Home
-        </Link>
+      {/* Center: Unified Navigation Capsule (Hidden on main homepage per user instruction) */}
+      {!isHome && (
+        <nav className="pointer-events-auto flex items-center bg-[#dbd7ca]/85 backdrop-blur-md border border-[#061a1e]/[0.08] p-1 sm:p-1.5 rounded-full shadow-[0_4px_20px_rgba(6,26,30,0.06)]">
+          {/* Home Toggle */}
+          <Link
+            href="/"
+            className="px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 text-[#061a1e]/75 hover:text-[#061a1e]"
+          >
+            Home
+          </Link>
 
-        {/* Work Toggle (Merged About + Projects) */}
-        <Link
-          href="/work"
-          className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
-            isWork
-              ? "bg-[#299093] text-white shadow-sm"
-              : "text-[#061a1e]/75 hover:text-[#061a1e]"
-          }`}
-        >
-          Work
-        </Link>
+          {/* Work Toggle (Merged About + Projects) */}
+          <Link
+            href="/work"
+            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
+              isWork
+                ? "bg-[#299093] text-white shadow-sm"
+                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+            }`}
+          >
+            Work
+          </Link>
 
-        {/* Contact Toggle */}
+          {/* Contact Toggle */}
+          <Link
+            href="/contact"
+            className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
+              isContact
+                ? "bg-[#299093] text-white shadow-sm"
+                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+            }`}
+          >
+            Contact
+          </Link>
+        </nav>
+      )}
+
+      {/* Right: Contact button (styled like Join me) + Join me */}
+      <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
+        {/* Contact CTA with authentic 3-layer slide-in hover waterfall */}
         <Link
           href="/contact"
-          className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
-            isContact
-              ? "bg-[#299093] text-white shadow-sm"
-              : "text-[#061a1e]/75 hover:text-[#061a1e]"
-          }`}
+          className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
         >
-          Contact
+          <span
+            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+            aria-hidden="true"
+          />
+          <span
+            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+            aria-hidden="true"
+          />
+          <span
+            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+            aria-hidden="true"
+          />
+          <span className="relative z-10 px-5 text-center leading-none">Contact</span>
         </Link>
-      </nav>
 
-      {/* Right: Join Me CTA */}
-      <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
+        {/* Join me CTA */}
         <a
           href="https://nacreous-one.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
           className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[1.4rem] font-bold"
         >
-          {/* 3-layer slide-in hover waterfall */}
           <span
             className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
             aria-hidden="true"

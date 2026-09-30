@@ -68,6 +68,11 @@ export default function Footer() {
             <nav>
               <ul className="tablet:gap-2 laptop:flex-row laptop:gap-8 flex flex-col gap-3">
                 <li>
+                  <Link href="/work" className="hover:text-[#299093] font-bold transition-colors duration-200">
+                    Work
+                  </Link>
+                </li>
+                <li>
                   <Link href="#privacy" className="hover:text-[#299093] transition-colors duration-200">
                     Privacy
                   </Link>

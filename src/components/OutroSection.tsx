@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { motion, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { X, RotateCcw, Trophy } from "lucide-react";
 
@@ -813,6 +814,28 @@ export default function OutroSection() {
           <span className="even:text-right">know</span>
           <span className="even:text-right">Rishii</span>
         </motion.p>
+
+        {/* Work CTA Button linking to /work */}
+        <div className="absolute bottom-8 sm:bottom-12 inset-x-0 z-30 flex justify-center pointer-events-auto">
+          <Link
+            href="/work"
+            className="group grid-pile h-11 md:h-12 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-sm md:text-base font-bold shadow-lg hover:scale-105 active:scale-95 transition-all"
+          >
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-8 text-center leading-none">View Work →</span>
+          </Link>
+        </div>
       </div>
 
       {/* Playable Multi-Game Dialog Modal */}
