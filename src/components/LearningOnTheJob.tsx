@@ -85,7 +85,7 @@ export default function LearningOnTheJob() {
       {/* Right Column: Supporting Photography */}
       <figure className="asset-container tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start rounded-[4rem] col-span-6 col-start-1 mt-20 overflow-hidden aspect-[755/503] relative">
         <Image
-          src="/images/robots-learning.png"
+          src="/images/workflow-discovery-laptop.png"
           alt="A messy real-world workflow, the kind I like to automate"
           fill
           priority

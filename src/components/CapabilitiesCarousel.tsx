@@ -7,19 +7,19 @@ const CAROUSEL_SLIDES = [
   {
     id: 1,
     title: "The workflow, as documented",
-    src: "/images/cap-carousel-1.png",
+    src: "/images/cap-workflow-documented.png",
     alt: "The workflow, as documented",
   },
   {
     id: 2,
     title: "The workflow, as it actually is",
-    src: "/images/cap-carousel-2.png",
+    src: "/images/cap-workflow-reality.png",
     alt: "The workflow, as it actually is",
   },
   {
     id: 3,
     title: "The workflow, after I'm done",
-    src: "/images/cap-carousel-3.png",
+    src: "/images/cap-workflow-automated.png",
     alt: "The workflow, after I'm done",
   },
 ];
