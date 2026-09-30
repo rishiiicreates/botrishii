@@ -384,32 +384,60 @@ export default function WorkPage() {
                   {/* Exact horizontal connector line pinned to 3D anchor */}
                   <div className="size-[7px] sm:size-[11px] rounded-full bg-[#34bffd] shadow-[0_0_8px_#34bffd] -ml-[3.5px] sm:-ml-[5.5px]" />
                   <div className="w-2 sm:w-10 lg:w-12 h-[1px] bg-[#34bffd]" />
-                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-3 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[170px] sm:min-w-[240px] max-w-[210px] sm:max-w-[320px]">
-                    <h3 className="text-[11px] sm:text-sm font-bold text-white tracking-wider mb-1.5 sm:mb-2 font-mono uppercase">
-                      Skills & Tech
-                    </h3>
-                    <ul className="space-y-1 sm:space-y-1.5 text-[10px] sm:text-xs font-mono text-white/90">
-                      <li className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Python, TypeScript, C++</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Enterprise RAG (95k+ Chunks)</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>FastAPI & Spring Boot SSE</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>MCP Servers & Playwright</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Next.js, Three.js & Docker</span>
-                      </li>
-                    </ul>
+                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-3 sm:p-4 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[210px] sm:min-w-[320px] max-w-[260px] sm:max-w-[370px]">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#34bffd]/30">
+                      <h3 className="text-[11px] sm:text-xs font-bold text-white tracking-wider font-mono uppercase">
+                        Technical Skillset
+                      </h3>
+                      <span className="text-[9px] text-cyan-300 font-mono">5 Pillars</span>
+                    </div>
+
+                    <div className="space-y-1.5 sm:space-y-2 text-[9px] sm:text-[10.5px] font-mono leading-snug">
+                      <div>
+                        <span className="text-[#34bffd] font-bold uppercase tracking-wider block text-[8px] sm:text-[9.5px]">
+                          Languages
+                        </span>
+                        <p className="text-white/90">
+                          Python, TypeScript/JavaScript, Java, C++, SQL
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[#34bffd] font-bold uppercase tracking-wider block text-[8px] sm:text-[9.5px]">
+                          Backend &amp; Web
+                        </span>
+                        <p className="text-white/90">
+                          FastAPI, Spring Boot (WebFlux/SSE), Node.js, React, Next.js, Vite, REST APIs, SSE
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[#34bffd] font-bold uppercase tracking-wider block text-[8px] sm:text-[9.5px]">
+                          AI/ML &amp; Retrieval
+                        </span>
+                        <p className="text-white/90">
+                          RAG, ChromaDB, pgvector, FastEmbed, BM25, LangChain, DSPy, Ollama, Hugging Face, Gemini API, OpenAI API, XGBoost, TensorFlow, Scikit-Learn
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[#34bffd] font-bold uppercase tracking-wider block text-[8px] sm:text-[9.5px]">
+                          Agent Tooling
+                        </span>
+                        <p className="text-white/90">
+                          MCP Servers, Playwright, n8n, OpenEnv, tool/agent evaluation harnesses
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[#34bffd] font-bold uppercase tracking-wider block text-[8px] sm:text-[9.5px]">
+                          Infra &amp; DevOps
+                        </span>
+                        <p className="text-white/90">
+                          Docker, Vercel, Render, Firebase, Supabase, Redis, GitHub Actions, Vitest, pytest, Git
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

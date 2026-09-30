@@ -47,80 +47,81 @@ export default function Header({ isDark = false }: HeaderProps) {
         </svg>
       </Link>
 
-      {/* Center: Unified Navigation Capsule (Hidden on main homepage per user instruction) */}
-      {!isHome && (
+      {/* Main Page: ONLY Contact CTA button; Other Pages: Navbar Capsule [ Home | Work | Contact ] on the right */}
+      {isHome ? (
+        <div className="flex items-center pointer-events-auto">
+          <Link
+            href="/contact"
+            className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
+            aria-label="Contact"
+          >
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
+              aria-hidden="true"
+            />
+            <span
+              className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
+              aria-hidden="true"
+            />
+            <span className="relative z-10 px-5 text-center leading-none">
+              Contact
+            </span>
+          </Link>
+        </div>
+      ) : (
         <nav
           className={`pointer-events-auto flex items-center p-1 sm:p-1.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_4px_20px_rgba(6,26,30,0.06)] ${
             isDark
               ? "bg-[#021833]/85 border border-cyan-500/30 text-white"
               : "bg-[#dbd7ca]/85 border border-[#061a1e]/[0.08] text-[#061a1e]"
           }`}
+          aria-label="Main Navigation"
         >
-          {/* Home Toggle */}
+          {/* Home Link */}
           <Link
             href="/"
             className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
               isDark
-                ? "text-white/80 hover:text-white"
-                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+                ? "text-white/80 hover:text-white hover:bg-white/10"
+                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
             }`}
           >
             Home
           </Link>
 
-          {/* Work Toggle (Merged About + Projects) */}
+          {/* Work Link */}
           <Link
             href="/work"
             className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
               isWork
                 ? "bg-[#299093] text-white shadow-sm"
                 : isDark
-                ? "text-white/80 hover:text-white"
-                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+                ? "text-white/80 hover:text-white hover:bg-white/10"
+                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
             }`}
           >
             Work
           </Link>
 
-          {/* Contact Toggle */}
+          {/* Contact Link */}
           <Link
             href="/contact"
             className={`px-3.5 sm:px-5 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm font-bold uppercase tracking-wider rounded-full transition-all duration-200 ${
               isContact
                 ? "bg-[#299093] text-white shadow-sm"
                 : isDark
-                ? "text-white/80 hover:text-white"
-                : "text-[#061a1e]/75 hover:text-[#061a1e]"
+                ? "text-white/80 hover:text-white hover:bg-white/10"
+                : "text-[#061a1e]/75 hover:text-[#061a1e] hover:bg-black/5"
             }`}
           >
             Contact
           </Link>
         </nav>
       )}
-
-      {/* Right: Signature Waterfall CTA Button */}
-      <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
-        <Link
-          href="/contact"
-          className="group grid-pile h-10 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-xs sm:text-sm font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
-        >
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ffbd00] delay-[50ms]"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
-            aria-hidden="true"
-          />
-          <span className="relative z-10 px-5 text-center leading-none">
-            {isContact ? "Get In Touch" : "Contact"}
-          </span>
-        </Link>
-      </div>
     </header>
   );
 }

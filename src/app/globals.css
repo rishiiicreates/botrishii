@@ -481,25 +481,19 @@ body {
   }
 }
 
-/* Pong Ball Attract & Hover States */
-.pong-ball.attract-in .reveal-fan {
-  transform: translateX(0);
-  translate: 0;
-}
-.pong-ball.attract-in .pong-play {
-  opacity: 1;
-}
-.pong-ball.attract-out .reveal-fan {
-  transform: translateX(102%);
-  translate: 102%;
-}
-.pong-ball.attract-out .pong-play {
-  opacity: 0;
-  transition-delay: 0s;
+/* Pong Ball Fan Wipe & Hover States */
+.reveal-fan {
+  transform: translateX(-102%);
+  translate: -102% 0;
+  transition: transform 600ms cubic-bezier(0.645, 0.045, 0.355, 1), translate 600ms cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 .pong-ball:hover .reveal-fan {
   transform: translateX(0);
   translate: 0;
+}
+.pong-play {
+  opacity: 0;
+  transition: opacity 200ms ease 300ms;
 }
 .pong-ball:hover .pong-play {
   opacity: 1;
