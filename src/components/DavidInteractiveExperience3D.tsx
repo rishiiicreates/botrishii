@@ -722,10 +722,16 @@ export default function DavidInteractiveExperience3D({
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
-      avatarGroup = gltf.scene;
+      const armature = gltf.scene.children[0] as THREE.Group;
+      const brain = armature.getObjectByName("brain");
+      if (brain) armature.remove(brain);
 
-      const brain = avatarGroup.getObjectByName("brain");
-      if (brain) brain.visible = false;
+      // David Heckhoff 1:1 fix: Reset Blender export Z-rotation on armature from -PI/2 to 0
+      // This eliminates the 90-degree internal skeletal axis twist and aligns hips squarely on the chair
+      armature.rotation.z = 0;
+
+      avatarGroup = new THREE.Group();
+      avatarGroup.add(armature);
 
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
@@ -883,11 +889,11 @@ export default function DavidInteractiveExperience3D({
         holoMesh.bind(sourceMesh.skeleton, sourceMesh.bindMatrix);
         holoMesh.frustumCulled = false;
         holoMesh.renderOrder = 26;
-        avatarGroup?.add(holoMesh);
+        armature.add(holoMesh);
       });
 
       // Animation Mixer
-      mixer = new THREE.AnimationMixer(avatarGroup);
+      mixer = new THREE.AnimationMixer(armature);
 
       const idleClip = gltf.animations.find((a) => a.name === "idle");
       if (idleClip) {
@@ -1071,7 +1077,7 @@ export default function DavidInteractiveExperience3D({
       // Avatar transition from desk to pedestal:
       if (avatarGroup) {
         const startAvatarYaw = startYaw + Math.PI / 2;
-        const targetAvatarYaw = Math.PI / 2;
+        const targetAvatarYaw = -Math.PI;
 
         // Smooth crossfade: sitting in chair at desk (hOut < 0.05),
         // standing up smoothly into t-idle as the room starts lifting
