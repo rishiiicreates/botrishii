@@ -64,7 +64,17 @@ export default function CapabilitiesCarousel() {
                   sizes="100vw"
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30 pointer-events-none" />
+
+                {/* Caption */}
+                <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 z-10 text-white pointer-events-none">
+                  <span className="font-mono text-xs uppercase tracking-widest text-[#299093] bg-black/60 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+                    0{slide.id} — Architecture Evolution
+                  </span>
+                  <h3 className="text-lg md:text-2xl font-bold mt-2 text-white/95 drop-shadow-md">
+                    {slide.title}
+                  </h3>
+                </div>
               </div>
             </li>
           );
