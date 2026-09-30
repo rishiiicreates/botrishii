@@ -375,9 +375,12 @@ export default function DavidInteractiveExperience3D({
     updateDigitDisplay(0);
 
     // 8. Load Lab Pedestal Model with Authentic Shaders (TA, SA, IA)
+    const baseProgressUniform = { value: 0 };
+    const coneProgressUniform = { value: 0 };
+
     const baseUniforms = {
       uDiffuseMap: { value: diffuseMap },
-      uProgress: scanUniform,
+      uProgress: baseProgressUniform,
     };
 
     const baseMaterial = new THREE.ShaderMaterial({
@@ -435,7 +438,7 @@ export default function DavidInteractiveExperience3D({
       depthTest: false,
       uniforms: {
         uTime: timeUniform,
-        uProgress: scanUniform,
+        uProgress: coneProgressUniform,
       },
       vertexShader: `
         varying float vLightY;
@@ -664,11 +667,11 @@ export default function DavidInteractiveExperience3D({
 
       float getProgress() {
         float s = smoothstep(uProgress, uProgress + SMOOTH_WIDTH, vModelProgress);
-        return mix(s, 1.0, step(uProgress, 0.001));
+        return mix(s, 1.0, step(uProgress, 0.0));
       }
 
       void main() {
-        if (uProgress <= 0.001) discard;
+        if (uProgress <= 0.0) discard;
 
         vec3 normal = normalize(vNormal);
         if (!gl_FrontFacing) normal *= -1.0;
@@ -756,14 +759,14 @@ export default function DavidInteractiveExperience3D({
             #define SMOOTH_WIDTH 0.002
             float getProgress() {
               float s = smoothstep(uScan, uScan + SMOOTH_WIDTH, vModelProgress);
-              return mix(s, 1.0, step(uScan, 0.001));
+              return mix(s, 1.0, step(uScan, 0.0));
             }
             ${shader.fragmentShader}
           `.replace(
             `#include <dithering_fragment>`,
             `#include <dithering_fragment>
              float solidProg = getProgress();
-             if (uScan > 0.001 && solidProg <= 0.001) {
+             if (uScan > 0.0 && solidProg <= 0.001) {
                discard;
              }
              gl_FragColor.a *= solidProg;
@@ -842,12 +845,12 @@ export default function DavidInteractiveExperience3D({
 
             float getProgress() {
               float s = smoothstep(uScan, uScan + SMOOTH_WIDTH, vModelProgress);
-              return mix(s, 1.0, step(uScan, 0.001));
+              return mix(s, 1.0, step(uScan, 0.0));
             }
 
             void main() {
               float progress = getProgress();
-              if (uScan > 0.001 && progress <= 0.001) {
+              if (uScan > 0.0 && progress <= 0.001) {
                 discard;
               }
 
@@ -968,18 +971,28 @@ export default function DavidInteractiveExperience3D({
       const tScan = Math.max(0, Math.min(1, targetsRef.current.scanProgress));
       currentScan += (tScan - currentScan) * 0.28;
       const sProg = currentScan;
-      scanUniform.value = sProg;
-      updateDigitDisplay(sProg * 100);
 
-      // Animate Laser Slice Plane (Zd)
-      const laserY = -0.2 + sProg * 4.7;
+      // Exact David Heckhoff formula:
+      // uProgress ranges from -0.1 (safely below shoes at 0%) to 1.0 (top of hair at 100%)
+      const uProg = sProg * 1.1 - 0.1;
+      scanUniform.value = uProg;
+      coneProgressUniform.value = Math.max(0, sProg);
+      baseProgressUniform.value = Math.max(0, sProg);
+
+      // Digital counter strictly tracks Math.floor(sProg * 100) (000 to 100)
+      const displayCount = Math.min(100, Math.max(0, Math.floor(sProg * 100)));
+      updateDigitDisplay(displayCount);
+
+      // Laser Slice Plane Y strictly matches shader progress:
+      // (worldPosition.y + 0.2) / 4.7 == uProg <=> worldPosition.y = -0.2 + uProg * 4.7
+      const laserY = -0.2 + uProg * 4.7;
       laserPlaneMesh.position.set(0, laserY + 0.01, 0);
 
       let planeOpacity = 0;
-      if (sProg <= 0.05) planeOpacity = 0;
-      else if (sProg <= 0.15) planeOpacity = (sProg - 0.05) / 0.1;
-      else if (sProg <= 0.85) planeOpacity = 1;
-      else if (sProg <= 0.98) planeOpacity = 1 - (sProg - 0.85) / 0.13;
+      if (uProg <= 0.01) planeOpacity = 0;
+      else if (uProg <= 0.1) planeOpacity = (uProg - 0.01) / 0.09;
+      else if (uProg <= 0.85) planeOpacity = 1;
+      else if (uProg <= 0.98) planeOpacity = 1 - (uProg - 0.85) / 0.13;
       else planeOpacity = 0;
 
       let planeScale = 1;
@@ -988,7 +1001,7 @@ export default function DavidInteractiveExperience3D({
 
       laserPlaneMesh.scale.x = planeScale;
       laserPlaneMat.opacity = planeOpacity;
-      laserPlaneMesh.visible = planeOpacity > 0;
+      laserPlaneMesh.visible = planeOpacity > 0 && hOut >= 0.85;
 
       const tAboutOut = Math.max(0, Math.min(1, targetsRef.current.aboutOut));
       currentAboutOut += (tAboutOut - currentAboutOut) * 0.28;
@@ -1001,29 +1014,33 @@ export default function DavidInteractiveExperience3D({
       // Easing curves matching GSAP power1.out (1 - (1 - x)^2)
       const easeHero = 1 - (1 - hOut) * (1 - hOut);
 
-      // Room group transition (desk flies UP and swivels away)
+      // Room group transition (desk stays stationary until hOut > 0.08, then flies UP smoothly)
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
+      const startYaw = landscape ? -2.3 : -2.1;
       const targetRoomX = landscape ? 4.5 : 0;
       const targetRoomY = landscape ? 5.7 : 5.4;
 
+      const tRoom = hOut < 0.08 ? 0 : (hOut - 0.08) / 0.92;
+      const easeRoom = tRoom * tRoom;
+
       roomGroup.position.set(
-        THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeHero),
-        THREE.MathUtils.lerp(0, targetRoomY, easeHero),
+        THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeRoom),
+        THREE.MathUtils.lerp(0, targetRoomY, easeRoom),
         0
       );
       roomGroup.rotation.set(
-        THREE.MathUtils.lerp(0, 0.1, easeHero),
-        landscape ? -2.3 : -2.1,
-        THREE.MathUtils.lerp(0, 0.09, easeHero)
+        THREE.MathUtils.lerp(0, 0.1, easeRoom),
+        startYaw,
+        THREE.MathUtils.lerp(0, 0.09, easeRoom)
       );
-      const roomScale = THREE.MathUtils.lerp(1, 0.85, easeHero);
+      const roomScale = THREE.MathUtils.lerp(1, 0.85, easeRoom);
       roomGroup.scale.set(roomScale, roomScale, roomScale);
       roomGroup.visible = hOut < 0.88;
 
       // Chair swivel on scroll
       if (chairMesh) {
-        const chairT = Math.min(1, easeHero / 0.6);
+        const chairT = Math.min(1, tRoom / 0.5);
         chairMesh.rotation.set(
           THREE.MathUtils.lerp(0, -0.9, chairT),
           THREE.MathUtils.lerp(0, -1.1, chairT),
@@ -1050,42 +1067,58 @@ export default function DavidInteractiveExperience3D({
       }
       renderer.setClearColor(curBg, 1.0);
 
-      // Avatar transition from desk to pedestal
+      // Avatar transition from desk to pedestal:
       if (avatarGroup) {
-        const startYaw = landscape ? -2.3 : -2.1;
         const targetYaw = Math.PI / 2;
 
-        avatarGroup.position.set(
-          THREE.MathUtils.lerp(baseRoomX, 0, easeHero),
-          0,
-          THREE.MathUtils.lerp(0, 6, easeHero)
-        );
-        avatarGroup.rotation.set(
-          0,
-          THREE.MathUtils.lerp(startYaw, targetYaw, easeHero),
-          0
-        );
+        if (hOut < 0.05) {
+          avatarGroup.position.set(baseRoomX, 0, 0);
+          avatarGroup.rotation.set(0, startYaw, 0);
+          if (idleAction && tIdleAction) {
+            idleAction.weight = 1.0;
+            tIdleAction.weight = 0.0;
+          }
+        } else {
+          // Standing crossfade starts immediately when scrolling begins:
+          // Chair swivels back, and avatar smoothly stands up into t-idle
+          const standT = Math.min(1, Math.max(0, hOut / 0.45));
+          const easeStand = 1 - (1 - standT) * (1 - standT);
+          if (idleAction && tIdleAction) {
+            idleAction.weight = 1.0 - easeStand;
+            tIdleAction.weight = easeStand;
+          }
 
-        // Crossfade animations: idle -> t-idle
-        if (idleAction && tIdleAction) {
-          const blend = Math.min(1, Math.max(0, easeHero * 1.3));
-          idleAction.weight = 1.0 - blend;
-          tIdleAction.weight = blend;
+          // Smooth step-forward from desk to pedestal (0, 0, 6)
+          const moveT = Math.min(1, Math.max(0, (hOut - 0.08) / 0.92));
+          const easeMove = 1 - (1 - moveT) * (1 - moveT);
+
+          avatarGroup.position.set(
+            THREE.MathUtils.lerp(baseRoomX, 0, easeMove),
+            0,
+            THREE.MathUtils.lerp(0, 6, easeMove)
+          );
+          avatarGroup.rotation.set(
+            0,
+            THREE.MathUtils.lerp(startYaw, targetYaw, easeMove),
+            0
+          );
         }
 
         avatarGroup.visible = true;
       }
 
-      // Lab pedestal & Hologram appearance
-      labGroup.visible = hOut > 0.05;
-      labGroup.position.y = 0;
+      // Lab pedestal at (0, 0, 6): only visible once room has lifted away (hOut >= 0.82)
+      // This strictly guarantees the light cone NEVER renders under or cuts through the room rug!
+      labGroup.position.set(0, 0, 6);
+      labGroup.visible = hOut >= 0.82 && aOut < 0.99;
 
       // Authentic curved dome grid uniforms & visibility
       if (gridMesh) {
-        gridMesh.visible = hOut > 0.05 && aOut < 0.99;
+        gridMesh.position.set(0, -0.4, 6);
+        gridMesh.visible = hOut >= 0.65 && aOut < 0.99;
         gridUniforms.uTime.value = elapsed;
         gridUniforms.uProgress.value = sProg;
-        const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.1) * 2.0));
+        const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.65) / 0.25));
         gridUniforms.uOpacity.value = (0.2 + 0.8 * inGridOpacity) * (1.0 - aOut);
       }
 

@@ -46,35 +46,36 @@ export default function WorkPage() {
       const sy = window.scrollY;
       setScrollY(sy);
 
-      // Hero transition: 0px to 750px
-      const hOut = Math.max(0, Math.min(1, sy / 750));
+      // 1. Hero transition: stays static until 120px, then room lifts cleanly between 120px and 850px
+      const hOut = sy < 120 ? 0 : Math.max(0, Math.min(1, (sy - 120) / 730));
       setHeroOut(hOut);
 
-      // Hero editorial text fades out smoothly between 0 and 240px
-      const hOpacity = Math.max(0, Math.min(1, 1 - sy / 240));
+      // Hero editorial text fades out smoothly between 80px and 320px
+      const hOpacity = sy < 80 ? 1 : Math.max(0, Math.min(1, 1 - (sy - 80) / 240));
       setHeroOpacity(hOpacity);
 
-      // Scan progress: 750px to 2150px sweeps smoothly from 0% to 100%
-      const sProg = Math.max(0, Math.min(1, (sy - 750) / 1400));
+      // 2. Scan progress: strictly 0 while room is lifting (< 850px);
+      // sweeps smoothly and proportionally from 0.0 to 1.0 between 850px and 2500px
+      const sProg = sy < 850 ? 0 : Math.max(0, Math.min(1, (sy - 850) / 1650));
       setScanProgress(sProg);
 
-      // About HUD overlay opacity: fades in at 750px, stays until 2600px, then rolls out
+      // 3. About exit into Projects: 2600px to 3250px
+      const aOut = sy > 2600 ? Math.max(0, Math.min(1, (sy - 2600) / 650)) : 0;
+      setAboutOut(aOut);
+
+      // About HUD overlay opacity: fades in at 850px, stays until 2600px, then rolls out
       let aOpacity = 0;
-      if (sy >= 750 && sy < 2600) {
-        aOpacity = Math.max(0, Math.min(1, (sy - 750) / 200));
+      if (sy >= 850 && sy < 2600) {
+        aOpacity = Math.max(0, Math.min(1, (sy - 850) / 200));
       } else if (sy >= 2600) {
         aOpacity = Math.max(0, Math.min(1, 1 - (sy - 2600) / 300));
       }
       setAboutOpacity(aOpacity);
 
-      // About exit into Projects: 2600px to 3200px
-      const aOut = sy > 2600 ? Math.max(0, Math.min(1, (sy - 2600) / 600)) : 0;
-      setAboutOut(aOut);
-
       // Navigation state tracking
       if (sy >= 2600) {
         setActiveSection("projects");
-      } else if (sy >= 750) {
+      } else if (sy >= 850) {
         setActiveSection("about");
       } else {
         setActiveSection("hero");
@@ -474,7 +475,7 @@ export default function WorkPage() {
                   top: `${anchors.details.y}px`,
                   left: `${anchors.details.x}px`,
                   transform: "translate(-100%, -50%)",
-                  opacity: scrollY >= 850 ? Math.min(1, (scrollY - 850) / 180) : 0,
+                  opacity: scanProgress >= 0.2 ? Math.min(1, (scanProgress - 0.2) / 0.15) : 0,
                 }}
               >
                 <div className="flex items-center">
@@ -500,13 +501,13 @@ export default function WorkPage() {
                   top: `${anchors.desc.y}px`,
                   left: `${anchors.desc.x}px`,
                   transform: "translate(-100%, -50%)",
-                  opacity: scrollY >= 1150 ? Math.min(1, (scrollY - 1150) / 180) : 0,
+                  opacity: scanProgress >= 0.45 ? Math.min(1, (scanProgress - 0.45) / 0.15) : 0,
                 }}
               >
                 <div className="flex items-center">
                   <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md max-w-[340px] sm:max-w-[370px]">
                     <p className="text-xs sm:text-[13px] text-white leading-relaxed font-mono font-medium">
-                      Builds interactive 3D experiences, autonomous AI agents, and real-time systems that are fast, responsive, and fun to use.
+                      Architects enterprise RAG pipelines, autonomous AI agent tooling, and high-performance WebGL systems.
                     </p>
                   </div>
                   {/* Exact horizontal connector line pinned to 3D anchor */}
@@ -516,7 +517,7 @@ export default function WorkPage() {
               </div>
             )}
 
-            {/* Box 3: Skills (Right -> Pinned to Avatar Right Arm) */}
+            {/* Box 3: Skills & Tech (Right -> Pinned to Avatar Right Shoulder/Chest) */}
             {anchors && (
               <div
                 className="absolute pointer-events-auto transition-opacity duration-300 hidden md:block"
@@ -524,37 +525,37 @@ export default function WorkPage() {
                   top: `${anchors.services.y}px`,
                   left: `${anchors.services.x}px`,
                   transform: "translateY(-50%)",
-                  opacity: scrollY >= 1450 ? Math.min(1, (scrollY - 1450) / 180) : 0,
+                  opacity: scanProgress >= 0.7 ? Math.min(1, (scanProgress - 0.7) / 0.15) : 0,
                 }}
               >
                 <div className="flex items-center">
                   {/* Exact horizontal connector line pinned to 3D anchor */}
                   <div className="size-[11px] rounded-full bg-[#34bffd] shadow-[0_0_8px_#34bffd] -ml-[5.5px]" />
                   <div className="w-10 lg:w-12 h-[1px] bg-[#34bffd]" />
-                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[220px] max-w-[290px]">
+                  <div className="rounded-[12px] bg-gradient-to-b from-[#003585] to-[rgba(0,82,145,0.7)] border border-[#34bffd] p-4 sm:p-5 shadow-[0_8px_32px_rgba(0,53,133,0.55)] backdrop-blur-md min-w-[220px] max-w-[300px]">
                     <h3 className="text-sm font-bold text-white tracking-wider mb-2 font-mono uppercase">
-                      Skills
+                      Skills & Tech
                     </h3>
                     <ul className="space-y-1.5 text-xs font-mono text-white/90">
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Three.js & WebGL</span>
+                        <span>Python, TypeScript & C++</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Node.js & WebSockets</span>
+                        <span>Enterprise RAG & pgvector</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>React & Vue</span>
+                        <span>FastAPI & Spring Boot SSE</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Kubernetes & Redis</span>
+                        <span>Agent Tooling, MCP & Playwright</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="size-1 rounded-full bg-[#34bffd] shrink-0" />
-                        <span>Real-time Multiplayer</span>
+                        <span>Next.js, Three.js & Docker</span>
                       </li>
                     </ul>
                   </div>
