@@ -99,9 +99,21 @@ export default function OutroSection() {
 
             <span
               ref={textRef}
-              className="pong-play pointer-events-none relative justify-self-center text-[25cqw] leading-none font-bold tracking-[-0.02em] text-white opacity-0 transition-opacity delay-300 duration-200 group-hover:opacity-100 motion-reduce:transition-none"
+              className="pong-play pointer-events-none relative justify-self-center flex items-center justify-center text-white opacity-0 transition-opacity delay-300 duration-200 group-hover:opacity-100 motion-reduce:transition-none"
             >
-              Work
+              <svg
+                className="size-[28cqw] transition-transform duration-300 group-hover:translate-x-[2%] group-hover:-translate-y-[2%]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="7" y1="17" x2="17" y2="7" />
+                <polyline points="7 7 17 7 17 17" />
+              </svg>
             </span>
           </MotionLink>
 

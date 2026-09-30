@@ -70,8 +70,9 @@ export default function Footer() {
                 <li>
                   <Link
                     href="/work"
-                    className="group grid-pile h-8 sm:h-8.5 w-fit cursor-pointer items-center overflow-hidden rounded-full text-white bg-[#299093] text-[11px] sm:text-xs font-bold uppercase tracking-wider shadow-sm transition-transform active:scale-95"
-                    aria-label="Work"
+                    className="group grid-pile size-8 sm:size-8.5 cursor-pointer items-center justify-center overflow-hidden rounded-full text-white bg-[#299093] shadow-sm transition-all duration-200 active:scale-95"
+                    aria-label="View Work"
+                    title="View Work"
                   >
                     <span
                       className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#ef6156]"
@@ -85,8 +86,20 @@ export default function Footer() {
                       className="pointer-events-none size-full -translate-x-full rounded-[inherit] transition-transform duration-600 ease-in-out group-hover:translate-x-0 bg-[#061a1e] delay-[120ms]"
                       aria-hidden="true"
                     />
-                    <span className="relative z-10 px-3.5 sm:px-4 text-center leading-none">
-                      Work
+                    <span className="relative z-10 flex items-center justify-center text-white">
+                      <svg
+                        className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <line x1="7" y1="17" x2="17" y2="7" />
+                        <polyline points="7 7 17 7 17 17" />
+                      </svg>
                     </span>
                   </Link>
                 </li>
