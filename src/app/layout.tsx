@@ -59,6 +59,12 @@ export default function RootLayout({
     <html lang="en" data-theme="light" className={`${centraNo2.variable} antialiased`}>
       <head>
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="min-h-screen flex flex-col font-sans selection:bg-[#299093] selection:text-white">
         {children}

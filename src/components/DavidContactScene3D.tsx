@@ -332,7 +332,7 @@ export default function DavidContactScene3D({
 
       avatarGroup = gltf.scene;
       avatarGroup.position.set(-3.0, -13, 0.6);
-      avatarGroup.rotation.set(0, Math.PI / 2 - 0.15, 0); // Faces slightly toward center/whiteboard
+      avatarGroup.rotation.set(0, Math.PI / 2 + 0.14, 0); // Faces forward and slightly toward whiteboard
 
       // Apply authentic Matcaps to each body mesh
       avatarGroup.traverse((child) => {
@@ -524,14 +524,14 @@ export default function DavidContactScene3D({
     scheduleNextBlink();
 
     // 7. Mouse Parallax
-    let targetRotY = Math.PI / 2 - 0.15;
+    let targetRotY = Math.PI / 2 + 0.14;
     let targetRotX = 0;
     let normMouseX = 0;
     let normMouseY = 0;
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = (Math.PI / 2 - 0.15) + normMouseX * 0.18;
+      targetRotY = (Math.PI / 2 + 0.14) + normMouseX * 0.18;
       targetRotX = normMouseY * 0.08;
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });

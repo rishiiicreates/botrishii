@@ -523,3 +523,34 @@ body {
 [data-theme="light"] ::-webkit-scrollbar-thumb {
   background: rgba(6, 26, 30, 0.2);
 }
+
+/* Whiteboard Marker Handwriting Typography & Effects */
+.font-marker {
+  font-family: 'Patrick Hand', 'Architects Daughter', 'Kalam', cursive, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.font-marker-title {
+  font-family: 'Architects Daughter', 'Patrick Hand', 'Kalam', cursive, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.marker-ink-black {
+  color: #14191f;
+  text-shadow: 0 0 0.5px rgba(20, 25, 31, 0.35);
+}
+
+.marker-ink-blue {
+  color: #1a4474;
+  text-shadow: 0 0 0.5px rgba(26, 68, 116, 0.35);
+}
+
+.marker-ink-teal {
+  color: #0e5c63;
+  text-shadow: 0 0 0.5px rgba(14, 92, 99, 0.35);
+}
+
+.marker-ink-red {
+  color: #9e2a2b;
+  text-shadow: 0 0 0.5px rgba(158, 42, 43, 0.35);
+}
