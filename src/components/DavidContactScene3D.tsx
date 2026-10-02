@@ -17,6 +17,7 @@ export default function DavidContactScene3D({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chatOverlayRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -422,8 +423,31 @@ export default function DavidContactScene3D({
     const whiteboardGroup = new THREE.Group();
     whiteboardGroup.position.set(2.4, -13, 0.1);
     whiteboardGroup.rotation.set(0, Math.PI / 2 - 0.12, 0); // Angled slightly towards avatar & camera
-    whiteboardGroup.scale.set(1.18, 1.18, 1.18);
+    whiteboardGroup.scale.set(1.24, 1.24, 1.24);
     scene.add(whiteboardGroup);
+
+    // Anchor dummy object positioned precisely flush with the backboard face in local coordinates
+    const chatAnchor = new THREE.Object3D();
+    chatAnchor.position.set(-0.026, 2.47, 0);
+    chatAnchor.rotation.set(0, -Math.PI / 2, 0);
+    whiteboardGroup.add(chatAnchor);
+
+    // Dimensions of the 3D dry-erase whiteboard canvas
+    const elWidth = 840;
+    const elHeight = 520;
+    const elScale = 0.0031;
+
+    // elementToLocal: shifts origin from top-left (0,0) to center, flips Y for CSS, and scales to 3D units
+    const localTranslate = new THREE.Matrix4().makeTranslation(-elWidth / 2, -elHeight / 2, 0);
+    const localScale = new THREE.Matrix4().makeScale(elScale, -elScale, elScale);
+    const elementToLocal = new THREE.Matrix4().multiplyMatrices(localScale, localTranslate);
+
+    // Reusable matrices for 60fps screen projection without heap allocations
+    const mWorld = new THREE.Matrix4();
+    const viewMatrix = new THREE.Matrix4();
+    const mvp = new THREE.Matrix4();
+    const sMatrix = new THREE.Matrix4();
+    const finalMatrix = new THREE.Matrix4();
 
     // Soft contact shadow beneath whiteboard wheels
     const wbShadowGeom = new THREE.PlaneGeometry(3.8, 1.8);
@@ -536,6 +560,12 @@ export default function DavidContactScene3D({
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
+    const updateResponsiveState = () => {
+      const mobile = window.innerWidth < 840;
+      setIsMobile(mobile);
+    };
+    updateResponsiveState();
+
     // 8. Resize Handler
     const onResize = () => {
       if (!container) return;
@@ -545,6 +575,7 @@ export default function DavidContactScene3D({
       updateCameraPosition();
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
+      updateResponsiveState();
     };
     window.addEventListener("resize", onResize);
 
@@ -574,57 +605,56 @@ export default function DavidContactScene3D({
       camera.position.y += (targetCamY - camera.position.y) * 0.05;
       camera.lookAt(baseCamX, isLandscape ? -10.5 : -9.6, 0);
 
-      // Update 3D-anchored whiteboard chatbot overlay
-      if (chatOverlayRef.current && whiteboardGroup && camera && container) {
-        const isMobile = window.innerWidth < 840;
-        if (isMobile) {
+      // Mathematically synchronize the whiteboard dry-erase chat overlay in 3D
+      if (chatOverlayRef.current && container) {
+        const isMobileScreen = window.innerWidth < 840;
+        if (isMobileScreen) {
           chatOverlayRef.current.style.position = "absolute";
-          chatOverlayRef.current.style.left = "50%";
+          chatOverlayRef.current.style.left = "16px";
+          chatOverlayRef.current.style.right = "16px";
           chatOverlayRef.current.style.bottom = "80px";
           chatOverlayRef.current.style.top = "auto";
           chatOverlayRef.current.style.width = "calc(100% - 32px)";
           chatOverlayRef.current.style.maxWidth = "420px";
           chatOverlayRef.current.style.height = "320px";
-          chatOverlayRef.current.style.transform = "translateX(-50%)";
+          chatOverlayRef.current.style.transformOrigin = "center center";
+          chatOverlayRef.current.style.transform = "none";
           chatOverlayRef.current.style.opacity = "1";
         } else {
-          // Precise screen projection of the whiteboard backboard face
-          const centerWorld = new THREE.Vector3(-0.03, 2.465, 0);
-          whiteboardGroup.localToWorld(centerWorld);
-
-          const topLeftWorld = new THREE.Vector3(-0.03, 2.465 + 0.88, -1.38);
-          whiteboardGroup.localToWorld(topLeftWorld);
-
-          const bottomRightWorld = new THREE.Vector3(-0.03, 2.465 - 0.86, 1.38);
-          whiteboardGroup.localToWorld(bottomRightWorld);
-
-          centerWorld.project(camera);
-          topLeftWorld.project(camera);
-          bottomRightWorld.project(camera);
-
           const w = container.clientWidth;
           const h = container.clientHeight;
 
-          const cx = (centerWorld.x * 0.5 + 0.5) * w;
-          const cy = (-centerWorld.y * 0.5 + 0.5) * h;
+          // Compute exact 4x4 MVP viewport projection matrix
+          chatAnchor.updateMatrixWorld(true);
+          mWorld.multiplyMatrices(chatAnchor.matrixWorld, elementToLocal);
+          viewMatrix.copy(camera.matrixWorldInverse);
+          mvp.multiplyMatrices(camera.projectionMatrix, viewMatrix).multiply(mWorld);
 
-          const tlX = (topLeftWorld.x * 0.5 + 0.5) * w;
-          const tlY = (-topLeftWorld.y * 0.5 + 0.5) * h;
+          sMatrix.set(
+            w / 2, 0, 0, w / 2,
+            0, -h / 2, 0, h / 2,
+            0, 0, 0.5, 0.5,
+            0, 0, 0, 1
+          );
 
-          const brX = (bottomRightWorld.x * 0.5 + 0.5) * w;
-          const brY = (-bottomRightWorld.y * 0.5 + 0.5) * h;
-
-          const boardWidth = Math.abs(brX - tlX);
-          const boardHeight = Math.abs(brY - tlY);
+          finalMatrix.multiplyMatrices(sMatrix, mvp);
+          const el = finalMatrix.elements;
+          const m44 = el[15];
 
           chatOverlayRef.current.style.position = "absolute";
-          chatOverlayRef.current.style.left = `${cx}px`;
-          chatOverlayRef.current.style.top = `${cy}px`;
+          chatOverlayRef.current.style.left = "0";
+          chatOverlayRef.current.style.top = "0";
           chatOverlayRef.current.style.bottom = "auto";
+          chatOverlayRef.current.style.right = "auto";
+          chatOverlayRef.current.style.width = `${elWidth}px`;
+          chatOverlayRef.current.style.height = `${elHeight}px`;
           chatOverlayRef.current.style.maxWidth = "none";
-          chatOverlayRef.current.style.width = `${Math.round(boardWidth * 0.95)}px`;
-          chatOverlayRef.current.style.height = `${Math.round(boardHeight * 0.94)}px`;
-          chatOverlayRef.current.style.transform = `translate(-50%, -50%) rotateY(-6deg)`;
+          chatOverlayRef.current.style.transformOrigin = "0 0";
+          chatOverlayRef.current.style.transform = `matrix3d(${
+            (el[0]/m44).toFixed(7)},${(el[1]/m44).toFixed(7)},${(el[2]/m44).toFixed(7)},${(el[3]/m44).toFixed(7)},${
+            (el[4]/m44).toFixed(7)},${(el[5]/m44).toFixed(7)},${(el[6]/m44).toFixed(7)},${(el[7]/m44).toFixed(7)},${
+            (el[8]/m44).toFixed(7)},${(el[9]/m44).toFixed(7)},${(el[10]/m44).toFixed(7)},${(el[11]/m44).toFixed(7)},${
+            (el[12]/m44).toFixed(4)},${(el[13]/m44).toFixed(4)},${(el[14]/m44).toFixed(4)},1)`;
           chatOverlayRef.current.style.opacity = "1";
         }
       }
@@ -656,12 +686,17 @@ export default function DavidContactScene3D({
       {/* 3D-Anchored Whiteboard Interactive Chatbot */}
       <div
         ref={chatOverlayRef}
-        className="pointer-events-auto transition-opacity duration-300 opacity-0 z-20"
+        className={`pointer-events-auto transition-opacity duration-300 opacity-0 z-20 ${
+          isMobile
+            ? "bg-[#fcfbf9]/95 backdrop-blur-md rounded-2xl border-2 border-[#14191f]/20 shadow-xl overflow-hidden flex flex-col"
+            : ""
+        }`}
         style={{
           transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
         }}
       >
-        <WhiteboardChatbot />
+        <WhiteboardChatbot isMobile={isMobile} />
       </div>
 
       {loading && (

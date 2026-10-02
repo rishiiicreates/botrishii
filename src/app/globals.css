@@ -524,6 +524,21 @@ body {
   background: rgba(6, 26, 30, 0.2);
 }
 
+/* Whiteboard Custom Scrollbar */
+.whiteboard-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.whiteboard-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.whiteboard-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(20, 25, 31, 0.18);
+  border-radius: 4px;
+}
+.whiteboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 25, 31, 0.35);
+}
+
 /* Whiteboard Marker Handwriting Typography & Effects */
 .font-marker {
   font-family: 'Patrick Hand', 'Architects Daughter', 'Kalam', cursive, sans-serif;
