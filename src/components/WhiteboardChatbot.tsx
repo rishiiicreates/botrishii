@@ -146,7 +146,7 @@ export default function WhiteboardChatbot({
       {/* 1. Messages Flow Written Directly on the Whiteboard Surface */}
       <div
         className={`flex-1 overflow-y-auto py-2 space-y-5 min-h-0 whiteboard-scrollbar pr-3 ${
-          isMobile ? "text-[18px] leading-snug" : "text-[30px] leading-[1.34]"
+          isMobile ? "text-[19px] leading-snug" : "text-[35px] leading-[1.30]"
         }`}
       >
         {messages.map((m) => (
@@ -159,16 +159,16 @@ export default function WhiteboardChatbot({
             <div className="max-w-[96%] text-left">
               {m.sender === "bot" ? (
                 <div className="space-y-2">
-                  <p className="marker-ink-black whitespace-pre-wrap font-medium">
+                  <p className="marker-ink-black whitespace-pre-wrap font-semibold tracking-wide">
                     {m.text}
                   </p>
 
                   {m.action && (
-                    <div className="pt-1">
+                    <div className="pt-1.5">
                       <a
                         href={m.action.url || "#"}
                         className={`inline-flex items-center gap-1 font-bold text-[#0e5c63] hover:text-[#14191f] underline decoration-wavy decoration-[#0e5c63]/40 transition-colors ${
-                          isMobile ? "text-[16px]" : "text-[25px]"
+                          isMobile ? "text-[17px]" : "text-[28px]"
                         }`}
                       >
                         <span>[ {m.action.label} ]</span>
@@ -178,7 +178,7 @@ export default function WhiteboardChatbot({
                 </div>
               ) : (
                 <div className="text-right">
-                  <p className="marker-ink-blue whitespace-pre-wrap font-semibold">
+                  <p className="marker-ink-blue whitespace-pre-wrap font-bold tracking-wide">
                     {m.text}
                   </p>
                 </div>
@@ -190,7 +190,7 @@ export default function WhiteboardChatbot({
         {isTyping && (
           <div
             className={`flex items-center gap-1.5 text-[#0e5c63] font-marker italic py-1 ${
-              isMobile ? "text-base" : "text-[24px]"
+              isMobile ? "text-base" : "text-[28px]"
             }`}
           >
             <span>scribbling</span>
@@ -209,13 +209,13 @@ export default function WhiteboardChatbot({
           e.preventDefault();
           handleSend();
         }}
-        className="shrink-0 pt-3 border-t-2 border-[#14191f]/20 flex items-center gap-3"
+        className="shrink-0 pt-3 border-t-2 border-[#14191f]/25 flex items-center gap-3"
       >
         <span
           className={
             isMobile
               ? "text-base text-[#14191f]/50 select-none"
-              : "text-2xl text-[#14191f]/50 select-none"
+              : "text-3xl text-[#14191f]/50 select-none"
           }
         >
           ✎
@@ -232,8 +232,8 @@ export default function WhiteboardChatbot({
             }
           }}
           placeholder="write on board & press Enter..."
-          className={`flex-1 bg-transparent border-b-2 border-[#14191f]/30 focus:border-[#0e5c63] text-[#14191f] placeholder:text-[#14191f]/35 focus:outline-none transition-colors font-marker ${
-            isMobile ? "text-[17px] py-1" : "text-[26px] py-1.5"
+          className={`flex-1 bg-transparent border-b-2 border-[#14191f]/35 focus:border-[#0e5c63] text-[#14191f] placeholder:text-[#14191f]/35 focus:outline-none transition-colors font-marker ${
+            isMobile ? "text-[18px] py-1" : "text-[28px] py-1.5"
           }`}
         />
 
@@ -243,7 +243,7 @@ export default function WhiteboardChatbot({
           className={`shrink-0 rounded-md border-2 border-[#14191f]/40 hover:border-[#0e5c63] hover:text-[#0e5c63] hover:bg-[#0e5c63]/10 font-marker text-[#14191f] disabled:opacity-25 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
             isMobile
               ? "text-sm px-3 py-1"
-              : "text-[22px] px-4 py-1.5 font-semibold"
+              : "text-[24px] px-4 py-1.5 font-bold"
           }`}
           aria-label="Write on board"
         >

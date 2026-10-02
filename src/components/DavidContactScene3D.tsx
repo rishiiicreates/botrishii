@@ -370,13 +370,13 @@ export default function DavidContactScene3D({
       }
     });
 
-    // 5. Avatar Model (Mannequin) shifted slightly right and rotated counterclockwise to face right/center
+    // 5. Avatar Model (Mannequin) rotated to face toward the right/center for direct eye contact with user
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
       avatarGroup = gltf.scene;
       avatarGroup.position.set(-2.1, -13, 0.6);
-      avatarGroup.rotation.set(0, Math.PI / 2 - 0.22, 0); // Faces counterclockwise toward center and whiteboard
+      avatarGroup.rotation.set(0, Math.PI / 2 + 0.28, 0); // Faces toward center/right to make eye contact with user
 
       // Apply authentic Matcaps to each body mesh
       avatarGroup.traverse((child) => {
@@ -591,15 +591,15 @@ export default function DavidContactScene3D({
     };
     scheduleNextBlink();
 
-    // 7. Mouse Parallax (Mannequin turns smoothly with cursor towards center / whiteboard)
-    let targetRotY = Math.PI / 2 - 0.22;
+    // 7. Mouse Parallax (Mannequin turns smoothly with cursor, centered on eye contact)
+    let targetRotY = Math.PI / 2 + 0.28;
     let targetRotX = 0;
     let normMouseX = 0;
     let normMouseY = 0;
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = (Math.PI / 2 - 0.22) + normMouseX * 0.18;
+      targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
       targetRotX = normMouseY * 0.08;
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
