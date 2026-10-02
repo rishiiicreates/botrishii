@@ -7,83 +7,15 @@ interface Message {
   id: string;
   sender: "bot" | "user";
   text: string;
-  action?: {
-    label: string;
-    url?: string;
-  };
 }
 
 const INITIAL_MESSAGES: Message[] = [
   {
     id: "init-1",
     sender: "bot",
-    text: "Hey! Ask me about Rishii's robotics systems, full-stack architectures, or leave a note for him directly.",
+    text: "hey! leave a note on the board or ask me anything about what i'm building.",
   },
 ];
-
-function getBotReply(input: string): { text: string; action?: { label: string; url?: string } } {
-  const query = input.toLowerCase().trim();
-
-  if (query.includes("who is rishii") || query.includes("about") || query.includes("rishii")) {
-    return {
-      text: "Rishii (Hrishikesh Yadav) is an engineer and AI systems builder based in Delhi NCR, India. He builds autonomous robotics pipelines, factory floor intelligence, and 3D spatial web applications with Next.js, Three.js, and Python.",
-      action: {
-        label: "View Work & Projects →",
-        url: "/work",
-      },
-    };
-  }
-
-  if (query.includes("mind robotics") || query.includes("what is mind") || query.includes("robotics")) {
-    return {
-      text: "Mind Robotics bridges physical industrial hardware with real-time AI automation, interactive 3D digital twins, and autonomous telemetry loops.",
-      action: {
-        label: "Explore Factory Floor →",
-        url: "/#factory",
-      },
-    };
-  }
-
-  if (query.includes("skill") || query.includes("stack") || query.includes("tech") || query.includes("tools")) {
-    return {
-      text: "Core Stack: TypeScript, React, Next.js, Three.js / WebGL, Tailwind, Python, PyTorch, Docker, MCP (Model Context Protocol), Node.js, and agentic workflows.",
-    };
-  }
-
-  if (query.includes("hire") || query.includes("available") || query.includes("contract") || query.includes("freelance")) {
-    return {
-      text: "Yes! Rishii is available for high-impact engineering roles, AI system contracts, and robotics consulting. Email him directly at rishiicreates@gmail.com.",
-      action: {
-        label: "Email: rishiicreates@gmail.com ✉",
-        url: "mailto:rishiicreates@gmail.com",
-      },
-    };
-  }
-
-  if (query.includes("contact") || query.includes("email") || query.includes("message") || query.includes("reach") || query.includes("@")) {
-    return {
-      text: "Direct email: rishiicreates@gmail.com | GitHub: @rishiicreates | LinkedIn: in/rishiicreates. Leave your note here and Rishii will review it directly!",
-      action: {
-        label: "Send Email Draft 📬",
-        url: `mailto:rishiicreates@gmail.com?subject=Note from Portfolio Whiteboard&body=${encodeURIComponent(input)}`,
-      },
-    };
-  }
-
-  if (query.includes("hello") || query.includes("hi") || query.includes("hey")) {
-    return {
-      text: "Hey! Welcome to the lab. Feel free to jot down any question about Rishii's projects, tech stack, or engineering collaboration.",
-    };
-  }
-
-  return {
-    text: `Got your note: "${input}". Rishii reviews all project inquiries and collaboration ideas. Drop your email or write directly to rishiicreates@gmail.com!`,
-    action: {
-      label: "Send via Email →",
-      url: `mailto:rishiicreates@gmail.com?subject=Inquiry from Portfolio&body=${encodeURIComponent(input)}`,
-    },
-  };
-}
 
 interface WhiteboardChatbotProps {
   className?: string;
@@ -107,9 +39,9 @@ export default function WhiteboardChatbot({
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = (typeof textToSend === "string" ? textToSend : inputValue).trim();
-    if (!text) return;
+    if (!text || isTyping) return;
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -117,21 +49,45 @@ export default function WhiteboardChatbot({
       text,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    // Optimistically append user message
+    const updatedHistory = [...messages, userMsg];
+    setMessages(updatedHistory);
     if (typeof textToSend !== "string") setInputValue("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const reply = getBotReply(text);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          history: messages,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Chat API error: ${res.status}`);
+      }
+
+      const data = await res.json();
       const botMsg: Message = {
         id: `bot-${Date.now()}`,
         sender: "bot",
-        text: reply.text,
-        action: reply.action,
+        text: data.text || "got your note! drop your email or hit me up at rishiicreates@gmail.com.",
       };
+
       setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      console.error("Failed to fetch chat response:", err);
+      const fallbackMsg: Message = {
+        id: `bot-${Date.now()}`,
+        sender: "bot",
+        text: "got your note! leave your contact info or email me directly at rishiicreates@gmail.com.",
+      };
+      setMessages((prev) => [...prev, fallbackMsg]);
+    } finally {
       setIsTyping(false);
-    }, 350);
+    }
   };
 
   return (
@@ -162,19 +118,6 @@ export default function WhiteboardChatbot({
                   <p className="marker-ink-black whitespace-pre-wrap font-semibold tracking-wide">
                     {m.text}
                   </p>
-
-                  {m.action && (
-                    <div className="pt-1.5">
-                      <a
-                        href={m.action.url || "#"}
-                        className={`inline-flex items-center gap-1 font-bold text-[#0e5c63] hover:text-[#14191f] underline decoration-wavy decoration-[#0e5c63]/40 transition-colors ${
-                          isMobile ? "text-[17px]" : "text-[28px]"
-                        }`}
-                      >
-                        <span>[ {m.action.label} ]</span>
-                      </a>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="text-right">
@@ -193,7 +136,7 @@ export default function WhiteboardChatbot({
               isMobile ? "text-base" : "text-[28px]"
             }`}
           >
-            <span>scribbling</span>
+            <span>writing</span>
             <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
             <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
             <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
@@ -239,7 +182,7 @@ export default function WhiteboardChatbot({
 
         <button
           type="submit"
-          disabled={!inputValue.trim()}
+          disabled={!inputValue.trim() || isTyping}
           className={`shrink-0 rounded-md border-2 border-[#14191f]/40 hover:border-[#0e5c63] hover:text-[#0e5c63] hover:bg-[#0e5c63]/10 font-marker text-[#14191f] disabled:opacity-25 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
             isMobile
               ? "text-sm px-3 py-1"
