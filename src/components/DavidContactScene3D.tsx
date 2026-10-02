@@ -279,17 +279,40 @@ export default function DavidContactScene3D({
     let mixer: THREE.AnimationMixer | null = null;
     let currentAction: THREE.AnimationAction | null = null;
     let contactIdleAction: THREE.AnimationAction | null = null;
-    let standingRelaxedAction: THREE.AnimationAction | null = null;
-    let standingWaveAction: THREE.AnimationAction | null = null;
-    let standingPointAction: THREE.AnimationAction | null = null;
-    let standingExplainAction: THREE.AnimationAction | null = null;
     let lastGesture: string = "idle";
-    let lastGestureStartTime = 0;
+    let nodStartTime = -10;
     let ambientIdleTimer: NodeJS.Timeout | null = null;
-    let pointTimeout: NodeJS.Timeout | null = null;
     let lookMode: "user" | "board" = "user";
     let faceUniformFrame: { value: number } | null = null;
     let avatarGroup: THREE.Group | null = null;
+
+    // Avatar bone references for procedural human locomotion
+    let leftUpLegBone: THREE.Bone | null = null;
+    let rightUpLegBone: THREE.Bone | null = null;
+    let leftLegBone: THREE.Bone | null = null;
+    let rightLegBone: THREE.Bone | null = null;
+    let hipsBone: THREE.Bone | null = null;
+    let spineBone: THREE.Bone | null = null;
+    let headBone: THREE.Bone | null = null;
+    let avatarShadowMesh: THREE.Mesh | null = null;
+
+    // Spatial Locomotion State (Human Pacing in Room)
+    let currentX = -2.0;
+    let currentZ = 0.6;
+    let targetX = -2.0;
+    let targetZ = 0.6;
+    let isMoving = false;
+    let walkPhase = 0;
+    let walkWeight = 0; // 0 (still) to 1 (full stride)
+    let walkSpeed = 1.25; // m/s
+    let walkArrivalCallback: (() => void) | null = null;
+
+    const walkTo = (destX: number, destZ: number, onArrival?: () => void) => {
+      targetX = destX;
+      targetZ = destZ;
+      isMoving = true;
+      walkArrivalCallback = onArrival || null;
+    };
 
     // 4. Contact Model (Boxes, envelopes, transparent shadow floor) on the left
     const contactPropsGroup = new THREE.Group();
@@ -467,65 +490,47 @@ export default function DavidContactScene3D({
         faceMesh.material = faceMat;
       }
 
-      // 5. Animations: Synthesize Standing Upper-Body Conversational Gestures
-      // Grounded with solid standing legs & pelvis (never drops, bends knees, or sits in mid-air!)
+      // Extract skeletal bones for natural procedural locomotion & body language
+      avatarGroup.traverse((child) => {
+        if (child.name === "leftUpLegBone") leftUpLegBone = child as THREE.Bone;
+        if (child.name === "rightUpLegBone") rightUpLegBone = child as THREE.Bone;
+        if (child.name === "leftLegBone") leftLegBone = child as THREE.Bone;
+        if (child.name === "rightLegBone") rightLegBone = child as THREE.Bone;
+        if (child.name === "hipsBone") hipsBone = child as THREE.Bone;
+        if (child.name === "spineBone") spineBone = child as THREE.Bone;
+        if (child.name === "headBone") headBone = child as THREE.Bone;
+      });
+
+      // Soft contact shadow beneath avatar feet that tracks with him anywhere in the room
+      const avatarShadowGeom = new THREE.PlaneGeometry(1.5, 1.1);
+      const avatarShadowMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            vUv = uv;
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          void main() {
+            float dist = length((vUv - 0.5) * vec2(1.2, 1.8));
+            float alpha = (1.0 - smoothstep(0.12, 0.48, dist)) * 0.35;
+            gl_FragColor = vec4(0.02, 0.08, 0.1, alpha);
+          }
+        `,
+      });
+      avatarShadowMesh = new THREE.Mesh(avatarShadowGeom, avatarShadowMat);
+      avatarShadowMesh.rotation.x = -Math.PI / 2;
+      avatarShadowMesh.position.set(-2.0, -12.98, 0.6);
+      avatarShadowMesh.renderOrder = -1;
+      scene.add(avatarShadowMesh);
+
+      // 5. Authentic Base Posture: Grounded standing folded-arms idle (no stiff zombie arms!)
       mixer = new THREE.AnimationMixer(avatarGroup);
-
       const contactIdleClip = gltf.animations.find((a) => a.name === "contact-idle");
-      const waveClip = gltf.animations.find((a) => a.name === "wave");
-      const leftDesktopClip = gltf.animations.find((a) => a.name === "left-desktop");
-      const wakeUpClip = gltf.animations.find((a) => a.name === "wake-up");
-      const tIdleClip = gltf.animations.find((a) => a.name === "t-idle");
-
-      const lowerBodyBones = [
-        "hipsBone.position",
-        "hipsBone.quaternion",
-        "leftUpLegBone",
-        "leftLegBone",
-        "leftFootBone",
-        "leftToeBaseBone",
-        "rightUpLegBone",
-        "rightLegBone",
-        "rightFootBone",
-        "rightToeBaseBone",
-      ];
-
-      // Helper to synthesize complete, glitch-free standing gesture clips
-      const createStandingGestureClip = (
-        name: string,
-        upperSourceClip: THREE.AnimationClip | undefined,
-        baseStandingClip: THREE.AnimationClip | undefined
-      ): THREE.AnimationClip | null => {
-        if (!upperSourceClip || !baseStandingClip) return null;
-        const tracks: THREE.KeyframeTrack[] = [];
-        const duration = upperSourceClip.duration;
-
-        // 1. Add expressive upper body tracks from source gesture
-        upperSourceClip.tracks.forEach((track) => {
-          const isLower = lowerBodyBones.some((b) => track.name.startsWith(b));
-          if (!isLower) {
-            tracks.push(track.clone());
-          }
-        });
-
-        // 2. Add stable upright standing lower body tracks from base standing idle
-        baseStandingClip.tracks.forEach((track) => {
-          const isLower = lowerBodyBones.some((b) => track.name.startsWith(b));
-          if (isLower) {
-            const cloned = track.clone();
-            const timeScale = duration / baseStandingClip.duration;
-            const newTimes = new Float32Array(cloned.times.length);
-            for (let i = 0; i < cloned.times.length; i++) {
-              newTimes[i] = cloned.times[i] * timeScale;
-            }
-            cloned.times = newTimes;
-            tracks.push(cloned);
-          }
-        });
-
-        return new THREE.AnimationClip(name, duration, tracks);
-      };
-
       if (contactIdleClip) {
         contactIdleAction = mixer.clipAction(contactIdleClip);
         contactIdleAction.setLoop(THREE.LoopRepeat, Infinity);
@@ -533,164 +538,47 @@ export default function DavidContactScene3D({
         currentAction = contactIdleAction;
       }
 
-      // Synthetic Standing Clips
-      if (tIdleClip && contactIdleClip) {
-        const relaxedClip = createStandingGestureClip("standing-relaxed", tIdleClip, contactIdleClip);
-        if (relaxedClip) {
-          standingRelaxedAction = mixer.clipAction(relaxedClip);
-          standingRelaxedAction.setLoop(THREE.LoopRepeat, Infinity);
-        }
-      }
-
-      if (waveClip && contactIdleClip) {
-        const standingWave = createStandingGestureClip("standing-wave", waveClip, contactIdleClip);
-        if (standingWave) {
-          standingWaveAction = mixer.clipAction(standingWave);
-          standingWaveAction.setLoop(THREE.LoopOnce, 1);
-          standingWaveAction.clampWhenFinished = true;
-        }
-      }
-
-      if (leftDesktopClip && contactIdleClip) {
-        const standingPoint = createStandingGestureClip("standing-point", leftDesktopClip, contactIdleClip);
-        if (standingPoint) {
-          standingPointAction = mixer.clipAction(standingPoint);
-          standingPointAction.setLoop(THREE.LoopOnce, 1);
-          standingPointAction.clampWhenFinished = true;
-        }
-      }
-
-      if (wakeUpClip && contactIdleClip) {
-        const standingExplain = createStandingGestureClip("standing-explain", wakeUpClip, contactIdleClip);
-        if (standingExplain) {
-          standingExplainAction = mixer.clipAction(standingExplain);
-          standingExplainAction.setLoop(THREE.LoopOnce, 1);
-          standingExplainAction.clampWhenFinished = true;
-        }
-      }
-
-      const playGesture = (
-        action: THREE.AnimationAction | null,
-        name: string,
-        fadeTime = 0.35,
-        clamp = true
-      ) => {
-        if (!action || !mixer) return;
-
-        lastGesture = name;
-        lastGestureStartTime = Date.now();
-        action.reset();
-        action.setLoop(clamp ? THREE.LoopOnce : THREE.LoopRepeat, clamp ? 1 : Infinity);
-        action.clampWhenFinished = clamp;
-        if (currentAction && currentAction !== action) {
-          action.crossFadeFrom(currentAction, fadeTime, true);
-        }
-        action.play();
-        currentAction = action;
-      };
-
-      mixer.addEventListener("finished", (e: any) => {
-        // When any one-shot gesture finishes, smoothly crossfade back into standing idle
-        if (e.action !== contactIdleAction && e.action !== standingRelaxedAction) {
-          const returnAction = Math.random() > 0.5 && standingRelaxedAction ? standingRelaxedAction : contactIdleAction;
-          if (returnAction) {
-            returnAction.reset();
-            returnAction.setLoop(THREE.LoopRepeat, Infinity);
-            returnAction.crossFadeFrom(e.action, 0.45, true);
-            returnAction.play();
-            currentAction = returnAction;
-          }
-        }
-      });
-
-      // Connect dynamic, non-repetitive gesture triggers to chat events
+      // Connect dynamic spatial locomotion & human gestures to chat events
       gestureHandlersRef.current.onUserSend = () => {
         lookMode = "user";
         if (faceUniformFrame) faceUniformFrame.value = 12;
-
-        // Choose between friendly wave, expressive explanation, or pointing at board
-        const candidatePool: Array<{ name: string; action: THREE.AnimationAction | null }> = [
-          { name: "wave", action: standingWaveAction },
-          { name: "explain", action: standingExplainAction },
-          { name: "point", action: standingPointAction },
-        ];
-
-        // Anti-repetition: filter out the last gesture played
-        const available = candidatePool.filter((g) => g.name !== lastGesture && g.action);
-        const chosen = available.length > 0
-          ? available[Math.floor(Math.random() * available.length)]
-          : candidatePool[Math.floor(Math.random() * candidatePool.length)];
-
-        if (chosen?.action) {
-          playGesture(chosen.action, chosen.name, 0.35, true);
-        }
+        nodStartTime = clock.getElapsedTime(); // Conversational nod of understanding
       };
 
       gestureHandlersRef.current.onBotWritingStart = () => {
-        lookMode = "board";
-        if (faceUniformFrame) faceUniformFrame.value = 12;
-
-        const timeSinceUserSend = Date.now() - lastGestureStartTime;
-        const delayBeforePoint = Math.max(0, 1400 - timeSinceUserSend);
-
-        if (pointTimeout) clearTimeout(pointTimeout);
-        pointTimeout = setTimeout(() => {
-          if (isDisposed) return;
-          if (standingPointAction && lookMode === "board") {
-            playGesture(standingPointAction, "point", 0.45, true);
-          }
-        }, delayBeforePoint);
+        // Human movement: casually walk across the room towards the whiteboard to reference it!
+        walkTo(-0.35, 0.55, () => {
+          lookMode = "board";
+        });
       };
 
       gestureHandlersRef.current.onBotWritingEnd = () => {
-        lookMode = "user";
-        if (faceUniformFrame) faceUniformFrame.value = 12;
-
-        // Allow visitor to see the full gesture without being cut off prematurely
-        const elapsed = Date.now() - lastGestureStartTime;
-        const minGestureHold = 2400;
-        const remaining = Math.max(0, minGestureHold - elapsed);
-
+        // When finished writing, take 2 casual steps forward/center to face visitor directly!
         setTimeout(() => {
           if (isDisposed) return;
-          const returnIdle = contactIdleAction || standingRelaxedAction;
-          if (
-            returnIdle &&
-            currentAction !== returnIdle &&
-            currentAction !== contactIdleAction &&
-            currentAction !== standingRelaxedAction
-          ) {
-            returnIdle.reset();
-            returnIdle.setLoop(THREE.LoopRepeat, Infinity);
-            if (currentAction) {
-              returnIdle.crossFadeFrom(currentAction, 0.5, true);
-            }
-            returnIdle.play();
-            currentAction = returnIdle;
-          }
-        }, remaining);
+          walkTo(-0.95, 0.85, () => {
+            lookMode = "user";
+          });
+        }, 500);
       };
 
-      // Ambient Idle Life: gentle weight/stance shifting during long inactivity
+      // Ambient Idle Life: gentle natural pacing in room every 18-24s
       const scheduleAmbientIdle = () => {
-        const delay = 12000 + Math.random() * 8000;
+        const delay = 18000 + Math.random() * 8000;
         ambientIdleTimer = setTimeout(() => {
-          if (isDisposed || lookMode === "board") {
+          if (isDisposed || isMoving || lookMode === "board") {
             scheduleAmbientIdle();
             return;
           }
-          if (currentAction === contactIdleAction && standingRelaxedAction && contactIdleAction) {
-            standingRelaxedAction.reset();
-            standingRelaxedAction.setLoop(THREE.LoopRepeat, Infinity);
-            standingRelaxedAction.crossFadeFrom(contactIdleAction, 0.65, true);
-            standingRelaxedAction.play();
-            currentAction = standingRelaxedAction;
-          } else if (currentAction === standingRelaxedAction && contactIdleAction && standingRelaxedAction) {
-            contactIdleAction.reset();
-            contactIdleAction.setLoop(THREE.LoopRepeat, Infinity);
-            contactIdleAction.crossFadeFrom(standingRelaxedAction, 0.65, true);
-            contactIdleAction.play();
-            currentAction = contactIdleAction;
+          // Casual human pacing: wander slightly across open floor while thinking
+          if (currentX > -1.0) {
+            walkTo(-1.8, 0.6, () => {
+              lookMode = "user";
+            });
+          } else {
+            walkTo(-1.2, 0.7, () => {
+              lookMode = "user";
+            });
           }
           scheduleAmbientIdle();
         }, delay);
@@ -839,13 +727,6 @@ export default function DavidContactScene3D({
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      if (lookMode === "board") {
-        targetRotY = (Math.PI / 2 - 0.08) + normMouseX * 0.08;
-        targetRotX = normMouseY * 0.04;
-      } else {
-        targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
-        targetRotX = normMouseY * 0.08;
-      }
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
@@ -882,15 +763,115 @@ export default function DavidContactScene3D({
         mixer.update(delta);
       }
 
-      // Smooth avatar parallax and dynamic gaze direction
+      // Update spatial locomotion (natural human walking & pacing in room)
       if (avatarGroup) {
-        if (lookMode === "board") {
-          targetRotY = (Math.PI / 2 - 0.08) + normMouseX * 0.08;
+        if (isMoving) {
+          const dx = targetX - currentX;
+          const dz = targetZ - currentZ;
+          const dist = Math.hypot(dx, dz);
+
+          if (dist > 0.05) {
+            walkWeight = Math.min(1.0, walkWeight + delta * 5.0);
+            const step = Math.min(dist, walkSpeed * delta);
+            currentX += (dx / dist) * step;
+            currentZ += (dz / dist) * step;
+
+            walkPhase += delta * 7.2; // brisk natural walking tempo (~2.3 steps/sec)
+
+            // Dynamic footfall vertical bounce & floor position
+            avatarGroup.position.x = currentX;
+            avatarGroup.position.z = currentZ;
+            avatarGroup.position.y = -13 + Math.abs(Math.sin(walkPhase * 2)) * 0.045 * walkWeight;
+
+            if (avatarShadowMesh) {
+              avatarShadowMesh.position.x = currentX;
+              avatarShadowMesh.position.z = currentZ;
+            }
+
+            // Body slightly turns into direction of motion while walking
+            const moveAngle = Math.atan2(dx, dz);
+            targetRotY = moveAngle + Math.PI / 2;
+          } else {
+            // Arrived at destination
+            isMoving = false;
+            currentX = targetX;
+            currentZ = targetZ;
+            avatarGroup.position.x = currentX;
+            avatarGroup.position.z = currentZ;
+            if (avatarShadowMesh) {
+              avatarShadowMesh.position.x = currentX;
+              avatarShadowMesh.position.z = currentZ;
+            }
+            if (walkArrivalCallback) {
+              const cb = walkArrivalCallback;
+              walkArrivalCallback = null;
+              cb();
+            }
+          }
         } else {
-          targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
+          // Standing still: smoothly ramp down walk weight and settle feet flush on floor
+          walkWeight = Math.max(0, walkWeight - delta * 4.5);
+          avatarGroup.position.y += (-13 - avatarGroup.position.y) * 0.1;
         }
-        avatarGroup.rotation.y += (targetRotY - avatarGroup.rotation.y) * 0.05;
-        avatarGroup.rotation.x += (targetRotX - avatarGroup.rotation.x) * 0.05;
+
+        // Apply procedural leg swing & knee lift to bones during locomotion
+        if (walkWeight > 0.001) {
+          const legSwing = Math.sin(walkPhase) * 0.36 * walkWeight;
+          const leftKneeBend = Math.max(0, -Math.sin(walkPhase)) * 0.62 * walkWeight;
+          const rightKneeBend = Math.max(0, Math.sin(walkPhase)) * 0.62 * walkWeight;
+
+          if (leftUpLegBone) {
+            leftUpLegBone.quaternion.multiply(
+              new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), legSwing)
+            );
+          }
+          if (rightUpLegBone) {
+            rightUpLegBone.quaternion.multiply(
+              new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -legSwing)
+            );
+          }
+          if (leftLegBone) {
+            leftLegBone.quaternion.multiply(
+              new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), leftKneeBend)
+            );
+          }
+          if (rightLegBone) {
+            rightLegBone.quaternion.multiply(
+              new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rightKneeBend)
+            );
+          }
+          if (spineBone) {
+            spineBone.quaternion.multiply(
+              new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.sin(walkPhase) * 0.035 * walkWeight)
+            );
+          }
+        }
+
+        // Smooth avatar parallax, dynamic gaze direction, and conversational nod
+        if (!isMoving) {
+          if (lookMode === "board") {
+            // Turned to the RIGHT towards the whiteboard (Math.PI / 2 + 0.65)
+            const clampedMouseX = Math.max(-0.2, Math.min(0.5, normMouseX));
+            targetRotY = (Math.PI / 2 + 0.65) + clampedMouseX * 0.05;
+            targetRotX = normMouseY * 0.03;
+          } else {
+            // Centered on direct eye contact with visitor (Math.PI / 2 + 0.28)
+            // Lower clamp on mouse X (-0.12) ensures mannequin NEVER swivels away to the left into dead space
+            const clampedMouseX = Math.max(-0.12, Math.min(0.65, normMouseX));
+            targetRotY = (Math.PI / 2 + 0.28) + clampedMouseX * 0.12;
+            targetRotX = normMouseY * 0.06;
+          }
+        }
+
+        // Natural conversational affirmation nod on user send
+        let nodOffset = 0;
+        const elapsedSinceNod = clock.getElapsedTime() - nodStartTime;
+        if (elapsedSinceNod >= 0 && elapsedSinceNod < 0.6) {
+          nodOffset = Math.sin((elapsedSinceNod / 0.6) * Math.PI) * 0.045;
+        }
+
+        avatarGroup.rotation.y += (targetRotY - avatarGroup.rotation.y) * (isMoving ? 0.08 : 0.05);
+        avatarGroup.rotation.x += (targetRotX + nodOffset - avatarGroup.rotation.x) * 0.08;
       }
 
       // Smooth camera parallax for dynamic room perspective
@@ -973,7 +954,6 @@ export default function DavidContactScene3D({
       cancelAnimationFrame(animationFrameId);
       if (blinkTimeout) clearTimeout(blinkTimeout);
       if (ambientIdleTimer) clearTimeout(ambientIdleTimer);
-      if (pointTimeout) clearTimeout(pointTimeout);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
 
