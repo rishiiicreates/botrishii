@@ -279,7 +279,14 @@ export default function DavidContactScene3D({
     let mixer: THREE.AnimationMixer | null = null;
     let currentAction: THREE.AnimationAction | null = null;
     let contactIdleAction: THREE.AnimationAction | null = null;
-    let waveAction: THREE.AnimationAction | null = null;
+    let standingRelaxedAction: THREE.AnimationAction | null = null;
+    let standingWaveAction: THREE.AnimationAction | null = null;
+    let standingPointAction: THREE.AnimationAction | null = null;
+    let standingExplainAction: THREE.AnimationAction | null = null;
+    let lastGesture: string = "idle";
+    let lastGestureStartTime = 0;
+    let ambientIdleTimer: NodeJS.Timeout | null = null;
+    let pointTimeout: NodeJS.Timeout | null = null;
     let lookMode: "user" | "board" = "user";
     let faceUniformFrame: { value: number } | null = null;
     let avatarGroup: THREE.Group | null = null;
@@ -460,60 +467,235 @@ export default function DavidContactScene3D({
         faceMesh.material = faceMat;
       }
 
-      // Animations: contact-idle, wave, and dynamic interaction
+      // 5. Animations: Synthesize Standing Upper-Body Conversational Gestures
+      // Grounded with solid standing legs & pelvis (never drops, bends knees, or sits in mid-air!)
       mixer = new THREE.AnimationMixer(avatarGroup);
+
       const contactIdleClip = gltf.animations.find((a) => a.name === "contact-idle");
+      const waveClip = gltf.animations.find((a) => a.name === "wave");
+      const leftDesktopClip = gltf.animations.find((a) => a.name === "left-desktop");
+      const wakeUpClip = gltf.animations.find((a) => a.name === "wake-up");
+      const tIdleClip = gltf.animations.find((a) => a.name === "t-idle");
+
+      const lowerBodyBones = [
+        "hipsBone.position",
+        "hipsBone.quaternion",
+        "leftUpLegBone",
+        "leftLegBone",
+        "leftFootBone",
+        "leftToeBaseBone",
+        "rightUpLegBone",
+        "rightLegBone",
+        "rightFootBone",
+        "rightToeBaseBone",
+      ];
+
+      // Helper to synthesize complete, glitch-free standing gesture clips
+      const createStandingGestureClip = (
+        name: string,
+        upperSourceClip: THREE.AnimationClip | undefined,
+        baseStandingClip: THREE.AnimationClip | undefined
+      ): THREE.AnimationClip | null => {
+        if (!upperSourceClip || !baseStandingClip) return null;
+        const tracks: THREE.KeyframeTrack[] = [];
+        const duration = upperSourceClip.duration;
+
+        // 1. Add expressive upper body tracks from source gesture
+        upperSourceClip.tracks.forEach((track) => {
+          const isLower = lowerBodyBones.some((b) => track.name.startsWith(b));
+          if (!isLower) {
+            tracks.push(track.clone());
+          }
+        });
+
+        // 2. Add stable upright standing lower body tracks from base standing idle
+        baseStandingClip.tracks.forEach((track) => {
+          const isLower = lowerBodyBones.some((b) => track.name.startsWith(b));
+          if (isLower) {
+            const cloned = track.clone();
+            const timeScale = duration / baseStandingClip.duration;
+            const newTimes = new Float32Array(cloned.times.length);
+            for (let i = 0; i < cloned.times.length; i++) {
+              newTimes[i] = cloned.times[i] * timeScale;
+            }
+            cloned.times = newTimes;
+            tracks.push(cloned);
+          }
+        });
+
+        return new THREE.AnimationClip(name, duration, tracks);
+      };
+
       if (contactIdleClip) {
         contactIdleAction = mixer.clipAction(contactIdleClip);
+        contactIdleAction.setLoop(THREE.LoopRepeat, Infinity);
         contactIdleAction.play();
         currentAction = contactIdleAction;
       }
 
-      const waveClip = gltf.animations.find((a) => a.name === "wave");
-      if (waveClip) {
-        waveAction = mixer.clipAction(waveClip);
+      // Synthetic Standing Clips
+      if (tIdleClip && contactIdleClip) {
+        const relaxedClip = createStandingGestureClip("standing-relaxed", tIdleClip, contactIdleClip);
+        if (relaxedClip) {
+          standingRelaxedAction = mixer.clipAction(relaxedClip);
+          standingRelaxedAction.setLoop(THREE.LoopRepeat, Infinity);
+        }
       }
 
+      if (waveClip && contactIdleClip) {
+        const standingWave = createStandingGestureClip("standing-wave", waveClip, contactIdleClip);
+        if (standingWave) {
+          standingWaveAction = mixer.clipAction(standingWave);
+          standingWaveAction.setLoop(THREE.LoopOnce, 1);
+          standingWaveAction.clampWhenFinished = true;
+        }
+      }
+
+      if (leftDesktopClip && contactIdleClip) {
+        const standingPoint = createStandingGestureClip("standing-point", leftDesktopClip, contactIdleClip);
+        if (standingPoint) {
+          standingPointAction = mixer.clipAction(standingPoint);
+          standingPointAction.setLoop(THREE.LoopOnce, 1);
+          standingPointAction.clampWhenFinished = true;
+        }
+      }
+
+      if (wakeUpClip && contactIdleClip) {
+        const standingExplain = createStandingGestureClip("standing-explain", wakeUpClip, contactIdleClip);
+        if (standingExplain) {
+          standingExplainAction = mixer.clipAction(standingExplain);
+          standingExplainAction.setLoop(THREE.LoopOnce, 1);
+          standingExplainAction.clampWhenFinished = true;
+        }
+      }
+
+      const playGesture = (
+        action: THREE.AnimationAction | null,
+        name: string,
+        fadeTime = 0.35,
+        clamp = true
+      ) => {
+        if (!action || !mixer) return;
+
+        lastGesture = name;
+        lastGestureStartTime = Date.now();
+        action.reset();
+        action.setLoop(clamp ? THREE.LoopOnce : THREE.LoopRepeat, clamp ? 1 : Infinity);
+        action.clampWhenFinished = clamp;
+        if (currentAction && currentAction !== action) {
+          action.crossFadeFrom(currentAction, fadeTime, true);
+        }
+        action.play();
+        currentAction = action;
+      };
+
       mixer.addEventListener("finished", (e: any) => {
-        if (e.action === waveAction && contactIdleAction && waveAction) {
-          contactIdleAction.reset();
-          contactIdleAction.crossFadeFrom(waveAction, 0.45, true);
-          contactIdleAction.play();
-          currentAction = contactIdleAction;
+        // When any one-shot gesture finishes, smoothly crossfade back into standing idle
+        if (e.action !== contactIdleAction && e.action !== standingRelaxedAction) {
+          const returnAction = Math.random() > 0.5 && standingRelaxedAction ? standingRelaxedAction : contactIdleAction;
+          if (returnAction) {
+            returnAction.reset();
+            returnAction.setLoop(THREE.LoopRepeat, Infinity);
+            returnAction.crossFadeFrom(e.action, 0.45, true);
+            returnAction.play();
+            currentAction = returnAction;
+          }
         }
       });
 
-      // Connect gesture triggers to chat events
+      // Connect dynamic, non-repetitive gesture triggers to chat events
       gestureHandlersRef.current.onUserSend = () => {
-        if (waveAction && mixer) {
-          waveAction.reset();
-          waveAction.setLoop(THREE.LoopOnce, 1);
-          waveAction.clampWhenFinished = true;
-          if (currentAction && currentAction !== waveAction) {
-            waveAction.crossFadeFrom(currentAction, 0.35, true);
-          }
-          waveAction.play();
-          currentAction = waveAction;
-        }
         lookMode = "user";
+        if (faceUniformFrame) faceUniformFrame.value = 12;
+
+        // Choose between friendly wave, expressive explanation, or pointing at board
+        const candidatePool: Array<{ name: string; action: THREE.AnimationAction | null }> = [
+          { name: "wave", action: standingWaveAction },
+          { name: "explain", action: standingExplainAction },
+          { name: "point", action: standingPointAction },
+        ];
+
+        // Anti-repetition: filter out the last gesture played
+        const available = candidatePool.filter((g) => g.name !== lastGesture && g.action);
+        const chosen = available.length > 0
+          ? available[Math.floor(Math.random() * available.length)]
+          : candidatePool[Math.floor(Math.random() * candidatePool.length)];
+
+        if (chosen?.action) {
+          playGesture(chosen.action, chosen.name, 0.35, true);
+        }
       };
 
       gestureHandlersRef.current.onBotWritingStart = () => {
         lookMode = "board";
+        if (faceUniformFrame) faceUniformFrame.value = 12;
+
+        const timeSinceUserSend = Date.now() - lastGestureStartTime;
+        const delayBeforePoint = Math.max(0, 1400 - timeSinceUserSend);
+
+        if (pointTimeout) clearTimeout(pointTimeout);
+        pointTimeout = setTimeout(() => {
+          if (isDisposed) return;
+          if (standingPointAction && lookMode === "board") {
+            playGesture(standingPointAction, "point", 0.45, true);
+          }
+        }, delayBeforePoint);
       };
 
       gestureHandlersRef.current.onBotWritingEnd = () => {
         lookMode = "user";
-        if (contactIdleAction && currentAction !== contactIdleAction) {
-          contactIdleAction.reset();
-          const prevAction = currentAction || waveAction;
-          if (prevAction) {
-            contactIdleAction.crossFadeFrom(prevAction, 0.45, true);
+        if (faceUniformFrame) faceUniformFrame.value = 12;
+
+        // Allow visitor to see the full gesture without being cut off prematurely
+        const elapsed = Date.now() - lastGestureStartTime;
+        const minGestureHold = 2400;
+        const remaining = Math.max(0, minGestureHold - elapsed);
+
+        setTimeout(() => {
+          if (isDisposed) return;
+          const returnIdle = contactIdleAction || standingRelaxedAction;
+          if (
+            returnIdle &&
+            currentAction !== returnIdle &&
+            currentAction !== contactIdleAction &&
+            currentAction !== standingRelaxedAction
+          ) {
+            returnIdle.reset();
+            returnIdle.setLoop(THREE.LoopRepeat, Infinity);
+            if (currentAction) {
+              returnIdle.crossFadeFrom(currentAction, 0.5, true);
+            }
+            returnIdle.play();
+            currentAction = returnIdle;
           }
-          contactIdleAction.play();
-          currentAction = contactIdleAction;
-        }
+        }, remaining);
       };
+
+      // Ambient Idle Life: gentle weight/stance shifting during long inactivity
+      const scheduleAmbientIdle = () => {
+        const delay = 12000 + Math.random() * 8000;
+        ambientIdleTimer = setTimeout(() => {
+          if (isDisposed || lookMode === "board") {
+            scheduleAmbientIdle();
+            return;
+          }
+          if (currentAction === contactIdleAction && standingRelaxedAction && contactIdleAction) {
+            standingRelaxedAction.reset();
+            standingRelaxedAction.setLoop(THREE.LoopRepeat, Infinity);
+            standingRelaxedAction.crossFadeFrom(contactIdleAction, 0.65, true);
+            standingRelaxedAction.play();
+            currentAction = standingRelaxedAction;
+          } else if (currentAction === standingRelaxedAction && contactIdleAction && standingRelaxedAction) {
+            contactIdleAction.reset();
+            contactIdleAction.setLoop(THREE.LoopRepeat, Infinity);
+            contactIdleAction.crossFadeFrom(standingRelaxedAction, 0.65, true);
+            contactIdleAction.play();
+            currentAction = contactIdleAction;
+          }
+          scheduleAmbientIdle();
+        }, delay);
+      };
+      scheduleAmbientIdle();
 
       scene.add(avatarGroup);
       setLoading(false);
@@ -790,6 +972,8 @@ export default function DavidContactScene3D({
       isDisposed = true;
       cancelAnimationFrame(animationFrameId);
       if (blinkTimeout) clearTimeout(blinkTimeout);
+      if (ambientIdleTimer) clearTimeout(ambientIdleTimer);
+      if (pointTimeout) clearTimeout(pointTimeout);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
 
