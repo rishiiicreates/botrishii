@@ -273,11 +273,33 @@ export default function DavidContactScene3D({
     let faceUniformFrame: { value: number } | null = null;
     let avatarGroup: THREE.Group | null = null;
 
-    // 4. Contact Model (Boxes, envelopes, transparent shadow floor) shifted to far left
+    // 4. Contact Model (Boxes, envelopes, transparent shadow floor) on the left
     const contactPropsGroup = new THREE.Group();
     contactPropsGroup.position.set(-4.8, -13, -0.6);
     contactPropsGroup.rotation.set(0, -0.4, 0);
     scene.add(contactPropsGroup);
+
+    // Additional container stacks to enrich the background and behind the whiteboard
+    // Stack 1: Behind whiteboard (deep right background)
+    const propsBehindBoard = new THREE.Group();
+    propsBehindBoard.position.set(3.4, -13, -2.6);
+    propsBehindBoard.rotation.set(0, 0.55, 0);
+    propsBehindBoard.scale.set(1.15, 1.15, 1.15);
+    scene.add(propsBehindBoard);
+
+    // Stack 2: Deep center background (filling the empty room wall)
+    const propsCenterBack = new THREE.Group();
+    propsCenterBack.position.set(0.3, -13, -4.2);
+    propsCenterBack.rotation.set(0, -0.28, 0);
+    propsCenterBack.scale.set(0.95, 0.95, 0.95);
+    scene.add(propsCenterBack);
+
+    // Stack 3: Behind avatar / mid-left background
+    const propsLeftBack = new THREE.Group();
+    propsLeftBack.position.set(-4.2, -13, -3.4);
+    propsLeftBack.rotation.set(0, 0.65, 0);
+    propsLeftBack.scale.set(0.9, 0.9, 0.9);
+    scene.add(propsLeftBack);
 
     gltfLoader.load("/models/contact-model.glb", (gltf) => {
       if (isDisposed) return;
@@ -288,6 +310,11 @@ export default function DavidContactScene3D({
           map: contactTexture,
         });
         contactPropsGroup.add(baseMesh);
+
+        // Clone base mesh into background stacks
+        propsBehindBoard.add(baseMesh.clone());
+        propsCenterBack.add(baseMesh.clone());
+        propsLeftBack.add(baseMesh.clone());
       }
 
       const shadowCatcher = gltf.scene.children.find(
@@ -324,16 +351,32 @@ export default function DavidContactScene3D({
         shadowCatcher.material = shadowMat;
         shadowCatcher.renderOrder = -1;
         contactPropsGroup.add(shadowCatcher);
+
+        // Cloned shadow catchers
+        const sc1 = shadowCatcher.clone();
+        sc1.material = shadowMat;
+        sc1.renderOrder = -1;
+        propsBehindBoard.add(sc1);
+
+        const sc2 = shadowCatcher.clone();
+        sc2.material = shadowMat;
+        sc2.renderOrder = -1;
+        propsCenterBack.add(sc2);
+
+        const sc3 = shadowCatcher.clone();
+        sc3.material = shadowMat;
+        sc3.renderOrder = -1;
+        propsLeftBack.add(sc3);
       }
     });
 
-    // 5. Avatar Model (Mannequin) shifted to left side with Matcaps and Blinking Face Shader
+    // 5. Avatar Model (Mannequin) shifted slightly right and rotated counterclockwise to face right/center
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
       avatarGroup = gltf.scene;
-      avatarGroup.position.set(-3.0, -13, 0.6);
-      avatarGroup.rotation.set(0, Math.PI / 2 + 0.14, 0); // Faces forward and slightly toward whiteboard
+      avatarGroup.position.set(-2.1, -13, 0.6);
+      avatarGroup.rotation.set(0, Math.PI / 2 - 0.22, 0); // Faces counterclockwise toward center and whiteboard
 
       // Apply authentic Matcaps to each body mesh
       avatarGroup.traverse((child) => {
@@ -439,7 +482,8 @@ export default function DavidContactScene3D({
 
     // elementToLocal: shifts origin from top-left (0,0) to center, flips Y for CSS, and scales to 3D units
     const localTranslate = new THREE.Matrix4().makeTranslation(-elWidth / 2, -elHeight / 2, 0);
-    const localScale = new THREE.Matrix4().makeScale(elScale, -elScale, elScale);
+    // Note: inverting Z along with Y keeps the matrix determinant strictly positive so WebKit / Safari never culls it as back-facing
+    const localScale = new THREE.Matrix4().makeScale(elScale, -elScale, -elScale);
     const elementToLocal = new THREE.Matrix4().multiplyMatrices(localScale, localTranslate);
 
     // Reusable matrices for 60fps screen projection without heap allocations
@@ -547,15 +591,15 @@ export default function DavidContactScene3D({
     };
     scheduleNextBlink();
 
-    // 7. Mouse Parallax
-    let targetRotY = Math.PI / 2 + 0.14;
+    // 7. Mouse Parallax (Mannequin turns smoothly with cursor towards center / whiteboard)
+    let targetRotY = Math.PI / 2 - 0.22;
     let targetRotX = 0;
     let normMouseX = 0;
     let normMouseY = 0;
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = (Math.PI / 2 + 0.14) + normMouseX * 0.18;
+      targetRotY = (Math.PI / 2 - 0.22) + normMouseX * 0.18;
       targetRotX = normMouseY * 0.08;
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
@@ -650,11 +694,13 @@ export default function DavidContactScene3D({
           chatOverlayRef.current.style.height = `${elHeight}px`;
           chatOverlayRef.current.style.maxWidth = "none";
           chatOverlayRef.current.style.transformOrigin = "0 0";
-          chatOverlayRef.current.style.transform = `matrix3d(${
+          const matrixStr = `matrix3d(${
             (el[0]/m44).toFixed(7)},${(el[1]/m44).toFixed(7)},${(el[2]/m44).toFixed(7)},${(el[3]/m44).toFixed(7)},${
             (el[4]/m44).toFixed(7)},${(el[5]/m44).toFixed(7)},${(el[6]/m44).toFixed(7)},${(el[7]/m44).toFixed(7)},${
             (el[8]/m44).toFixed(7)},${(el[9]/m44).toFixed(7)},${(el[10]/m44).toFixed(7)},${(el[11]/m44).toFixed(7)},${
             (el[12]/m44).toFixed(4)},${(el[13]/m44).toFixed(4)},${(el[14]/m44).toFixed(4)},1)`;
+          chatOverlayRef.current.style.transform = matrixStr;
+          chatOverlayRef.current.style.webkitTransform = matrixStr;
           chatOverlayRef.current.style.opacity = "1";
         }
       }
@@ -686,14 +732,15 @@ export default function DavidContactScene3D({
       {/* 3D-Anchored Whiteboard Interactive Chatbot */}
       <div
         ref={chatOverlayRef}
-        className={`pointer-events-auto transition-opacity duration-300 opacity-0 z-20 ${
+        className={`pointer-events-auto transition-opacity duration-300 opacity-100 z-20 ${
           isMobile
             ? "bg-[#fcfbf9]/95 backdrop-blur-md rounded-2xl border-2 border-[#14191f]/20 shadow-xl overflow-hidden flex flex-col"
             : ""
         }`}
         style={{
-          transformStyle: "preserve-3d",
-          backfaceVisibility: "hidden",
+          transformStyle: "flat",
+          backfaceVisibility: "visible",
+          WebkitBackfaceVisibility: "visible",
         }}
       >
         <WhiteboardChatbot isMobile={isMobile} />
