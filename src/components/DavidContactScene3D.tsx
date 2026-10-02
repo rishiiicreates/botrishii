@@ -19,6 +19,13 @@ export default function DavidContactScene3D({
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Gesture callback handlers exposed to WhiteboardChatbot
+  const gestureHandlersRef = useRef<{
+    onUserSend?: () => void;
+    onBotWritingStart?: () => void;
+    onBotWritingEnd?: () => void;
+  }>({});
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -65,7 +72,7 @@ export default function DavidContactScene3D({
     renderer.toneMappingExposure = 1.05;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    container.appendChild(renderer.domElement);
+    container.insertBefore(renderer.domElement, container.firstChild);
 
     // 2. Lighting
     const ambientLight = new THREE.AmbientLight(0xfff7ed, 1.4);
@@ -270,6 +277,10 @@ export default function DavidContactScene3D({
     matcapWhite.colorSpace = THREE.SRGBColorSpace;
 
     let mixer: THREE.AnimationMixer | null = null;
+    let currentAction: THREE.AnimationAction | null = null;
+    let contactIdleAction: THREE.AnimationAction | null = null;
+    let waveAction: THREE.AnimationAction | null = null;
+    let lookMode: "user" | "board" = "user";
     let faceUniformFrame: { value: number } | null = null;
     let avatarGroup: THREE.Group | null = null;
 
@@ -449,13 +460,60 @@ export default function DavidContactScene3D({
         faceMesh.material = faceMat;
       }
 
-      // Animations: contact-idle
+      // Animations: contact-idle, wave, and dynamic interaction
       mixer = new THREE.AnimationMixer(avatarGroup);
-      const idleClip = gltf.animations.find((a) => a.name === "contact-idle");
-      if (idleClip) {
-        const action = mixer.clipAction(idleClip);
-        action.play();
+      const contactIdleClip = gltf.animations.find((a) => a.name === "contact-idle");
+      if (contactIdleClip) {
+        contactIdleAction = mixer.clipAction(contactIdleClip);
+        contactIdleAction.play();
+        currentAction = contactIdleAction;
       }
+
+      const waveClip = gltf.animations.find((a) => a.name === "wave");
+      if (waveClip) {
+        waveAction = mixer.clipAction(waveClip);
+      }
+
+      mixer.addEventListener("finished", (e: any) => {
+        if (e.action === waveAction && contactIdleAction && waveAction) {
+          contactIdleAction.reset();
+          contactIdleAction.crossFadeFrom(waveAction, 0.45, true);
+          contactIdleAction.play();
+          currentAction = contactIdleAction;
+        }
+      });
+
+      // Connect gesture triggers to chat events
+      gestureHandlersRef.current.onUserSend = () => {
+        if (waveAction && mixer) {
+          waveAction.reset();
+          waveAction.setLoop(THREE.LoopOnce, 1);
+          waveAction.clampWhenFinished = true;
+          if (currentAction && currentAction !== waveAction) {
+            waveAction.crossFadeFrom(currentAction, 0.35, true);
+          }
+          waveAction.play();
+          currentAction = waveAction;
+        }
+        lookMode = "user";
+      };
+
+      gestureHandlersRef.current.onBotWritingStart = () => {
+        lookMode = "board";
+      };
+
+      gestureHandlersRef.current.onBotWritingEnd = () => {
+        lookMode = "user";
+        if (contactIdleAction && currentAction !== contactIdleAction) {
+          contactIdleAction.reset();
+          const prevAction = currentAction || waveAction;
+          if (prevAction) {
+            contactIdleAction.crossFadeFrom(prevAction, 0.45, true);
+          }
+          contactIdleAction.play();
+          currentAction = contactIdleAction;
+        }
+      };
 
       scene.add(avatarGroup);
       setLoading(false);
@@ -599,8 +657,13 @@ export default function DavidContactScene3D({
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
-      targetRotX = normMouseY * 0.08;
+      if (lookMode === "board") {
+        targetRotY = (Math.PI / 2 - 0.08) + normMouseX * 0.08;
+        targetRotX = normMouseY * 0.04;
+      } else {
+        targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
+        targetRotX = normMouseY * 0.08;
+      }
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
@@ -610,15 +673,18 @@ export default function DavidContactScene3D({
     };
     updateResponsiveState();
 
+    let cachedWidth = container.clientWidth;
+    let cachedHeight = container.clientHeight;
+
     // 8. Resize Handler
     const onResize = () => {
       if (!container) return;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
+      cachedWidth = container.clientWidth;
+      cachedHeight = container.clientHeight;
+      camera.aspect = cachedWidth / cachedHeight;
       updateCameraPosition();
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      renderer.setSize(cachedWidth, cachedHeight);
       updateResponsiveState();
     };
     window.addEventListener("resize", onResize);
@@ -634,8 +700,13 @@ export default function DavidContactScene3D({
         mixer.update(delta);
       }
 
-      // Smooth avatar parallax
+      // Smooth avatar parallax and dynamic gaze direction
       if (avatarGroup) {
+        if (lookMode === "board") {
+          targetRotY = (Math.PI / 2 - 0.08) + normMouseX * 0.08;
+        } else {
+          targetRotY = (Math.PI / 2 + 0.28) + normMouseX * 0.18;
+        }
         avatarGroup.rotation.y += (targetRotY - avatarGroup.rotation.y) * 0.05;
         avatarGroup.rotation.x += (targetRotX - avatarGroup.rotation.x) * 0.05;
       }
@@ -648,6 +719,9 @@ export default function DavidContactScene3D({
       camera.position.x += (targetCamX - camera.position.x) * 0.05;
       camera.position.y += (targetCamY - camera.position.y) * 0.05;
       camera.lookAt(baseCamX, isLandscape ? -10.5 : -9.6, 0);
+
+      // CRITICAL FIX: Synchronize camera world and inverse matrices in the exact same frame
+      camera.updateMatrixWorld(true);
 
       // Mathematically synchronize the whiteboard dry-erase chat overlay in 3D
       if (chatOverlayRef.current && container) {
@@ -662,11 +736,13 @@ export default function DavidContactScene3D({
           chatOverlayRef.current.style.maxWidth = "420px";
           chatOverlayRef.current.style.height = "320px";
           chatOverlayRef.current.style.transformOrigin = "center center";
+          chatOverlayRef.current.style.webkitTransformOrigin = "center center";
           chatOverlayRef.current.style.transform = "none";
+          chatOverlayRef.current.style.webkitTransform = "none";
           chatOverlayRef.current.style.opacity = "1";
         } else {
-          const w = container.clientWidth;
-          const h = container.clientHeight;
+          const w = cachedWidth;
+          const h = cachedHeight;
 
           // Compute exact 4x4 MVP viewport projection matrix
           chatAnchor.updateMatrixWorld(true);
@@ -683,7 +759,7 @@ export default function DavidContactScene3D({
 
           finalMatrix.multiplyMatrices(sMatrix, mvp);
           const el = finalMatrix.elements;
-          const m44 = el[15];
+          const invM44 = 1 / el[15];
 
           chatOverlayRef.current.style.position = "absolute";
           chatOverlayRef.current.style.left = "0";
@@ -694,11 +770,12 @@ export default function DavidContactScene3D({
           chatOverlayRef.current.style.height = `${elHeight}px`;
           chatOverlayRef.current.style.maxWidth = "none";
           chatOverlayRef.current.style.transformOrigin = "0 0";
+          chatOverlayRef.current.style.webkitTransformOrigin = "0 0";
           const matrixStr = `matrix3d(${
-            (el[0]/m44).toFixed(7)},${(el[1]/m44).toFixed(7)},${(el[2]/m44).toFixed(7)},${(el[3]/m44).toFixed(7)},${
-            (el[4]/m44).toFixed(7)},${(el[5]/m44).toFixed(7)},${(el[6]/m44).toFixed(7)},${(el[7]/m44).toFixed(7)},${
-            (el[8]/m44).toFixed(7)},${(el[9]/m44).toFixed(7)},${(el[10]/m44).toFixed(7)},${(el[11]/m44).toFixed(7)},${
-            (el[12]/m44).toFixed(4)},${(el[13]/m44).toFixed(4)},${(el[14]/m44).toFixed(4)},1)`;
+            el[0] * invM44},${el[1] * invM44},${el[2] * invM44},${el[3] * invM44},${
+            el[4] * invM44},${el[5] * invM44},${el[6] * invM44},${el[7] * invM44},${
+            el[8] * invM44},${el[9] * invM44},${el[10] * invM44},${el[11] * invM44},${
+            el[12] * invM44},${el[13] * invM44},${el[14] * invM44},1)`;
           chatOverlayRef.current.style.transform = matrixStr;
           chatOverlayRef.current.style.webkitTransform = matrixStr;
           chatOverlayRef.current.style.opacity = "1";
@@ -738,12 +815,20 @@ export default function DavidContactScene3D({
             : ""
         }`}
         style={{
+          transformOrigin: "0 0",
+          WebkitTransformOrigin: "0 0",
           transformStyle: "flat",
           backfaceVisibility: "visible",
           WebkitBackfaceVisibility: "visible",
+          willChange: "transform",
         }}
       >
-        <WhiteboardChatbot isMobile={isMobile} />
+        <WhiteboardChatbot
+          isMobile={isMobile}
+          onUserSend={() => gestureHandlersRef.current.onUserSend?.()}
+          onBotWritingStart={() => gestureHandlersRef.current.onBotWritingStart?.()}
+          onBotWritingEnd={() => gestureHandlersRef.current.onBotWritingEnd?.()}
+        />
       </div>
 
       {loading && (

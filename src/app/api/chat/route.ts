@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.warn("GEMINI_API_KEY environment variable is not configured");
-      return NextResponse.json({
-        text: "my signal's a bit patchy right now, but drop your note or email me directly at rishiicreates@gmail.com and i'll get right back to you.",
-      });
+      return new Response(
+        "my signal's a bit patchy right now, but drop your note or email me directly at rishiicreates@gmail.com and i'll get right back to you.",
+        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+      );
     }
 
     const { message, history } = (await req.json()) as {
@@ -65,46 +66,107 @@ export async function POST(req: NextRequest) {
       parts: [{ text: message.trim() }],
     });
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${encodeURIComponent(
-      apiKey
-    )}`;
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const bodyPayload = {
+      systemInstruction: {
+        parts: [{ text: SYSTEM_INSTRUCTION }],
       },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: SYSTEM_INSTRUCTION }],
-        },
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 250,
-        },
-      }),
-    });
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 250,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    };
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini API Error:", response.status, errText);
-      return NextResponse.json({
-        text: "my signal's a bit patchy right now, but drop your note or email me directly at rishiicreates@gmail.com and i'll get right back to you.",
-      });
+    // Fast multi-model cascade (Primary: gemini-3.1-flash-lite, Fallback: gemini-2.5-flash)
+    const models = ["gemini-3.1-flash-lite", "gemini-2.5-flash"];
+    let upstreamRes: Response | null = null;
+
+    for (const model of models) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(
+        apiKey
+      )}`;
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPayload),
+        });
+
+        if (res.ok && res.body) {
+          upstreamRes = res;
+          break;
+        } else {
+          const errText = await res.text();
+          console.warn(`Model ${model} stream error ${res.status}:`, errText);
+        }
+      } catch (err) {
+        console.warn(`Fetch error for model ${model}:`, err);
+      }
     }
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const replyText =
-      candidate?.content?.parts?.[0]?.text?.trim() ||
-      "got your note! drop your email or hit me up at rishiicreates@gmail.com so we can connect.";
+    if (!upstreamRes || !upstreamRes.body) {
+      return new Response(
+        "my signal's a bit patchy right now, but drop your note or email me directly at rishiicreates@gmail.com and i'll get right back to you.",
+        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+      );
+    }
 
-    return NextResponse.json({ text: replyText });
+    // Transform Gemini's upstream SSE into a direct token stream for sub-500ms time-to-first-token
+    const upstreamReader = upstreamRes.body.getReader();
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    let sseBuffer = "";
+
+    const stream = new ReadableStream({
+      async pull(controller) {
+        try {
+          const { done, value } = await upstreamReader.read();
+          if (done) {
+            controller.close();
+            return;
+          }
+
+          sseBuffer += decoder.decode(value, { stream: true });
+          const lines = sseBuffer.split("\n");
+          sseBuffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("data: ")) {
+              const jsonStr = trimmed.slice(6).trim();
+              if (jsonStr === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const textChunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textChunk) {
+                  controller.enqueue(encoder.encode(textChunk));
+                }
+              } catch {
+                // Ignore incomplete SSE json fragments
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Stream reader error:", err);
+          controller.error(err);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("API error in /api/chat:", error);
-    return NextResponse.json({
-      text: "got your note! drop your email or email me at rishiicreates@gmail.com and let's talk.",
-    });
+    return new Response(
+      "got your note! drop your email or email me at rishiicreates@gmail.com and let's talk.",
+      { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+    );
   }
 }
