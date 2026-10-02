@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import WhiteboardChatbot from "@/components/WhiteboardChatbot";
 
 interface DavidContactScene3DProps {
   onLoaded?: () => void;
@@ -14,6 +15,7 @@ export default function DavidContactScene3D({
   className = "",
 }: DavidContactScene3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const chatOverlayRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,9 +41,9 @@ export default function DavidContactScene3D({
     const updateCameraPosition = () => {
       isLandscape = getIsLandscape();
       if (isLandscape) {
-        // Desktop landscape framing - avatar centered to right-center
-        camera.position.set(0.6, -8.5, 9.2);
-        camera.lookAt(0.6, -10.5, 0);
+        // Desktop landscape framing - balanced room showing avatar on left and whiteboard on right
+        camera.position.set(0, -8.5, 9.2);
+        camera.lookAt(0, -10.5, 0);
       } else {
         // Mobile portrait framing
         camera.position.set(0, -8.2, 12.5);
@@ -270,10 +272,10 @@ export default function DavidContactScene3D({
     let faceUniformFrame: { value: number } | null = null;
     let avatarGroup: THREE.Group | null = null;
 
-    // 4. Contact Model (Boxes, envelopes, transparent shadow floor)
+    // 4. Contact Model (Boxes, envelopes, transparent shadow floor) shifted to far left
     const contactPropsGroup = new THREE.Group();
-    contactPropsGroup.position.set(1, -13, 0);
-    contactPropsGroup.rotation.set(0, -0.8, 0);
+    contactPropsGroup.position.set(-4.8, -13, -0.6);
+    contactPropsGroup.rotation.set(0, -0.4, 0);
     scene.add(contactPropsGroup);
 
     gltfLoader.load("/models/contact-model.glb", (gltf) => {
@@ -324,13 +326,13 @@ export default function DavidContactScene3D({
       }
     });
 
-    // 5. Avatar Model with Matcaps and Blinking Face Shader
+    // 5. Avatar Model (Mannequin) shifted to left side with Matcaps and Blinking Face Shader
     gltfLoader.load("/models/avatar-model.glb", (gltf) => {
       if (isDisposed) return;
 
       avatarGroup = gltf.scene;
-      avatarGroup.position.set(0, -13, 0);
-      avatarGroup.rotation.set(0, Math.PI / 2, 0); // Faces camera directly
+      avatarGroup.position.set(-3.0, -13, 0.6);
+      avatarGroup.rotation.set(0, Math.PI / 2 - 0.15, 0); // Faces slightly toward center/whiteboard
 
       // Apply authentic Matcaps to each body mesh
       avatarGroup.traverse((child) => {
@@ -416,6 +418,85 @@ export default function DavidContactScene3D({
       onLoaded?.();
     });
 
+    // 5.5 Whiteboard Model (low_poly_whiteboard.glb) on the right side of the room
+    const whiteboardGroup = new THREE.Group();
+    whiteboardGroup.position.set(2.4, -13, 0.1);
+    whiteboardGroup.rotation.set(0, Math.PI / 2 - 0.12, 0); // Angled slightly towards avatar & camera
+    whiteboardGroup.scale.set(1.18, 1.18, 1.18);
+    scene.add(whiteboardGroup);
+
+    // Soft contact shadow beneath whiteboard wheels
+    const wbShadowGeom = new THREE.PlaneGeometry(3.8, 1.8);
+    const wbShadowMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vUv = uv;
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        void main() {
+          float dist = length((vUv - 0.5) * vec2(1.0, 2.0));
+          float alpha = (1.0 - smoothstep(0.12, 0.48, dist)) * 0.24;
+          gl_FragColor = vec4(0.024, 0.102, 0.118, alpha);
+        }
+      `,
+    });
+    const wbShadowMesh = new THREE.Mesh(wbShadowGeom, wbShadowMat);
+    wbShadowMesh.rotation.x = -Math.PI / 2;
+    wbShadowMesh.position.set(2.4, -12.98, 0.1);
+    wbShadowMesh.renderOrder = -1;
+    scene.add(wbShadowMesh);
+
+    gltfLoader.load("/models/low_poly_whiteboard.glb", (gltf) => {
+      if (isDisposed) return;
+      const model = gltf.scene;
+
+      model.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          if (mesh.name.includes("Backboard")) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0xfcfbf9,
+              roughness: 0.18,
+              metalness: 0.05,
+            });
+          } else if (
+            mesh.name.includes("Sideboards") ||
+            mesh.name.includes("Axles") ||
+            mesh.name.includes("Marker")
+          ) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0xd0d5da,
+              roughness: 0.35,
+              metalness: 0.85,
+            });
+          } else if (mesh.name.includes("Stand") || mesh.name.includes("Undercarraige")) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0x1e272c,
+              roughness: 0.45,
+              metalness: 0.65,
+            });
+          } else if (mesh.name.includes("Wheel") || mesh.name.includes("Corner")) {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0x0a1012,
+              roughness: 0.75,
+              metalness: 0.2,
+            });
+          }
+        }
+      });
+
+      whiteboardGroup.add(model);
+    });
+
     // 6. Organic Blink Loop: 12 -> 13 -> 14 -> 15 -> 12
     let blinkTimeout: NodeJS.Timeout | null = null;
     const scheduleNextBlink = () => {
@@ -443,14 +524,14 @@ export default function DavidContactScene3D({
     scheduleNextBlink();
 
     // 7. Mouse Parallax
-    let targetRotY = Math.PI / 2;
+    let targetRotY = Math.PI / 2 - 0.15;
     let targetRotX = 0;
     let normMouseX = 0;
     let normMouseY = 0;
     const onMouseMove = (e: MouseEvent) => {
       normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
       normMouseY = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = Math.PI / 2 + normMouseX * 0.18;
+      targetRotY = (Math.PI / 2 - 0.15) + normMouseX * 0.18;
       targetRotX = normMouseY * 0.08;
     };
     window.addEventListener("mousemove", onMouseMove, { passive: true });
@@ -485,13 +566,68 @@ export default function DavidContactScene3D({
       }
 
       // Smooth camera parallax for dynamic room perspective
-      const baseCamX = isLandscape ? 0.6 : 0;
+      const baseCamX = 0;
       const baseCamY = isLandscape ? -8.5 : -8.2;
       const targetCamX = baseCamX + normMouseX * 0.35;
       const targetCamY = baseCamY - normMouseY * 0.20;
       camera.position.x += (targetCamX - camera.position.x) * 0.05;
       camera.position.y += (targetCamY - camera.position.y) * 0.05;
       camera.lookAt(baseCamX, isLandscape ? -10.5 : -9.6, 0);
+
+      // Update 3D-anchored whiteboard chatbot overlay
+      if (chatOverlayRef.current && whiteboardGroup && camera && container) {
+        const isMobile = window.innerWidth < 840;
+        if (isMobile) {
+          chatOverlayRef.current.style.position = "absolute";
+          chatOverlayRef.current.style.left = "50%";
+          chatOverlayRef.current.style.bottom = "80px";
+          chatOverlayRef.current.style.top = "auto";
+          chatOverlayRef.current.style.width = "calc(100% - 32px)";
+          chatOverlayRef.current.style.maxWidth = "420px";
+          chatOverlayRef.current.style.height = "320px";
+          chatOverlayRef.current.style.transform = "translateX(-50%)";
+          chatOverlayRef.current.style.opacity = "1";
+        } else {
+          // Precise screen projection of the whiteboard backboard face
+          const centerWorld = new THREE.Vector3(-0.03, 2.465, 0);
+          whiteboardGroup.localToWorld(centerWorld);
+
+          const topLeftWorld = new THREE.Vector3(-0.03, 2.465 + 0.88, -1.38);
+          whiteboardGroup.localToWorld(topLeftWorld);
+
+          const bottomRightWorld = new THREE.Vector3(-0.03, 2.465 - 0.86, 1.38);
+          whiteboardGroup.localToWorld(bottomRightWorld);
+
+          centerWorld.project(camera);
+          topLeftWorld.project(camera);
+          bottomRightWorld.project(camera);
+
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+
+          const cx = (centerWorld.x * 0.5 + 0.5) * w;
+          const cy = (-centerWorld.y * 0.5 + 0.5) * h;
+
+          const tlX = (topLeftWorld.x * 0.5 + 0.5) * w;
+          const tlY = (-topLeftWorld.y * 0.5 + 0.5) * h;
+
+          const brX = (bottomRightWorld.x * 0.5 + 0.5) * w;
+          const brY = (-bottomRightWorld.y * 0.5 + 0.5) * h;
+
+          const boardWidth = Math.abs(brX - tlX);
+          const boardHeight = Math.abs(brY - tlY);
+
+          chatOverlayRef.current.style.position = "absolute";
+          chatOverlayRef.current.style.left = `${cx}px`;
+          chatOverlayRef.current.style.top = `${cy}px`;
+          chatOverlayRef.current.style.bottom = "auto";
+          chatOverlayRef.current.style.maxWidth = "none";
+          chatOverlayRef.current.style.width = `${Math.round(boardWidth * 0.95)}px`;
+          chatOverlayRef.current.style.height = `${Math.round(boardHeight * 0.94)}px`;
+          chatOverlayRef.current.style.transform = `translate(-50%, -50%) rotateY(-6deg)`;
+          chatOverlayRef.current.style.opacity = "1";
+        }
+      }
 
       renderer.render(scene, camera);
     };
@@ -514,11 +650,22 @@ export default function DavidContactScene3D({
   return (
     <div
       ref={containerRef}
-      className={`absolute inset-0 size-full pointer-events-none select-none ${className}`}
+      className={`absolute inset-0 size-full select-none ${className}`}
       style={{ touchAction: "none" }}
     >
+      {/* 3D-Anchored Whiteboard Interactive Chatbot */}
+      <div
+        ref={chatOverlayRef}
+        className="pointer-events-auto transition-opacity duration-300 opacity-0 z-20"
+        style={{
+          transformStyle: "preserve-3d",
+        }}
+      >
+        <WhiteboardChatbot />
+      </div>
+
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="size-8 rounded-full border-2 border-[#061a1e]/20 border-t-[#299093] animate-spin" />
         </div>
       )}
