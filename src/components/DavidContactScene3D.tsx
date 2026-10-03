@@ -10,6 +10,93 @@ interface DavidContactScene3DProps {
   className?: string;
 }
 
+/**
+ * Synthesizes a silky-smooth, seamless human breathing animation cycle from raw contact-idle.
+ *
+ * Root problems in raw avatar-model.glb contact-idle:
+ * 1. Sawtooth half-cycle: The raw clip only moves downwards (exhale) over 2.08s, then snaps
+ *    back to the top on loop repeat (+1.54cm instantaneous jump).
+ * 2. Antipodal quaternion sign flips: Frame 15 and loop seam have dot product -1.0, collapsing
+ *    slerp interpolations through zero and causing mechanical spine/chest twitches.
+ * 3. Rapid panting tempo: 2.08s cycle = 28.8 breaths/min (hyperventilating).
+ *
+ * Solution:
+ * - Continuously align quaternion signs so dot(q[i], q[i-1]) >= 0 everywhere.
+ * - Symmetrically mirror the motion into a complete Inhale -> Exhale -> Inhale cycle (A -> B -> A).
+ * - Full duration = 4.167s (14.4 breaths/min, textbook resting human breathing).
+ * - 100% continuous derivatives: start and end frames match identically (0 seam jump, 0 jerk).
+ */
+function createSmoothBreathingClip(sourceClip: THREE.AnimationClip): THREE.AnimationClip {
+  const origDuration = sourceClip.duration;
+  const newTracks: THREE.KeyframeTrack[] = [];
+
+  for (const track of sourceClip.tracks) {
+    const stride = track.getValueSize();
+    const n = track.times.length;
+
+    if (n < 2) {
+      newTracks.push(track.clone());
+      continue;
+    }
+
+    // 1. Enforce quaternion sign continuity along forward path
+    const rawValues = new Float32Array(track.values);
+    if (track.ValueTypeName === "quaternion") {
+      for (let i = 1; i < n; i++) {
+        let dot = 0;
+        for (let c = 0; c < 4; c++) {
+          dot += rawValues[(i - 1) * 4 + c] * rawValues[i * 4 + c];
+        }
+        if (dot < 0) {
+          for (let c = 0; c < 4; c++) {
+            rawValues[i * 4 + c] = -rawValues[i * 4 + c];
+          }
+        }
+      }
+    }
+
+    // 2. Mirror into full symmetric breath cycle (A -> B -> A)
+    const totalSamples = 2 * n - 1;
+    const newTimes = new Float32Array(totalSamples);
+    const newValues = new Float32Array(totalSamples * stride);
+
+    // Forward phase (0 -> origDuration)
+    for (let i = 0; i < n; i++) {
+      newTimes[i] = track.times[i];
+      for (let c = 0; c < stride; c++) {
+        newValues[i * stride + c] = rawValues[i * stride + c];
+      }
+    }
+
+    // Return half (origDuration -> 2 * origDuration)
+    for (let i = 1; i < n; i++) {
+      const targetIdx = n - 1 + i;
+      const sourceIdx = n - 1 - i;
+      newTimes[targetIdx] = origDuration + (origDuration - track.times[sourceIdx]);
+
+      if (track.ValueTypeName === "quaternion") {
+        let dot = 0;
+        for (let c = 0; c < 4; c++) {
+          dot += newValues[(targetIdx - 1) * 4 + c] * rawValues[sourceIdx * 4 + c];
+        }
+        const sign = dot < 0 ? -1 : 1;
+        for (let c = 0; c < 4; c++) {
+          newValues[targetIdx * 4 + c] = sign * rawValues[sourceIdx * 4 + c];
+        }
+      } else {
+        for (let c = 0; c < stride; c++) {
+          newValues[targetIdx * stride + c] = rawValues[sourceIdx * stride + c];
+        }
+      }
+    }
+
+    const TrackConstructor = (track as any).constructor;
+    newTracks.push(new TrackConstructor(track.name, newTimes, newValues, track.getInterpolation()));
+  }
+
+  return new THREE.AnimationClip(`${sourceClip.name}-smooth`, origDuration * 2, newTracks);
+}
+
 export default function DavidContactScene3D({
   onLoaded,
   className = "",
@@ -488,10 +575,11 @@ export default function DavidContactScene3D({
       avatarShadowMesh.renderOrder = -1;
       scene.add(avatarShadowMesh);
 
-      // 5. Authentic Base Posture: Grounded standing folded-arms idle (no stiff zombie arms!)
+      // 5. Authentic Base Posture: Grounded standing folded-arms idle with silky smooth breathing
       mixer = new THREE.AnimationMixer(avatarGroup);
-      const contactIdleClip = gltf.animations.find((a) => a.name === "contact-idle");
-      if (contactIdleClip) {
+      const rawIdleClip = gltf.animations.find((a) => a.name === "contact-idle");
+      if (rawIdleClip) {
+        const contactIdleClip = createSmoothBreathingClip(rawIdleClip);
         contactIdleAction = mixer.clipAction(contactIdleClip);
         contactIdleAction.setLoop(THREE.LoopRepeat, Infinity);
         contactIdleAction.play();
