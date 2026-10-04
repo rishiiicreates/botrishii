@@ -41,7 +41,7 @@ export default function Home() {
       {/* Section 7: Careers / Hands on with hardware every day */}
       <CareersSection />
 
-      {/* Section 8: Outro / Get to know Mind / Interactive Pong */}
+      {/* Section 8: Outro / Get to know Botrishii / Interactive Work ball */}
       <OutroSection />
 
       {/* Footer */}

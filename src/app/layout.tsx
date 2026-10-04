@@ -25,7 +25,7 @@ const centraNo2 = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://nacreous-one.vercel.app"),
+  metadataBase: new URL("https://botrishii.vercel.app"),
   title: "Rishii — AI Automation Built for Real Work",
   description:
     "Rishii builds AI agents, LLM pipelines, and workflow automation that take over repetitive work, so teams can get back to the interesting parts.",
