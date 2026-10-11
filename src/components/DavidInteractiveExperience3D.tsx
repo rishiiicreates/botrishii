@@ -331,9 +331,19 @@ export default function DavidInteractiveExperience3D({
     let tIdleAction: THREE.AnimationAction | null = null;
     let faceUniformFrame: { value: number } | null = null;
 
+    // Procedural leg and arm bones for natural walking kinematics
+    let leftUpLegBone: THREE.Bone | null = null;
+    let rightUpLegBone: THREE.Bone | null = null;
+    let leftLegBone: THREE.Bone | null = null;
+    let rightLegBone: THREE.Bone | null = null;
+    let leftArmBone: THREE.Bone | null = null;
+    let rightArmBone: THREE.Bone | null = null;
+    let hipsBone: THREE.Bone | null = null;
+
     // Scan progress uniform for the hologram beam
     const scanUniform = { value: 0 };
     const timeUniform = { value: 0 };
+    const shadowCatcherOpacityUniform = { value: 1.0 };
 
     const roomMaterial = new THREE.MeshBasicMaterial({ map: roomTexture, transparent: true });
     const desktopsMaterial = new THREE.MeshBasicMaterial({ map: desktopsTexture, transparent: true });
@@ -376,15 +386,17 @@ export default function DavidInteractiveExperience3D({
                 varying vec2 vUv;
                 uniform sampler2D uTexture;
                 uniform vec3 uColorShadow;
+                uniform float uOpacity;
                 void main() {
                   vec4 shadow = texture2D(uTexture, vUv);
-                  float shadowAlpha = (1.0 - shadow.r) * 0.38;
+                  float shadowAlpha = (1.0 - shadow.r) * 0.38 * uOpacity;
                   gl_FragColor = vec4(uColorShadow, shadowAlpha);
                 }
               `,
               uniforms: {
                 uTexture: { value: roomShadowTexture },
                 uColorShadow: { value: new THREE.Color("rgb(190, 168, 142)") },
+                uOpacity: shadowCatcherOpacityUniform,
               },
             });
             mesh.renderOrder = -10;
@@ -844,6 +856,20 @@ export default function DavidInteractiveExperience3D({
       // This eliminates the 90-degree internal skeletal axis twist and aligns hips squarely on the chair
       armature.rotation.z = 0;
 
+      // Cache procedural bones for natural walking kinematics
+      armature.traverse((node) => {
+        if ((node as THREE.Bone).isBone) {
+          const bone = node as THREE.Bone;
+          if (bone.name === "leftUpLegBone") leftUpLegBone = bone;
+          else if (bone.name === "rightUpLegBone") rightUpLegBone = bone;
+          else if (bone.name === "leftLegBone") leftLegBone = bone;
+          else if (bone.name === "rightLegBone") rightLegBone = bone;
+          else if (bone.name === "leftArmBone") leftArmBone = bone;
+          else if (bone.name === "rightArmBone") rightArmBone = bone;
+          else if (bone.name === "hipsBone") hipsBone = bone;
+        }
+      });
+
       avatarGroup = new THREE.Group();
       avatarGroup.add(armature);
 
@@ -1074,14 +1100,19 @@ export default function DavidInteractiveExperience3D({
     let currentHeroOut = targetsRef.current.heroOut;
     let currentScan = targetsRef.current.scanProgress;
     let currentAboutOut = targetsRef.current.aboutOut;
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
+    const startTime = performance.now();
+
+    const lastProj = { x1: -999, y1: -999, x2: -999, y2: -999, x3: -999, y3: -999 };
 
     const animate = () => {
       if (isDisposed) return;
       animationFrameId = requestAnimationFrame(animate);
 
-      const delta = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
+      const now = performance.now();
+      const delta = Math.min((now - lastTime) / 1000, 0.1);
+      const elapsed = (now - startTime) / 1000;
+      lastTime = now;
       timeUniform.value = elapsed;
 
       // Smooth progress interpolation
@@ -1136,30 +1167,18 @@ export default function DavidInteractiveExperience3D({
       // Easing curves matching GSAP power1.out (1 - (1 - x)^2)
       const easeHero = 1 - (1 - hOut) * (1 - hOut);
 
-      // Phased Spatial Choreography & Physical Layer Containers:
-      // Real-World Layer Hierarchy & Physical Containment:
-      // Layer 0: Ground / Cyber grid (Y = 0)
-      // Layer 1: Carpet (floorGroup: stays strictly grounded at Y = 0 until mannequin walks completely off)
-      // Layer 2: Chair (floorGroup: sits on carpet, pushes back naturally when mannequin stands, then tumbles/falls into void)
-      // Layer 3: Mannequin (sits in chair -> stands up -> walks across and completely OFF the carpet -> steps onto pedestal)
-      
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const startYaw = landscape ? -2.3 : -2.1;
-      const targetRoomX = landscape ? 4.5 : 0;
-      const targetRoomY = landscape ? 5.7 : 5.4;
 
       // Keep floorGroup container strictly aligned with room base coordinates while grounded
       floorGroup.position.set(baseRoomX, 0, 0);
       floorGroup.rotation.set(0, startYaw, 0);
 
       // -------------------------------------------------------------
-      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.12)
+      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.16)
       // -------------------------------------------------------------
-      // -------------------------------------------------------------
-      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.18)
-      // -------------------------------------------------------------
-      const standT = Math.min(1, Math.max(0, hOut / 0.18));
+      const standT = Math.min(1, Math.max(0, hOut / 0.16));
       const easeStand = standT * standT * (3 - 2 * standT);
       if (idleAction && tIdleAction) {
         idleAction.setEffectiveWeight(1.0 - easeStand);
@@ -1171,18 +1190,30 @@ export default function DavidInteractiveExperience3D({
       const chairPush = easeStand * 0.45;
 
       // -------------------------------------------------------------
-      // 2. MANNEQUIN WALKS DIRECTLY TO PEDESTAL (hOut: 0.18 -> 0.52)
+      // 2. MANNEQUIN WALKS DIRECTLY TO PEDESTAL (hOut: 0.16 -> 0.48)
       // -------------------------------------------------------------
       // Monotonic, continuous forward locomotion directly to pedestal center (0, 0, 6.0)
-      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.18) / 0.34));
+      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.16) / 0.32));
       const easeWalkOff = walkOffT * walkOffT * (3 - 2 * walkOffT);
 
-      // Smooth mathematical envelope for stride bobbing: exactly 0 at start and finish!
+      // Natural stylized walking stride envelope: strictly 0 at start and finish!
       const walkEnvelope = Math.sin(walkOffT * Math.PI);
-      const walkBob = walkEnvelope * Math.abs(Math.sin(walkOffT * Math.PI * 3)) * 0.035;
+      const walkBob = walkEnvelope * Math.abs(Math.sin(walkOffT * Math.PI * 6.0)) * 0.035;
+
+      // Layered Procedural Walking Kinematics (Leg Strides, Knee Bends, Arm Swings, Pelvic Sway)
+      if (walkEnvelope > 0.001) {
+        const walkCycle = walkOffT * Math.PI * 6.0; // 3 complete, natural, grounded strides
+        if (leftUpLegBone) leftUpLegBone.rotation.x += Math.sin(walkCycle) * 0.44 * walkEnvelope;
+        if (rightUpLegBone) rightUpLegBone.rotation.x -= Math.sin(walkCycle) * 0.44 * walkEnvelope;
+        if (leftLegBone) leftLegBone.rotation.x += Math.max(0, -Math.sin(walkCycle)) * 0.38 * walkEnvelope;
+        if (rightLegBone) rightLegBone.rotation.x += Math.max(0, Math.sin(walkCycle)) * 0.38 * walkEnvelope;
+        if (leftArmBone) leftArmBone.rotation.x -= Math.sin(walkCycle) * 0.35 * walkEnvelope;
+        if (rightArmBone) rightArmBone.rotation.x += Math.sin(walkCycle) * 0.35 * walkEnvelope;
+        if (hipsBone) hipsBone.rotation.y += Math.sin(walkCycle) * 0.08 * walkEnvelope;
+      }
 
       // Carpet elevation: steps cleanly down from carpet (0.055m) to bare floor (0.00m)
-      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.65) / 0.25));
+      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.55) / 0.25));
       const easeStepDown = stepDownT * stepDownT * (3 - 2 * stepDownT);
       const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, easeStepDown);
 
@@ -1203,14 +1234,14 @@ export default function DavidInteractiveExperience3D({
       // 3. CHAIR FALL (BAKED CANNON-ES RIGID-BODY TRAJECTORY)
       // -------------------------------------------------------------
       // 100% deterministic, jitter-free, glitch-free physical topple.
-      // Starts once avatar has stepped past the carpet boundary (hOut >= 0.45).
+      // Starts once avatar has stepped completely past the carpet boundary (hOut >= 0.42).
       if (chairMesh) {
-        if (hOut < 0.45) {
+        if (hOut < 0.42) {
           chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
           chairMesh.quaternion.identity();
           chairMesh.visible = true;
         } else {
-          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.45) / 0.28));
+          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.42) / 0.28));
           const easeFall = chairFallT * chairFallT * (3 - 2 * chairFallT);
           sampleTrajectory(chairTrajectory, easeFall, sampledChairPos, sampledChairQuat);
           chairMesh.position.copy(sampledChairPos);
@@ -1228,29 +1259,48 @@ export default function DavidInteractiveExperience3D({
       }
 
       // -------------------------------------------------------------
-      // 4. SMOOTH CINEMATIC DISSOLVE FOR ROOM INTO CYBER PEDESTAL
+      // 4. SMOOTH CYBER PEDESTAL ELEVATION (hOut: 0.38 -> 0.70)
       // -------------------------------------------------------------
-      // Smooth opacity dissolve between hOut = 0.78 and 0.88 (zero popping!)
-      const roomFadeT = Math.min(1, Math.max(0, (hOut - 0.78) / 0.10));
+      // Pedestal at (0, 0, 6) smoothly elevates from below floor to meet the avatar's feet!
+      const pedestalRiseT = Math.min(1, Math.max(0, (hOut - 0.38) / 0.28));
+      const easePedestalRise = pedestalRiseT * pedestalRiseT * (3 - 2 * pedestalRiseT);
+      const pedestalY = THREE.MathUtils.lerp(-1.2, 0.0, easePedestalRise);
+      const pedestalScale = THREE.MathUtils.lerp(0.85, 1.0, easePedestalRise);
+
+      labGroup.position.set(0, pedestalY, 6);
+      labGroup.scale.set(pedestalScale, pedestalScale, pedestalScale);
+      labGroup.visible = hOut >= 0.38 && aOut < 0.99;
+
+      // -------------------------------------------------------------
+      // 5. SMOOTH CINEMATIC DISSOLVE FOR ROOM INTO CYBER WORLD
+      // -------------------------------------------------------------
+      // Room & floor stay grounded in place, then dissolve smoothly between hOut = 0.58 and 0.82
+      const roomFadeT = Math.min(1, Math.max(0, (hOut - 0.58) / 0.24));
       const roomOpacity = 1.0 - (roomFadeT * roomFadeT * (3 - 2 * roomFadeT));
+
       roomMaterial.opacity = roomOpacity;
+      roomMaterial.depthWrite = roomOpacity > 0.98;
       desktopsMaterial.opacity = roomOpacity;
+      desktopsMaterial.depthWrite = roomOpacity > 0.98;
+
+      shadowCatcherOpacityUniform.value = roomOpacity;
+      const isRoomVisible = roomOpacity > 0.005;
 
       if (shadowCatcherMesh) {
-        shadowCatcherMesh.visible = hOut < 0.88;
+        shadowCatcherMesh.visible = isRoomVisible;
       }
 
       // Floor group (carpet & chair): strictly grounded and stationary
       floorGroup.position.set(baseRoomX, 0, 0);
       floorGroup.rotation.set(0, startYaw, 0);
       floorGroup.scale.set(1, 1, 1);
-      floorGroup.visible = hOut < 0.88;
+      floorGroup.visible = isRoomVisible;
 
       // Room / Desk group: NEVER leaves its position! Strictly grounded and stationary
       roomGroup.position.set(baseRoomX, 0, 0);
       roomGroup.rotation.set(0, startYaw, 0);
       roomGroup.scale.set(1, 1, 1);
-      roomGroup.visible = hOut < 0.88;
+      roomGroup.visible = isRoomVisible;
 
       // Floating musical notes effect
       if (musicMesh) {
@@ -1258,32 +1308,31 @@ export default function DavidInteractiveExperience3D({
         musicMesh.rotation.z = Math.sin(elapsed * 1.8) * 0.04;
       }
 
-      // Dynamic background color lerp: #e8e5e0 (Hero) -> #001738 (About) -> #e8e5e0 (Projects)
+      // Dynamic background color lerp: stays cream/beige (#e8e5e0) while office is active,
+      // then shifts smoothly to cyber dark blue (#001738) as the pedestal activates!
       const heroBgColor = new THREE.Color("#e8e5e0");
       const aboutBgColor = new THREE.Color("#001738");
       const projectsBgColor = new THREE.Color("#e8e5e0");
 
       const curBg = heroBgColor.clone();
       if (hOut < 1.0) {
-        curBg.lerp(aboutBgColor, easeHero);
+        const bgT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.32));
+        const easeBg = bgT * bgT * (3 - 2 * bgT);
+        curBg.lerp(aboutBgColor, easeBg);
       } else {
         curBg.lerpColors(aboutBgColor, projectsBgColor, aOut);
       }
       renderer.setClearColor(curBg, 1.0);
 
-      // Lab pedestal at (0, 0, 6): only visible once room has lifted away (hOut >= 0.82)
-      // This strictly guarantees the light cone NEVER renders under or cuts through the room rug!
-      labGroup.position.set(0, 0, 6);
-      labGroup.visible = hOut >= 0.82 && aOut < 0.99;
-
-      // Authentic curved dome grid uniforms & visibility
+      // Authentic curved dome grid uniforms & smooth fade-in
       if (gridMesh) {
         gridMesh.position.set(0, -0.4, 6);
-        gridMesh.visible = hOut >= 0.65 && aOut < 0.99;
+        const gridInT = Math.min(1, Math.max(0, (hOut - 0.55) / 0.25));
+        const easeGridIn = gridInT * gridInT * (3 - 2 * gridInT);
+        gridMesh.visible = gridInT > 0.01 && aOut < 0.99;
         gridUniforms.uTime.value = elapsed;
         gridUniforms.uProgress.value = sProg;
-        const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.65) / 0.25));
-        gridUniforms.uOpacity.value = (0.2 + 0.8 * inGridOpacity) * (1.0 - aOut);
+        gridUniforms.uOpacity.value = easeGridIn * (1.0 - aOut);
       }
 
       // Camera coordinates matching David Heckhoff points:
@@ -1311,7 +1360,7 @@ export default function DavidInteractiveExperience3D({
       cameraGroup.position.x += (targetCamGroupX - cameraGroup.position.x) * 0.06;
       cameraGroup.position.y += (targetCamGroupY - cameraGroup.position.y) * 0.06;
 
-      // Project 3D callout anchor points for HUD cards (David Heckhoff 1:1)
+      // Project 3D callout anchor points for HUD cards (debounced to eliminate 60fps React churn)
       if (onProjectPoints && hOut > 0.05 && aOut < 0.99) {
         const pDetails = new THREE.Vector3(-0.76, 3.6, 6.75).project(camera);
         const pDesc = new THREE.Vector3(-0.9, 2.0, 6.75).project(camera);
@@ -1320,20 +1369,34 @@ export default function DavidInteractiveExperience3D({
         const w = window.innerWidth;
         const h = window.innerHeight;
 
-        onProjectPoints({
-          details: {
-            x: (pDetails.x * 0.5 + 0.5) * w,
-            y: (-(pDetails.y * 0.5) + 0.5) * h,
-          },
-          desc: {
-            x: (pDesc.x * 0.5 + 0.5) * w,
-            y: (-(pDesc.y * 0.5) + 0.5) * h,
-          },
-          services: {
-            x: (pServices.x * 0.5 + 0.5) * w,
-            y: (-(pServices.y * 0.5) + 0.5) * h,
-          },
-        });
+        const x1 = Math.round((pDetails.x * 0.5 + 0.5) * w);
+        const y1 = Math.round((-(pDetails.y * 0.5) + 0.5) * h);
+        const x2 = Math.round((pDesc.x * 0.5 + 0.5) * w);
+        const y2 = Math.round((-(pDesc.y * 0.5) + 0.5) * h);
+        const x3 = Math.round((pServices.x * 0.5 + 0.5) * w);
+        const y3 = Math.round((-(pServices.y * 0.5) + 0.5) * h);
+
+        if (
+          Math.abs(x1 - lastProj.x1) >= 1.5 ||
+          Math.abs(y1 - lastProj.y1) >= 1.5 ||
+          Math.abs(x2 - lastProj.x2) >= 1.5 ||
+          Math.abs(y2 - lastProj.y2) >= 1.5 ||
+          Math.abs(x3 - lastProj.x3) >= 1.5 ||
+          Math.abs(y3 - lastProj.y3) >= 1.5
+        ) {
+          lastProj.x1 = x1;
+          lastProj.y1 = y1;
+          lastProj.x2 = x2;
+          lastProj.y2 = y2;
+          lastProj.x3 = x3;
+          lastProj.y3 = y3;
+
+          onProjectPoints({
+            details: { x: x1, y: y1 },
+            desc: { x: x2, y: y2 },
+            services: { x: x3, y: y3 },
+          });
+        }
       }
 
       renderer.render(scene, camera);

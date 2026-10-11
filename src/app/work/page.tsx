@@ -41,42 +41,50 @@ export default function WorkPage() {
 
   // Synchronize scroll position with continuous 3D WebGL timeline
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const sy = window.scrollY;
-      setScrollY(sy);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const sy = window.scrollY;
+          setScrollY(sy);
 
-      // 1. Hero transition: stays static until 120px, then room lifts cleanly between 120px and 850px
-      const hOut = sy < 120 ? 0 : Math.max(0, Math.min(1, (sy - 120) / 730));
-      setHeroOut(hOut);
+          // 1. Hero transition: stays static until 120px, then room lifts cleanly between 120px and 850px
+          const hOut = sy < 120 ? 0 : Math.max(0, Math.min(1, (sy - 120) / 730));
+          setHeroOut(hOut);
 
-      // Hero editorial text fades out smoothly between 80px and 320px
-      const hOpacity = sy < 80 ? 1 : Math.max(0, Math.min(1, 1 - (sy - 80) / 240));
-      setHeroOpacity(hOpacity);
+          // Hero editorial text fades out smoothly between 80px and 320px
+          const hOpacity = sy < 80 ? 1 : Math.max(0, Math.min(1, 1 - (sy - 80) / 240));
+          setHeroOpacity(hOpacity);
 
-      // 2. Scan progress: sweeps smoothly and proportionally from 0.0 to 1.0 between 850px and 2450px
-      const sProg = sy < 850 ? 0 : Math.max(0, Math.min(1, (sy - 850) / 1600));
-      setScanProgress(sProg);
+          // 2. Scan progress: sweeps smoothly and proportionally from 0.0 to 1.0 between 850px and 2450px
+          const sProg = sy < 850 ? 0 : Math.max(0, Math.min(1, (sy - 850) / 1600));
+          setScanProgress(sProg);
 
-      // 3. About exit into Projects: 2450px to 3050px
-      const aOut = sy > 2450 ? Math.max(0, Math.min(1, (sy - 2450) / 600)) : 0;
-      setAboutOut(aOut);
+          // 3. About exit into Projects: 2450px to 3050px
+          const aOut = sy > 2450 ? Math.max(0, Math.min(1, (sy - 2450) / 600)) : 0;
+          setAboutOut(aOut);
 
-      // About HUD overlay opacity: fades in at 850px, stays until 2450px, then rolls out
-      let aOpacity = 0;
-      if (sy >= 850 && sy < 2450) {
-        aOpacity = Math.max(0, Math.min(1, (sy - 850) / 200));
-      } else if (sy >= 2450) {
-        aOpacity = Math.max(0, Math.min(1, 1 - (sy - 2450) / 300));
-      }
-      setAboutOpacity(aOpacity);
+          // About HUD overlay opacity: fades in at 850px, stays until 2450px, then rolls out
+          let aOpacity = 0;
+          if (sy >= 850 && sy < 2450) {
+            aOpacity = Math.max(0, Math.min(1, (sy - 850) / 200));
+          } else if (sy >= 2450) {
+            aOpacity = Math.max(0, Math.min(1, 1 - (sy - 2450) / 300));
+          }
+          setAboutOpacity(aOpacity);
 
-      // Navigation state tracking
-      if (sy >= 2700) {
-        setActiveSection("projects");
-      } else if (sy >= 850) {
-        setActiveSection("about");
-      } else {
-        setActiveSection("hero");
+          // Navigation state tracking
+          if (sy >= 2700) {
+            setActiveSection("projects");
+          } else if (sy >= 850) {
+            setActiveSection("about");
+          } else {
+            setActiveSection("hero");
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
