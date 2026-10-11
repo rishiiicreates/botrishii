@@ -241,11 +241,11 @@ export default function DavidInteractiveExperience3D({
     let musicMesh: THREE.Mesh | null = null;
     let baseMusicY = 0;
 
-    // Organic randomized tumbling factors for the chair falling into the void
+    // Organic randomized tumbling factors for the chair falling over onto the carpet
     const chairTumbleSeed = {
-      pitch: -1.75 - Math.random() * 0.55, // topple backward away from avatar & desk
-      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.85 + Math.random() * 0.75),   // natural angular spin
-      roll: (Math.random() > 0.5 ? 1 : -1) * (0.75 + Math.random() * 0.65),   // sideways lean
+      pitch: -1.30 - Math.random() * 0.15, // topple backward onto backrest
+      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.25 + Math.random() * 0.20), // natural angular twist
+      roll: (Math.random() > 0.5 ? 1 : -1) * (0.35 + Math.random() * 0.20), // natural sideways lean
     };
 
     let avatarGroup: THREE.Group | null = null;
@@ -316,19 +316,11 @@ export default function DavidInteractiveExperience3D({
       });
 
       if (chairMesh) {
-        chairMesh.material = new THREE.MeshBasicMaterial({
-          map: roomTexture,
-          transparent: true,
-          opacity: 1.0,
-        });
+        chairMesh.material = roomMaterial;
         floorGroup.add(chairMesh);
       }
       if (carpetMesh) {
-        carpetMesh.material = new THREE.MeshBasicMaterial({
-          map: roomTexture,
-          transparent: true,
-          opacity: 1.0,
-        });
+        carpetMesh.material = roomMaterial;
         floorGroup.add(carpetMesh);
       }
 
@@ -1110,32 +1102,21 @@ export default function DavidInteractiveExperience3D({
         : 0;
 
       // Carpet elevation: while walking on carpet, soles rest on carpet surface (0.055m)
-      // Once stepping off the front edge (walkOffT: 0.82 -> 1.0), steps down to ground (0.00m)
-      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.82) / 0.18));
+      // Once stepping off the front edge (walkOffT: 0.72 -> 0.90), steps cleanly down to floor (0.00m)
+      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.72) / 0.18));
       const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, stepDownT);
 
-      // Forward step off the carpet to clearance point (Z = 5.5, clear of carpet Corner 1 at Z = 5.24)
-      const clearX = THREE.MathUtils.lerp(baseRoomX, landscape ? 0.2 : 0.0, easeWalkOff);
-      const clearZ = THREE.MathUtils.lerp(0, 5.5, easeWalkOff);
+      // Forward step off the carpet to pedestal center (Z = 6.0, well clear of carpet Corner 1 at Z = 5.24)
+      const clearX = THREE.MathUtils.lerp(baseRoomX, 0.0, easeWalkOff);
+      const clearZ = THREE.MathUtils.lerp(0, 6.0, easeWalkOff);
       const startAvatarYaw = startYaw + Math.PI / 2;
       const targetAvatarYaw = -Math.PI;
-      const clearYaw = THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw + 0.2, easeWalkOff);
+      const clearYaw = THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeWalkOff);
 
-      // -------------------------------------------------------------
-      // 3. PEDESTAL APPROACH (hOut: 0.52 -> 0.85)
-      // -------------------------------------------------------------
-      // Once safely off the carpet, mannequin takes final steps onto pedestal center (0, 0, 6)
-      const toPedestalT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.33));
-      const easePedestal = toPedestalT * toPedestalT * (3 - 2 * toPedestalT);
-
-      const pedestalBob = (toPedestalT > 0.01 && toPedestalT < 0.99)
-        ? Math.abs(Math.sin(toPedestalT * Math.PI * 4)) * 0.035
-        : 0;
-
-      const finalAvatarX = THREE.MathUtils.lerp(clearX, 0, easePedestal);
-      const finalAvatarZ = THREE.MathUtils.lerp(clearZ, 6.0, easePedestal);
-      const finalAvatarY = carpetElev + walkBob + pedestalBob;
-      const finalAvatarYaw = THREE.MathUtils.lerp(clearYaw, targetAvatarYaw, easePedestal);
+      const finalAvatarX = clearX;
+      const finalAvatarZ = clearZ;
+      const finalAvatarY = carpetElev + walkBob;
+      const finalAvatarYaw = clearYaw;
 
       if (avatarGroup) {
         avatarGroup.position.set(finalAvatarX, finalAvatarY, finalAvatarZ);
@@ -1144,63 +1125,65 @@ export default function DavidInteractiveExperience3D({
       }
 
       // -------------------------------------------------------------
-      // 4. CHAIR FALL (RANDOMIZED) & CARPET / ROOM DISPERSAL (hOut: 0.52 -> 0.90)
+      // 3. CHAIR FALL (RANDOMIZED) & ROOM DISPERSAL (hOut: 0.52 -> 0.90)
       // -------------------------------------------------------------
-      // Now that the mannequin is safely and completely OFF the carpet (Z >= 5.5),
-      // the chair tumbles backward/sideways into the void, the carpet drops straight down,
-      // and the room disperses behind him with ZERO overlap or collision!
-      const fallT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.36));
-      const easeFall = fallT * fallT; // Accelerating gravity drop
-      const fadeFall = Math.max(0, 1.0 - fallT * 2.2); // Fades out into the void
+      // CARPET DOES NOT MOVE AT ALL: Stays 100% stationary on the floor.
+      // The mannequin is now safely and completely OFF the carpet (Z = 6.0) facing front.
+      // At hOut >= 0.52, the chair topples over onto the carpet behind him with randomized fall physics,
+      // and the desk lifts away into the ceiling with ZERO overlap or collision!
 
-      // Ground shadow catcher: only visible while room is grounded, fades immediately upon dispersal
+      // Ground shadow catcher: only visible while room is grounded, hides when desk lifts
       if (shadowCatcherMesh) {
         shadowCatcherMesh.visible = hOut < 0.52;
       }
 
-      // Chair: stays upright on carpet until avatar is off carpet, then tumbles into void
+      // Carpet: DOES NOT MOVE. Stays 100% grounded and completely stationary on the floor
+      if (carpetMesh) {
+        carpetMesh.position.copy(baseCarpetPos);
+        carpetMesh.rotation.set(0, 0, 0);
+        carpetMesh.scale.set(1, 1, 1);
+        carpetMesh.visible = true;
+      }
+
+      // Chair: stays upright on carpet until avatar is off carpet, then topples over onto carpet
       if (chairMesh) {
+        if (hOut < 0.02) {
+          // Re-randomize tumble angles for each subsequent scroll run
+          chairTumbleSeed.pitch = -1.25 - Math.random() * 0.20;
+          chairTumbleSeed.yaw = (Math.random() > 0.5 ? 1 : -1) * (0.20 + Math.random() * 0.25);
+          chairTumbleSeed.roll = (Math.random() > 0.5 ? 1 : -1) * (0.25 + Math.random() * 0.25);
+        }
+
         if (hOut < 0.52) {
           // Standing and walking phase: pushed back, upright, perfectly resting on carpet
           chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
           chairMesh.rotation.set(0, 0, 0);
           chairMesh.visible = true;
-          (chairMesh.material as THREE.MeshBasicMaterial).opacity = 1.0;
         } else {
-          // Falling phase: randomized tumbling physics & downward drop into void
-          const dropY = easeFall * 20.0;
-          const dropZ = chairPush + easeFall * 4.0;
-          chairMesh.position.set(baseChairPos.x, baseChairPos.y - dropY, baseChairPos.z + dropZ);
-          chairMesh.rotation.set(
-            chairTumbleSeed.pitch * easeFall,
-            chairTumbleSeed.yaw * easeFall,
-            chairTumbleSeed.roll * easeFall
+          // Falling phase: chair topples over onto the carpet (randomized angles)
+          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.28));
+          const easeTopple = chairFallT * chairFallT * (3 - 2 * chairFallT);
+
+          const pitch = chairTumbleSeed.pitch * easeTopple;
+          const yaw = chairTumbleSeed.yaw * easeTopple;
+          const roll = chairTumbleSeed.roll * easeTopple;
+
+          // Lift pivot so chair bottom rests squarely on carpet surface (Y >= 0.04) without penetrating
+          const toppleLiftY = easeTopple * 1.20;
+          const toppleSlideZ = chairPush - easeTopple * 0.35;
+          const toppleSlideX = easeTopple * (chairTumbleSeed.roll > 0 ? 0.15 : -0.15);
+
+          chairMesh.position.set(
+            baseChairPos.x + toppleSlideX,
+            baseChairPos.y + toppleLiftY,
+            baseChairPos.z + toppleSlideZ
           );
-          (chairMesh.material as THREE.MeshBasicMaterial).opacity = fadeFall;
-          chairMesh.visible = fadeFall > 0.01;
+          chairMesh.rotation.set(pitch, yaw, roll);
+          chairMesh.visible = true;
         }
       }
 
-      // Carpet: stays flat and grounded until avatar is off carpet, then drops into void
-      if (carpetMesh) {
-        if (hOut < 0.52) {
-          carpetMesh.position.copy(baseCarpetPos);
-          carpetMesh.rotation.set(0, 0, 0);
-          carpetMesh.scale.set(1, 1, 1);
-          carpetMesh.visible = true;
-          (carpetMesh.material as THREE.MeshBasicMaterial).opacity = 1.0;
-        } else {
-          const carpetDropY = easeFall * 20.0;
-          const carpetScale = Math.max(0.001, 1.0 - easeFall * 0.85);
-          carpetMesh.position.set(baseCarpetPos.x, baseCarpetPos.y - carpetDropY, baseCarpetPos.z);
-          carpetMesh.rotation.set(0, 0, 0);
-          carpetMesh.scale.set(carpetScale, carpetScale, carpetScale);
-          (carpetMesh.material as THREE.MeshBasicMaterial).opacity = fadeFall;
-          carpetMesh.visible = fadeFall > 0.01;
-        }
-      }
-
-      // Floor group visibility
+      // Floor group visibility: active throughout hero scroll, hides when About section begins
       floorGroup.visible = hOut < 0.88;
 
       // Room / Desk group: stays grounded, then lifts / disperses away once avatar has walked off
@@ -1210,18 +1193,19 @@ export default function DavidInteractiveExperience3D({
         roomGroup.scale.set(1, 1, 1);
         roomGroup.visible = true;
       } else {
-        const easeRoom = easeFall;
+        const deskT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.36));
+        const easeDesk = deskT * deskT;
         roomGroup.position.set(
-          THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeRoom),
-          THREE.MathUtils.lerp(0, targetRoomY, easeRoom),
+          THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeDesk),
+          THREE.MathUtils.lerp(0, targetRoomY, easeDesk),
           0
         );
         roomGroup.rotation.set(
-          THREE.MathUtils.lerp(0, 0.1, easeRoom),
+          THREE.MathUtils.lerp(0, 0.1, easeDesk),
           startYaw,
-          THREE.MathUtils.lerp(0, 0.09, easeRoom)
+          THREE.MathUtils.lerp(0, 0.09, easeDesk)
         );
-        const roomScale = THREE.MathUtils.lerp(1, 0.85, easeRoom);
+        const roomScale = THREE.MathUtils.lerp(1, 0.85, easeDesk);
         roomGroup.scale.set(roomScale, roomScale, roomScale);
         roomGroup.visible = hOut < 0.88;
       }
