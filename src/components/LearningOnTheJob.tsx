@@ -82,16 +82,16 @@ export default function LearningOnTheJob() {
         </p>
       </div>
 
-      {/* Right Column: Supporting Photography */}
-      <figure className="asset-container tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start rounded-[4rem] col-span-6 col-start-1 mt-20 overflow-hidden aspect-[755/503] relative">
+      {/* Right Column: Supporting Photography & Engineering Telemetry */}
+      <figure className="asset-container tablet:col-span-10 tablet:col-start-3 tablet:mt-24 laptop:col-span-6 laptop:col-start-7 laptop:row-span-full laptop:mt-0 laptop:self-start rounded-[2.5rem] tablet:rounded-[3.5rem] col-span-6 col-start-1 mt-20 overflow-hidden aspect-[16/10] relative border border-black/10 dark:border-white/10 shadow-xl bg-[#fbf8ee] dark:bg-[#071b1f]">
         <Image
-          src="/images/robots-learning.png"
-          alt="Handwritten notes in notebook with fountain pen and reading glasses"
+          src="/images/work-eval-suite-radar.png"
+          alt="100% Pass Rate on Automated Eval Suite with 6-Dimension Capability Radar"
           fill
           priority
           unoptimized
           sizes="(min-width: 1280px) 47vw, (min-width: 768px) 76vw, 88vw"
-          className="object-cover"
+          className="object-contain p-2 sm:p-4"
         />
       </figure>
     </section>
