@@ -336,9 +336,14 @@ export default function DavidInteractiveExperience3D({
     let rightUpLegBone: THREE.Bone | null = null;
     let leftLegBone: THREE.Bone | null = null;
     let rightLegBone: THREE.Bone | null = null;
+    let leftFootBone: THREE.Bone | null = null;
+    let rightFootBone: THREE.Bone | null = null;
     let leftArmBone: THREE.Bone | null = null;
     let rightArmBone: THREE.Bone | null = null;
+    let leftForeArmBone: THREE.Bone | null = null;
+    let rightForeArmBone: THREE.Bone | null = null;
     let hipsBone: THREE.Bone | null = null;
+    let spineBone: THREE.Bone | null = null;
 
     // Scan progress uniform for the hologram beam
     const scanUniform = { value: 0 };
@@ -860,13 +865,19 @@ export default function DavidInteractiveExperience3D({
       armature.traverse((node) => {
         if ((node as THREE.Bone).isBone) {
           const bone = node as THREE.Bone;
-          if (bone.name === "leftUpLegBone") leftUpLegBone = bone;
-          else if (bone.name === "rightUpLegBone") rightUpLegBone = bone;
-          else if (bone.name === "leftLegBone") leftLegBone = bone;
-          else if (bone.name === "rightLegBone") rightLegBone = bone;
-          else if (bone.name === "leftArmBone") leftArmBone = bone;
-          else if (bone.name === "rightArmBone") rightArmBone = bone;
-          else if (bone.name === "hipsBone") hipsBone = bone;
+          const n = bone.name.toLowerCase();
+          if (n === "leftuplegbone") leftUpLegBone = bone;
+          else if (n === "rightuplegbone") rightUpLegBone = bone;
+          else if (n === "leftlegbone") leftLegBone = bone;
+          else if (n === "rightlegbone") rightLegBone = bone;
+          else if (n === "leftfootbone") leftFootBone = bone;
+          else if (n === "rightfootbone") rightFootBone = bone;
+          else if (n === "leftarmbone") leftArmBone = bone;
+          else if (n === "rightarmbone") rightArmBone = bone;
+          else if (n === "leftforearmbone") leftForeArmBone = bone;
+          else if (n === "rightforearmbone") rightForeArmBone = bone;
+          else if (n === "hipsbone") hipsBone = bone;
+          else if (n === "spinebone") spineBone = bone;
         }
       });
 
@@ -1105,6 +1116,23 @@ export default function DavidInteractiveExperience3D({
 
     const lastProj = { x1: -999, y1: -999, x2: -999, y2: -999, x3: -999, y3: -999 };
 
+    // Reusable quaternion scratch objects for 60fps GC-free walking kinematics
+    const deltaHipLeft = new THREE.Quaternion();
+    const deltaHipRight = new THREE.Quaternion();
+    const deltaKneeLeft = new THREE.Quaternion();
+    const deltaKneeRight = new THREE.Quaternion();
+    const deltaFootLeft = new THREE.Quaternion();
+    const deltaFootRight = new THREE.Quaternion();
+    const deltaArmLeft = new THREE.Quaternion();
+    const deltaArmRight = new THREE.Quaternion();
+    const deltaForeArmLeft = new THREE.Quaternion();
+    const deltaForeArmRight = new THREE.Quaternion();
+    const deltaSpinePitch = new THREE.Quaternion();
+    const deltaSpineTwist = new THREE.Quaternion();
+    const axisX = new THREE.Vector3(1, 0, 0);
+    const axisY = new THREE.Vector3(0, 1, 0);
+    const axisZ = new THREE.Vector3(0, 0, 1);
+
     const animate = () => {
       if (isDisposed) return;
       animationFrameId = requestAnimationFrame(animate);
@@ -1198,26 +1226,87 @@ export default function DavidInteractiveExperience3D({
 
       // Natural stylized walking stride envelope: strictly 0 at start and finish!
       const walkEnvelope = Math.sin(walkOffT * Math.PI);
-      const walkBob = walkEnvelope * Math.abs(Math.sin(walkOffT * Math.PI * 6.0)) * 0.035;
+      const walkCycle = walkOffT * Math.PI * 8.0; // 4 complete, grounded, natural strides
 
-      // Layered Procedural Walking Kinematics (Leg Strides, Knee Bends, Arm Swings, Pelvic Sway)
+      // Layered Procedural Walking Kinematics (Quaternion-based, zero Euler distortion)
       if (walkEnvelope > 0.001) {
-        const walkCycle = walkOffT * Math.PI * 6.0; // 3 complete, natural, grounded strides
-        if (leftUpLegBone) leftUpLegBone.rotation.x += Math.sin(walkCycle) * 0.44 * walkEnvelope;
-        if (rightUpLegBone) rightUpLegBone.rotation.x -= Math.sin(walkCycle) * 0.44 * walkEnvelope;
-        if (leftLegBone) leftLegBone.rotation.x += Math.max(0, -Math.sin(walkCycle)) * 0.38 * walkEnvelope;
-        if (rightLegBone) rightLegBone.rotation.x += Math.max(0, Math.sin(walkCycle)) * 0.38 * walkEnvelope;
-        if (leftArmBone) leftArmBone.rotation.x -= Math.sin(walkCycle) * 0.35 * walkEnvelope;
-        if (rightArmBone) rightArmBone.rotation.x += Math.sin(walkCycle) * 0.35 * walkEnvelope;
-        if (hipsBone) hipsBone.rotation.y += Math.sin(walkCycle) * 0.08 * walkEnvelope;
+        // 1. Thigh flexion / extension (pitch forward & back)
+        const thighSwingL = Math.sin(walkCycle) * 0.46 * walkEnvelope;
+        const thighSwingR = -Math.sin(walkCycle) * 0.46 * walkEnvelope;
+
+        if (leftUpLegBone) {
+          deltaHipLeft.setFromAxisAngle(axisX, thighSwingL);
+          leftUpLegBone.quaternion.multiply(deltaHipLeft);
+        }
+        if (rightUpLegBone) {
+          deltaHipRight.setFromAxisAngle(axisX, thighSwingR);
+          rightUpLegBone.quaternion.multiply(deltaHipRight);
+        }
+
+        // 2. Knee flexion (only bends backward during swing phase!)
+        // In local bone space, negative angle around local X bends knee backward
+        const kneeFlexL = Math.max(0, -Math.sin(walkCycle + 0.35)) * 0.68 * walkEnvelope;
+        const kneeFlexR = Math.max(0, Math.sin(walkCycle + 0.35)) * 0.68 * walkEnvelope;
+
+        if (leftLegBone) {
+          deltaKneeLeft.setFromAxisAngle(axisX, -kneeFlexL);
+          leftLegBone.quaternion.multiply(deltaKneeLeft);
+        }
+        if (rightLegBone) {
+          deltaKneeRight.setFromAxisAngle(axisX, -kneeFlexR);
+          rightLegBone.quaternion.multiply(deltaKneeRight);
+        }
+
+        // 3. Foot / Ankle articulation (heel-strike dorsiflexion, toe-off plantarflexion)
+        const footPitchL = (Math.sin(walkCycle) * 0.22 - Math.cos(walkCycle * 2.0) * 0.10) * walkEnvelope;
+        const footPitchR = (-Math.sin(walkCycle) * 0.22 - Math.cos(walkCycle * 2.0) * 0.10) * walkEnvelope;
+
+        if (leftFootBone) {
+          deltaFootLeft.setFromAxisAngle(axisX, footPitchL);
+          leftFootBone.quaternion.multiply(deltaFootLeft);
+        }
+        if (rightFootBone) {
+          deltaFootRight.setFromAxisAngle(axisX, footPitchR);
+          rightFootBone.quaternion.multiply(deltaFootRight);
+        }
+
+        // 4. Arm swing (counter-swing to opposite leg around local X)
+        const armSwingL = Math.sin(walkCycle) * 0.32 * walkEnvelope;
+        const armSwingR = -Math.sin(walkCycle) * 0.32 * walkEnvelope;
+        if (leftArmBone) {
+          deltaArmLeft.setFromAxisAngle(axisX, armSwingL);
+          leftArmBone.quaternion.multiply(deltaArmLeft);
+        }
+        if (rightArmBone) {
+          deltaArmRight.setFromAxisAngle(axisX, armSwingR);
+          rightArmBone.quaternion.multiply(deltaArmRight);
+        }
+
+        // 5. Elbow bend (forearms flex forward around local X on forward swing)
+        const elbowBendL = Math.max(0, -armSwingL) * 0.45;
+        const elbowBendR = Math.max(0, -armSwingR) * 0.45;
+        if (leftForeArmBone) {
+          deltaForeArmLeft.setFromAxisAngle(axisX, -elbowBendL);
+          leftForeArmBone.quaternion.multiply(deltaForeArmLeft);
+        }
+        if (rightForeArmBone) {
+          deltaForeArmRight.setFromAxisAngle(axisX, -elbowBendR);
+          rightForeArmBone.quaternion.multiply(deltaForeArmRight);
+        }
+
+        // 6. Torso: keep t-idle posture pristine (t-idle already has natural upright chest pose)
       }
+
+      // Smooth pelvic vertical bounce (2 bounces per full stride, strictly smooth sine)
+      const walkBob = walkEnvelope > 0.001 ? walkEnvelope * Math.sin(walkCycle * 2.0) * 0.032 : 0;
+      const hipSway = walkEnvelope > 0.001 ? Math.sin(walkCycle) * 0.02 * walkEnvelope : 0;
 
       // Carpet elevation: steps cleanly down from carpet (0.055m) to bare floor (0.00m)
       const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.55) / 0.25));
       const easeStepDown = stepDownT * stepDownT * (3 - 2 * stepDownT);
       const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, easeStepDown);
 
-      const finalAvatarX = THREE.MathUtils.lerp(baseRoomX, 0.0, easeWalkOff);
+      const finalAvatarX = THREE.MathUtils.lerp(baseRoomX, 0.0, easeWalkOff) + hipSway;
       const finalAvatarY = carpetElev + walkBob;
       const finalAvatarZ = THREE.MathUtils.lerp(0.0, 6.0, easeWalkOff);
       const startAvatarYaw = startYaw + Math.PI / 2;
