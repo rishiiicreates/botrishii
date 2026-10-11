@@ -216,19 +216,37 @@ export default function DavidInteractiveExperience3D({
     scene.add(gridMesh);
 
     // 5. Interactive Groups & Mesh Handles
+    // Room Group: Desk, monitors, pinboard, shelf (lifts up into the ceiling)
     const roomGroup = new THREE.Group();
     const landscapeInit = isLandscape();
     roomGroup.position.set(landscapeInit ? 2 : 0, 0, 0);
     roomGroup.rotation.set(0, landscapeInit ? -2.3 : -2.1, 0);
     scene.add(roomGroup);
 
+    // Floor Group: Carpet & Chair physical containment layer (stays strictly grounded, drops down into void)
+    const floorGroup = new THREE.Group();
+    floorGroup.position.set(landscapeInit ? 2 : 0, 0, 0);
+    floorGroup.rotation.set(0, landscapeInit ? -2.3 : -2.1, 0);
+    scene.add(floorGroup);
+
     const labGroup = new THREE.Group();
     labGroup.position.set(0, 0, 6);
     scene.add(labGroup);
 
     let chairMesh: THREE.Mesh | null = null;
+    let carpetMesh: THREE.Mesh | null = null;
+    let shadowCatcherMesh: THREE.Mesh | null = null;
+    const baseChairPos = new THREE.Vector3();
+    const baseCarpetPos = new THREE.Vector3();
     let musicMesh: THREE.Mesh | null = null;
     let baseMusicY = 0;
+
+    // Organic randomized tumbling factors for the chair falling into the void
+    const chairTumbleSeed = {
+      pitch: -1.75 - Math.random() * 0.55, // topple backward away from avatar & desk
+      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.85 + Math.random() * 0.75),   // natural angular spin
+      roll: (Math.random() > 0.5 ? 1 : -1) * (0.75 + Math.random() * 0.65),   // sideways lean
+    };
 
     let avatarGroup: THREE.Group | null = null;
     let mixer: THREE.AnimationMixer | null = null;
@@ -246,6 +264,13 @@ export default function DavidInteractiveExperience3D({
       const roomScene = gltf.scene;
 
       chairMesh = roomScene.children.find((c) => c.name === "chair") as THREE.Mesh;
+      carpetMesh = roomScene.children.find((c) => c.name === "carpet") as THREE.Mesh;
+      if (chairMesh) {
+        baseChairPos.copy(chairMesh.position);
+      }
+      if (carpetMesh) {
+        baseCarpetPos.copy(carpetMesh.position);
+      }
       musicMesh = roomScene.children.find((c) => c.name === "music") as THREE.Mesh;
       if (musicMesh) baseMusicY = musicMesh.position.y;
 
@@ -257,6 +282,7 @@ export default function DavidInteractiveExperience3D({
           if (mesh.name === "desktop-plane-0" || mesh.name === "desktop-plane-1") {
             mesh.material = new THREE.MeshBasicMaterial({ map: desktopsTexture });
           } else if (mesh.name === "shadow-catcher") {
+            shadowCatcherMesh = mesh;
             mesh.material = new THREE.ShaderMaterial({
               transparent: true,
               depthWrite: false,
@@ -288,6 +314,23 @@ export default function DavidInteractiveExperience3D({
           }
         }
       });
+
+      if (chairMesh) {
+        chairMesh.material = new THREE.MeshBasicMaterial({
+          map: roomTexture,
+          transparent: true,
+          opacity: 1.0,
+        });
+        floorGroup.add(chairMesh);
+      }
+      if (carpetMesh) {
+        carpetMesh.material = new THREE.MeshBasicMaterial({
+          map: roomTexture,
+          transparent: true,
+          opacity: 1.0,
+        });
+        floorGroup.add(carpetMesh);
+      }
 
       roomGroup.add(roomScene);
     });
@@ -1022,38 +1065,165 @@ export default function DavidInteractiveExperience3D({
       // Easing curves matching GSAP power1.out (1 - (1 - x)^2)
       const easeHero = 1 - (1 - hOut) * (1 - hOut);
 
-      // Room group transition (desk stays stationary until hOut > 0.08, then flies UP smoothly)
+      // Phased Spatial Choreography & Physical Layer Containers:
+      // Real-World Layer Hierarchy & Physical Containment:
+      // Layer 0: Ground / Cyber grid (Y = 0)
+      // Layer 1: Carpet (floorGroup: stays strictly grounded at Y = 0 until mannequin walks completely off)
+      // Layer 2: Chair (floorGroup: sits on carpet, pushes back naturally when mannequin stands, then tumbles/falls into void)
+      // Layer 3: Mannequin (sits in chair -> stands up -> walks across and completely OFF the carpet -> steps onto pedestal)
+      
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const startYaw = landscape ? -2.3 : -2.1;
       const targetRoomX = landscape ? 4.5 : 0;
       const targetRoomY = landscape ? 5.7 : 5.4;
 
-      const tRoom = hOut < 0.08 ? 0 : (hOut - 0.08) / 0.92;
-      const easeRoom = tRoom * tRoom;
+      // Keep floorGroup container strictly aligned with room base coordinates while grounded
+      floorGroup.position.set(baseRoomX, 0, 0);
+      floorGroup.rotation.set(0, startYaw, 0);
 
-      roomGroup.position.set(
-        THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeRoom),
-        THREE.MathUtils.lerp(0, targetRoomY, easeRoom),
-        0
-      );
-      roomGroup.rotation.set(
-        THREE.MathUtils.lerp(0, 0.1, easeRoom),
-        startYaw,
-        THREE.MathUtils.lerp(0, 0.09, easeRoom)
-      );
-      const roomScale = THREE.MathUtils.lerp(1, 0.85, easeRoom);
-      roomGroup.scale.set(roomScale, roomScale, roomScale);
-      roomGroup.visible = hOut < 0.88;
+      // -------------------------------------------------------------
+      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.16)
+      // -------------------------------------------------------------
+      const standT = Math.min(1, Math.max(0, hOut / 0.16));
+      const easeStand = standT * standT * (3 - 2 * standT);
+      if (idleAction && tIdleAction) {
+        idleAction.setEffectiveWeight(1.0 - easeStand);
+        tIdleAction.setEffectiveWeight(easeStand);
+      }
 
-      // Chair swivel on scroll
+      // Chair pushback: as avatar stands, chair pushes back by 0.55m along local Z
+      // staying upright and flush on top of the carpet so they NEVER collide
+      const chairPush = easeStand * 0.55;
+
+      // -------------------------------------------------------------
+      // 2. MANNEQUIN WALKS COMPLETELY OFF THE CARPET (hOut: 0.16 -> 0.52)
+      // -------------------------------------------------------------
+      // The mannequin FIRST steps forward across the carpet and completely
+      // steps OFF the front edge of the carpet (Z = 5.5) before any falling occurs!
+      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.16) / 0.36));
+      const easeWalkOff = walkOffT * walkOffT * (3 - 2 * walkOffT);
+
+      // Stride bobbing for natural human locomotion while walking
+      const walkBob = (walkOffT > 0.01 && walkOffT < 0.99)
+        ? Math.abs(Math.sin(walkOffT * Math.PI * 4)) * 0.045
+        : 0;
+
+      // Carpet elevation: while walking on carpet, soles rest on carpet surface (0.055m)
+      // Once stepping off the front edge (walkOffT: 0.82 -> 1.0), steps down to ground (0.00m)
+      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.82) / 0.18));
+      const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, stepDownT);
+
+      // Forward step off the carpet to clearance point (Z = 5.5, clear of carpet Corner 1 at Z = 5.24)
+      const clearX = THREE.MathUtils.lerp(baseRoomX, landscape ? 0.2 : 0.0, easeWalkOff);
+      const clearZ = THREE.MathUtils.lerp(0, 5.5, easeWalkOff);
+      const startAvatarYaw = startYaw + Math.PI / 2;
+      const targetAvatarYaw = -Math.PI;
+      const clearYaw = THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw + 0.2, easeWalkOff);
+
+      // -------------------------------------------------------------
+      // 3. PEDESTAL APPROACH (hOut: 0.52 -> 0.85)
+      // -------------------------------------------------------------
+      // Once safely off the carpet, mannequin takes final steps onto pedestal center (0, 0, 6)
+      const toPedestalT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.33));
+      const easePedestal = toPedestalT * toPedestalT * (3 - 2 * toPedestalT);
+
+      const pedestalBob = (toPedestalT > 0.01 && toPedestalT < 0.99)
+        ? Math.abs(Math.sin(toPedestalT * Math.PI * 4)) * 0.035
+        : 0;
+
+      const finalAvatarX = THREE.MathUtils.lerp(clearX, 0, easePedestal);
+      const finalAvatarZ = THREE.MathUtils.lerp(clearZ, 6.0, easePedestal);
+      const finalAvatarY = carpetElev + walkBob + pedestalBob;
+      const finalAvatarYaw = THREE.MathUtils.lerp(clearYaw, targetAvatarYaw, easePedestal);
+
+      if (avatarGroup) {
+        avatarGroup.position.set(finalAvatarX, finalAvatarY, finalAvatarZ);
+        avatarGroup.rotation.set(0, finalAvatarYaw, 0);
+        avatarGroup.visible = aOut < 0.99;
+      }
+
+      // -------------------------------------------------------------
+      // 4. CHAIR FALL (RANDOMIZED) & CARPET / ROOM DISPERSAL (hOut: 0.52 -> 0.90)
+      // -------------------------------------------------------------
+      // Now that the mannequin is safely and completely OFF the carpet (Z >= 5.5),
+      // the chair tumbles backward/sideways into the void, the carpet drops straight down,
+      // and the room disperses behind him with ZERO overlap or collision!
+      const fallT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.36));
+      const easeFall = fallT * fallT; // Accelerating gravity drop
+      const fadeFall = Math.max(0, 1.0 - fallT * 2.2); // Fades out into the void
+
+      // Ground shadow catcher: only visible while room is grounded, fades immediately upon dispersal
+      if (shadowCatcherMesh) {
+        shadowCatcherMesh.visible = hOut < 0.52;
+      }
+
+      // Chair: stays upright on carpet until avatar is off carpet, then tumbles into void
       if (chairMesh) {
-        const chairT = Math.min(1, tRoom / 0.5);
-        chairMesh.rotation.set(
-          THREE.MathUtils.lerp(0, -0.9, chairT),
-          THREE.MathUtils.lerp(0, -1.1, chairT),
-          THREE.MathUtils.lerp(0, -1.3, chairT)
+        if (hOut < 0.52) {
+          // Standing and walking phase: pushed back, upright, perfectly resting on carpet
+          chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
+          chairMesh.rotation.set(0, 0, 0);
+          chairMesh.visible = true;
+          (chairMesh.material as THREE.MeshBasicMaterial).opacity = 1.0;
+        } else {
+          // Falling phase: randomized tumbling physics & downward drop into void
+          const dropY = easeFall * 20.0;
+          const dropZ = chairPush + easeFall * 4.0;
+          chairMesh.position.set(baseChairPos.x, baseChairPos.y - dropY, baseChairPos.z + dropZ);
+          chairMesh.rotation.set(
+            chairTumbleSeed.pitch * easeFall,
+            chairTumbleSeed.yaw * easeFall,
+            chairTumbleSeed.roll * easeFall
+          );
+          (chairMesh.material as THREE.MeshBasicMaterial).opacity = fadeFall;
+          chairMesh.visible = fadeFall > 0.01;
+        }
+      }
+
+      // Carpet: stays flat and grounded until avatar is off carpet, then drops into void
+      if (carpetMesh) {
+        if (hOut < 0.52) {
+          carpetMesh.position.copy(baseCarpetPos);
+          carpetMesh.rotation.set(0, 0, 0);
+          carpetMesh.scale.set(1, 1, 1);
+          carpetMesh.visible = true;
+          (carpetMesh.material as THREE.MeshBasicMaterial).opacity = 1.0;
+        } else {
+          const carpetDropY = easeFall * 20.0;
+          const carpetScale = Math.max(0.001, 1.0 - easeFall * 0.85);
+          carpetMesh.position.set(baseCarpetPos.x, baseCarpetPos.y - carpetDropY, baseCarpetPos.z);
+          carpetMesh.rotation.set(0, 0, 0);
+          carpetMesh.scale.set(carpetScale, carpetScale, carpetScale);
+          (carpetMesh.material as THREE.MeshBasicMaterial).opacity = fadeFall;
+          carpetMesh.visible = fadeFall > 0.01;
+        }
+      }
+
+      // Floor group visibility
+      floorGroup.visible = hOut < 0.88;
+
+      // Room / Desk group: stays grounded, then lifts / disperses away once avatar has walked off
+      if (hOut < 0.52) {
+        roomGroup.position.set(baseRoomX, 0, 0);
+        roomGroup.rotation.set(0, startYaw, 0);
+        roomGroup.scale.set(1, 1, 1);
+        roomGroup.visible = true;
+      } else {
+        const easeRoom = easeFall;
+        roomGroup.position.set(
+          THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeRoom),
+          THREE.MathUtils.lerp(0, targetRoomY, easeRoom),
+          0
         );
+        roomGroup.rotation.set(
+          THREE.MathUtils.lerp(0, 0.1, easeRoom),
+          startYaw,
+          THREE.MathUtils.lerp(0, 0.09, easeRoom)
+        );
+        const roomScale = THREE.MathUtils.lerp(1, 0.85, easeRoom);
+        roomGroup.scale.set(roomScale, roomScale, roomScale);
+        roomGroup.visible = hOut < 0.88;
       }
 
       // Floating musical notes effect
@@ -1074,38 +1244,6 @@ export default function DavidInteractiveExperience3D({
         curBg.lerpColors(aboutBgColor, projectsBgColor, aOut);
       }
       renderer.setClearColor(curBg, 1.0);
-
-      // Avatar transition from desk to pedestal:
-      if (avatarGroup) {
-        const startAvatarYaw = startYaw + Math.PI / 2;
-        const targetAvatarYaw = -Math.PI;
-
-        // Smooth crossfade: sitting in chair at desk (hOut < 0.05),
-        // standing up smoothly into t-idle as the room starts lifting
-        const standT = Math.min(1, Math.max(0, hOut / 0.45));
-        const easeStand = 1 - (1 - standT) * (1 - standT);
-        if (idleAction && tIdleAction) {
-          idleAction.setEffectiveWeight(1.0 - easeStand);
-          tIdleAction.setEffectiveWeight(easeStand);
-        }
-
-        // Smooth step-forward from desk to pedestal (0, 0, 6)
-        const moveT = Math.min(1, Math.max(0, (hOut - 0.08) / 0.92));
-        const easeMove = 1 - (1 - moveT) * (1 - moveT);
-
-        avatarGroup.position.set(
-          THREE.MathUtils.lerp(baseRoomX, 0, easeMove),
-          0,
-          THREE.MathUtils.lerp(0, 6, easeMove)
-        );
-        avatarGroup.rotation.set(
-          0,
-          THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeMove),
-          0
-        );
-
-        avatarGroup.visible = aOut < 0.99;
-      }
 
       // Lab pedestal at (0, 0, 6): only visible once room has lifted away (hOut >= 0.82)
       // This strictly guarantees the light cone NEVER renders under or cuts through the room rug!
