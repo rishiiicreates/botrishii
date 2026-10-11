@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import * as CANNON from "cannon-es";
 
 interface DavidInteractiveExperience3DProps {
   heroOut: number; // 0 (Hero active) -> 1 (Hero fully scrolled out)
@@ -16,85 +15,6 @@ interface DavidInteractiveExperience3DProps {
     desc: { x: number; y: number };
     services: { x: number; y: number };
   }) => void;
-}
-
-function generateChairPhysicsTrajectory(baseZ: number): Array<{ pos: THREE.Vector3; quat: THREE.Quaternion }> {
-  const world = new CANNON.World();
-  world.gravity.set(0, -9.82, 0);
-
-  const groundMat = new CANNON.Material("ground");
-  const chairMat = new CANNON.Material("chair");
-  world.addContactMaterial(
-    new CANNON.ContactMaterial(groundMat, chairMat, {
-      friction: 1.0,
-      restitution: 0.15,
-    })
-  );
-
-  const groundBody = new CANNON.Body({
-    type: CANNON.Body.STATIC,
-    shape: new CANNON.Box(new CANNON.Vec3(10, 0.5, 10)),
-    position: new CANNON.Vec3(0, -0.5 + 0.0575 + 0.076, 0),
-    material: groundMat,
-  });
-  world.addBody(groundBody);
-
-  const offsetCOM = new THREE.Vector3(0.5, 1.18, 0.05);
-  const initialCOM = new THREE.Vector3(0, 0.01688, baseZ).add(offsetCOM);
-
-  const chairBody = new CANNON.Body({
-    mass: 7.0,
-    material: chairMat,
-    linearDamping: 0.35,
-    angularDamping: 0.35,
-    position: new CANNON.Vec3(initialCOM.x, initialCOM.y, initialCOM.z),
-  });
-
-  chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.05, 0.5)), new CANNON.Vec3(0, -0.28, -0.05));
-  chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.45, 0.05)), new CANNON.Vec3(0, 0.52, -0.55));
-  chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.04, 0.55)), new CANNON.Vec3(0, -1.099, -0.05));
-  world.addBody(chairBody);
-
-  chairBody.angularVelocity.set(-4.5, 0.35, 0.18);
-  chairBody.applyImpulse(
-    new CANNON.Vec3(0.15, 0, -3.2),
-    new CANNON.Vec3(initialCOM.x, initialCOM.y + 0.6, initialCOM.z - 0.55)
-  );
-
-  const frames: Array<{ pos: THREE.Vector3; quat: THREE.Quaternion }> = [];
-  frames.push({
-    pos: new THREE.Vector3(0, 0.01688, baseZ),
-    quat: new THREE.Quaternion(0, 0, 0, 1),
-  });
-
-  for (let s = 1; s <= 90; s++) {
-    world.step(1 / 60);
-    const q = chairBody.quaternion;
-    const quat = new THREE.Quaternion(q.x, q.y, q.z, q.w);
-    const bodyPos = new THREE.Vector3(chairBody.position.x, chairBody.position.y, chairBody.position.z);
-    const rotatedOffset = offsetCOM.clone().applyQuaternion(quat);
-    const meshPos = bodyPos.clone().sub(rotatedOffset);
-    frames.push({ pos: meshPos, quat });
-  }
-
-  return frames;
-}
-
-function sampleTrajectory(
-  trajectory: Array<{ pos: THREE.Vector3; quat: THREE.Quaternion }>,
-  progress: number,
-  outPos: THREE.Vector3,
-  outQuat: THREE.Quaternion
-) {
-  if (trajectory.length === 0) return;
-  const p = Math.max(0, Math.min(1, progress));
-  const sampleIndex = p * (trajectory.length - 1);
-  const idx0 = Math.floor(sampleIndex);
-  const idx1 = Math.min(trajectory.length - 1, idx0 + 1);
-  const alpha = sampleIndex - idx0;
-
-  outPos.lerpVectors(trajectory[idx0].pos, trajectory[idx1].pos, alpha);
-  outQuat.copy(trajectory[idx0].quat).slerp(trajectory[idx1].quat, alpha);
 }
 
 export default function DavidInteractiveExperience3D({
@@ -296,34 +216,19 @@ export default function DavidInteractiveExperience3D({
     scene.add(gridMesh);
 
     // 5. Interactive Groups & Mesh Handles
-    // Room Group: Desk, monitors, pinboard, shelf (lifts up into the ceiling)
     const roomGroup = new THREE.Group();
     const landscapeInit = isLandscape();
     roomGroup.position.set(landscapeInit ? 2 : 0, 0, 0);
     roomGroup.rotation.set(0, landscapeInit ? -2.3 : -2.1, 0);
     scene.add(roomGroup);
 
-    // Floor Group: Carpet & Chair physical containment layer (stays strictly grounded, drops down into void)
-    const floorGroup = new THREE.Group();
-    floorGroup.position.set(landscapeInit ? 2 : 0, 0, 0);
-    floorGroup.rotation.set(0, landscapeInit ? -2.3 : -2.1, 0);
-    scene.add(floorGroup);
-
     const labGroup = new THREE.Group();
     labGroup.position.set(0, 0, 6);
     scene.add(labGroup);
 
     let chairMesh: THREE.Mesh | null = null;
-    let carpetMesh: THREE.Mesh | null = null;
-    let shadowCatcherMesh: THREE.Mesh | null = null;
-    const baseChairPos = new THREE.Vector3();
-    const baseCarpetPos = new THREE.Vector3();
     let musicMesh: THREE.Mesh | null = null;
     let baseMusicY = 0;
-
-    let chairTrajectory: Array<{ pos: THREE.Vector3; quat: THREE.Quaternion }> = [];
-    const sampledChairPos = new THREE.Vector3();
-    const sampledChairQuat = new THREE.Quaternion();
 
     let avatarGroup: THREE.Group | null = null;
     let mixer: THREE.AnimationMixer | null = null;
@@ -331,27 +236,9 @@ export default function DavidInteractiveExperience3D({
     let tIdleAction: THREE.AnimationAction | null = null;
     let faceUniformFrame: { value: number } | null = null;
 
-    // Procedural leg and arm bones for natural walking kinematics
-    let leftUpLegBone: THREE.Bone | null = null;
-    let rightUpLegBone: THREE.Bone | null = null;
-    let leftLegBone: THREE.Bone | null = null;
-    let rightLegBone: THREE.Bone | null = null;
-    let leftFootBone: THREE.Bone | null = null;
-    let rightFootBone: THREE.Bone | null = null;
-    let leftArmBone: THREE.Bone | null = null;
-    let rightArmBone: THREE.Bone | null = null;
-    let leftForeArmBone: THREE.Bone | null = null;
-    let rightForeArmBone: THREE.Bone | null = null;
-    let hipsBone: THREE.Bone | null = null;
-    let spineBone: THREE.Bone | null = null;
-
     // Scan progress uniform for the hologram beam
     const scanUniform = { value: 0 };
     const timeUniform = { value: 0 };
-    const shadowCatcherOpacityUniform = { value: 1.0 };
-
-    const roomMaterial = new THREE.MeshBasicMaterial({ map: roomTexture, transparent: true });
-    const desktopsMaterial = new THREE.MeshBasicMaterial({ map: desktopsTexture, transparent: true });
 
     // Load Room Model
     gltfLoader.load("/models/room-model.glb", (gltf) => {
@@ -359,24 +246,17 @@ export default function DavidInteractiveExperience3D({
       const roomScene = gltf.scene;
 
       chairMesh = roomScene.children.find((c) => c.name === "chair") as THREE.Mesh;
-      carpetMesh = roomScene.children.find((c) => c.name === "carpet") as THREE.Mesh;
-      if (chairMesh) {
-        baseChairPos.copy(chairMesh.position);
-        chairTrajectory = generateChairPhysicsTrajectory(baseChairPos.z + 0.45);
-      }
-      if (carpetMesh) {
-        baseCarpetPos.copy(carpetMesh.position);
-      }
       musicMesh = roomScene.children.find((c) => c.name === "music") as THREE.Mesh;
       if (musicMesh) baseMusicY = musicMesh.position.y;
+
+      const roomMaterial = new THREE.MeshBasicMaterial({ map: roomTexture });
 
       roomScene.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
           if (mesh.name === "desktop-plane-0" || mesh.name === "desktop-plane-1") {
-            mesh.material = desktopsMaterial;
+            mesh.material = new THREE.MeshBasicMaterial({ map: desktopsTexture });
           } else if (mesh.name === "shadow-catcher") {
-            shadowCatcherMesh = mesh;
             mesh.material = new THREE.ShaderMaterial({
               transparent: true,
               depthWrite: false,
@@ -391,17 +271,15 @@ export default function DavidInteractiveExperience3D({
                 varying vec2 vUv;
                 uniform sampler2D uTexture;
                 uniform vec3 uColorShadow;
-                uniform float uOpacity;
                 void main() {
                   vec4 shadow = texture2D(uTexture, vUv);
-                  float shadowAlpha = (1.0 - shadow.r) * 0.38 * uOpacity;
+                  float shadowAlpha = (1.0 - shadow.r) * 0.38;
                   gl_FragColor = vec4(uColorShadow, shadowAlpha);
                 }
               `,
               uniforms: {
                 uTexture: { value: roomShadowTexture },
                 uColorShadow: { value: new THREE.Color("rgb(190, 168, 142)") },
-                uOpacity: shadowCatcherOpacityUniform,
               },
             });
             mesh.renderOrder = -10;
@@ -410,15 +288,6 @@ export default function DavidInteractiveExperience3D({
           }
         }
       });
-
-      if (chairMesh) {
-        chairMesh.material = roomMaterial;
-        floorGroup.add(chairMesh);
-      }
-      if (carpetMesh) {
-        carpetMesh.material = roomMaterial;
-        floorGroup.add(carpetMesh);
-      }
 
       roomGroup.add(roomScene);
     });
@@ -861,26 +730,6 @@ export default function DavidInteractiveExperience3D({
       // This eliminates the 90-degree internal skeletal axis twist and aligns hips squarely on the chair
       armature.rotation.z = 0;
 
-      // Cache procedural bones for natural walking kinematics
-      armature.traverse((node) => {
-        if ((node as THREE.Bone).isBone) {
-          const bone = node as THREE.Bone;
-          const n = bone.name.toLowerCase();
-          if (n === "leftuplegbone") leftUpLegBone = bone;
-          else if (n === "rightuplegbone") rightUpLegBone = bone;
-          else if (n === "leftlegbone") leftLegBone = bone;
-          else if (n === "rightlegbone") rightLegBone = bone;
-          else if (n === "leftfootbone") leftFootBone = bone;
-          else if (n === "rightfootbone") rightFootBone = bone;
-          else if (n === "leftarmbone") leftArmBone = bone;
-          else if (n === "rightarmbone") rightArmBone = bone;
-          else if (n === "leftforearmbone") leftForeArmBone = bone;
-          else if (n === "rightforearmbone") rightForeArmBone = bone;
-          else if (n === "hipsbone") hipsBone = bone;
-          else if (n === "spinebone") spineBone = bone;
-        }
-      });
-
       avatarGroup = new THREE.Group();
       avatarGroup.add(armature);
 
@@ -1064,7 +913,7 @@ export default function DavidInteractiveExperience3D({
       onLoaded?.();
     });
 
-    // 12. Eye Blinking is driven smoothly & deterministically in 60fps animate() loop
+
 
     // 13. Interactive Mouse Parallax
     const mousePos = { x: 0, y: 0 };
@@ -1089,41 +938,18 @@ export default function DavidInteractiveExperience3D({
     let currentHeroOut = targetsRef.current.heroOut;
     let currentScan = targetsRef.current.scanProgress;
     let currentAboutOut = targetsRef.current.aboutOut;
-    let lastTime = performance.now();
-    const startTime = performance.now();
-
-    const lastProj = { x1: -999, y1: -999, x2: -999, y2: -999, x3: -999, y3: -999 };
-
-    // Reusable quaternion scratch objects for 60fps GC-free walking kinematics
-    const deltaHipLeft = new THREE.Quaternion();
-    const deltaHipRight = new THREE.Quaternion();
-    const deltaKneeLeft = new THREE.Quaternion();
-    const deltaKneeRight = new THREE.Quaternion();
-    const deltaFootLeft = new THREE.Quaternion();
-    const deltaFootRight = new THREE.Quaternion();
-    const deltaArmLeft = new THREE.Quaternion();
-    const deltaArmRight = new THREE.Quaternion();
-    const deltaForeArmLeft = new THREE.Quaternion();
-    const deltaForeArmRight = new THREE.Quaternion();
-    const deltaSpinePitch = new THREE.Quaternion();
-    const deltaSpineTwist = new THREE.Quaternion();
-    const axisX = new THREE.Vector3(1, 0, 0);
-    const axisY = new THREE.Vector3(0, 1, 0);
-    const axisZ = new THREE.Vector3(0, 0, 1);
+    const clock = new THREE.Clock();
 
     const animate = () => {
       if (isDisposed) return;
       animationFrameId = requestAnimationFrame(animate);
 
-      const now = performance.now();
-      const delta = Math.min((now - lastTime) / 1000, 0.1);
-      const elapsed = (now - startTime) / 1000;
-      lastTime = now;
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
       timeUniform.value = elapsed;
 
       // Natural organic eye blinking (clean, deterministic, symmetrical closing and reopening)
       if (faceUniformFrame) {
-        // Natural human blink cycle: once every ~5.4 seconds
         const blinkTime = elapsed % 5.4;
         if (blinkTime < 0.05) {
           faceUniformFrame.value = 1; // start closing
@@ -1192,201 +1018,39 @@ export default function DavidInteractiveExperience3D({
       // Easing curves matching GSAP power1.out (1 - (1 - x)^2)
       const easeHero = 1 - (1 - hOut) * (1 - hOut);
 
+      // Room group transition (desk stays stationary until hOut > 0.08, then flies UP smoothly)
       const landscape = isLandscape();
       const baseRoomX = landscape ? 2 : 0;
       const startYaw = landscape ? -2.3 : -2.1;
+      const targetRoomX = landscape ? 4.5 : 0;
+      const targetRoomY = landscape ? 5.7 : 5.4;
 
-      // Keep floorGroup container strictly aligned with room base coordinates while grounded
-      floorGroup.position.set(baseRoomX, 0, 0);
-      floorGroup.rotation.set(0, startYaw, 0);
+      const tRoom = hOut < 0.08 ? 0 : (hOut - 0.08) / 0.92;
+      const easeRoom = tRoom * tRoom;
 
-      // -------------------------------------------------------------
-      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.14)
-      // -------------------------------------------------------------
-      const standT = Math.min(1, Math.max(0, hOut / 0.14));
-      const easeStand = standT * standT * (3 - 2 * standT);
-      if (idleAction && tIdleAction) {
-        idleAction.setEffectiveWeight(1.0 - easeStand);
-        tIdleAction.setEffectiveWeight(easeStand);
-      }
+      roomGroup.position.set(
+        THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeRoom),
+        THREE.MathUtils.lerp(0, targetRoomY, easeRoom),
+        0
+      );
+      roomGroup.rotation.set(
+        THREE.MathUtils.lerp(0, 0.1, easeRoom),
+        startYaw,
+        THREE.MathUtils.lerp(0, 0.09, easeRoom)
+      );
+      const roomScale = THREE.MathUtils.lerp(1, 0.85, easeRoom);
+      roomGroup.scale.set(roomScale, roomScale, roomScale);
+      roomGroup.visible = hOut < 0.88;
 
-      // Chair pushback: as avatar stands, chair pushes back by 0.45m along local Z
-      // staying upright and flush on top of the carpet so they NEVER collide
-      const chairPush = easeStand * 0.45;
-
-      // -------------------------------------------------------------
-      // 2. MANNEQUIN WALKS DIRECTLY TO PEDESTAL (hOut: 0.14 -> 0.58)
-      // -------------------------------------------------------------
-      // Natural, relaxed pacing across 320px of scroll
-      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.14) / 0.44));
-      const easeWalkOff = walkOffT * walkOffT * (3 - 2 * walkOffT);
-
-      // Natural stylized walking stride envelope: strictly 0 at start and finish!
-      const walkEnvelope = Math.sin(walkOffT * Math.PI);
-      const walkCycle = walkOffT * Math.PI * 6.0; // 3 complete, natural, grounded strides
-
-      // Layered Procedural Walking Kinematics (Quaternion-based, zero Euler distortion)
-      if (walkEnvelope > 0.001) {
-        // 1. Thigh flexion / extension (pitch forward & back)
-        const thighSwingL = Math.sin(walkCycle) * 0.42 * walkEnvelope;
-        const thighSwingR = -Math.sin(walkCycle) * 0.42 * walkEnvelope;
-
-        if (leftUpLegBone) {
-          deltaHipLeft.setFromAxisAngle(axisX, thighSwingL);
-          leftUpLegBone.quaternion.multiply(deltaHipLeft);
-        }
-        if (rightUpLegBone) {
-          deltaHipRight.setFromAxisAngle(axisX, thighSwingR);
-          rightUpLegBone.quaternion.multiply(deltaHipRight);
-        }
-
-        // 2. Knee flexion (only bends backward during swing phase!)
-        // In local bone space, negative angle around local X bends knee backward
-        const kneeFlexL = Math.max(0, -Math.sin(walkCycle + 0.35)) * 0.62 * walkEnvelope;
-        const kneeFlexR = Math.max(0, Math.sin(walkCycle + 0.35)) * 0.62 * walkEnvelope;
-
-        if (leftLegBone) {
-          deltaKneeLeft.setFromAxisAngle(axisX, -kneeFlexL);
-          leftLegBone.quaternion.multiply(deltaKneeLeft);
-        }
-        if (rightLegBone) {
-          deltaKneeRight.setFromAxisAngle(axisX, -kneeFlexR);
-          rightLegBone.quaternion.multiply(deltaKneeRight);
-        }
-
-        // 3. Foot / Ankle articulation (heel-strike dorsiflexion, toe-off plantarflexion)
-        const footPitchL = (Math.sin(walkCycle) * 0.20 - Math.cos(walkCycle * 2.0) * 0.08) * walkEnvelope;
-        const footPitchR = (-Math.sin(walkCycle) * 0.20 - Math.cos(walkCycle * 2.0) * 0.08) * walkEnvelope;
-
-        if (leftFootBone) {
-          deltaFootLeft.setFromAxisAngle(axisX, footPitchL);
-          leftFootBone.quaternion.multiply(deltaFootLeft);
-        }
-        if (rightFootBone) {
-          deltaFootRight.setFromAxisAngle(axisX, footPitchR);
-          rightFootBone.quaternion.multiply(deltaFootRight);
-        }
-
-        // 4. Arm swing (counter-swing to opposite leg around local X)
-        const armSwingL = Math.sin(walkCycle) * 0.28 * walkEnvelope;
-        const armSwingR = -Math.sin(walkCycle) * 0.28 * walkEnvelope;
-        if (leftArmBone) {
-          deltaArmLeft.setFromAxisAngle(axisX, armSwingL);
-          leftArmBone.quaternion.multiply(deltaArmLeft);
-        }
-        if (rightArmBone) {
-          deltaArmRight.setFromAxisAngle(axisX, armSwingR);
-          rightArmBone.quaternion.multiply(deltaArmRight);
-        }
-
-        // 5. Elbow bend (forearms flex forward around local X on forward swing)
-        const elbowBendL = Math.max(0, -armSwingL) * 0.40;
-        const elbowBendR = Math.max(0, -armSwingR) * 0.40;
-        if (leftForeArmBone) {
-          deltaForeArmLeft.setFromAxisAngle(axisX, -elbowBendL);
-          leftForeArmBone.quaternion.multiply(deltaForeArmLeft);
-        }
-        if (rightForeArmBone) {
-          deltaForeArmRight.setFromAxisAngle(axisX, -elbowBendR);
-          rightForeArmBone.quaternion.multiply(deltaForeArmRight);
-        }
-
-        // 6. Torso: keep t-idle posture pristine (t-idle already has natural upright chest pose)
-      }
-
-      // Smooth pelvic vertical bounce (2 bounces per full stride, strictly smooth sine)
-      const walkBob = walkEnvelope > 0.001 ? walkEnvelope * Math.sin(walkCycle * 2.0) * 0.026 : 0;
-      const hipSway = walkEnvelope > 0.001 ? Math.sin(walkCycle) * 0.016 * walkEnvelope : 0;
-
-      // Carpet elevation: steps cleanly down from carpet (0.055m) to bare floor (0.00m)
-      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.45) / 0.30));
-      const easeStepDown = stepDownT * stepDownT * (3 - 2 * stepDownT);
-      const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, easeStepDown);
-
-      const finalAvatarX = THREE.MathUtils.lerp(baseRoomX, 0.0, easeWalkOff) + hipSway;
-      const finalAvatarY = carpetElev + walkBob;
-      const finalAvatarZ = THREE.MathUtils.lerp(0.0, 6.0, easeWalkOff);
-      const startAvatarYaw = startYaw + Math.PI / 2;
-      const targetAvatarYaw = -Math.PI;
-      const finalAvatarYaw = THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeWalkOff);
-
-      if (avatarGroup) {
-        avatarGroup.position.set(finalAvatarX, finalAvatarY, finalAvatarZ);
-        avatarGroup.rotation.set(0, finalAvatarYaw, 0);
-        avatarGroup.visible = aOut < 0.99;
-      }
-
-      // -------------------------------------------------------------
-      // 3. CHAIR FALL (BAKED CANNON-ES RIGID-BODY TRAJECTORY)
-      // -------------------------------------------------------------
-      // 100% deterministic, jitter-free, glitch-free physical topple.
-      // Starts once avatar has stepped completely past the carpet boundary (hOut >= 0.46).
+      // Chair swivel on scroll
       if (chairMesh) {
-        if (hOut < 0.46) {
-          chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
-          chairMesh.quaternion.identity();
-          chairMesh.visible = true;
-        } else {
-          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.46) / 0.26));
-          const easeFall = chairFallT * chairFallT * (3 - 2 * chairFallT);
-          sampleTrajectory(chairTrajectory, easeFall, sampledChairPos, sampledChairQuat);
-          chairMesh.position.copy(sampledChairPos);
-          chairMesh.quaternion.copy(sampledChairQuat);
-          chairMesh.visible = true;
-        }
+        const chairT = Math.min(1, tRoom / 0.5);
+        chairMesh.rotation.set(
+          THREE.MathUtils.lerp(0, -0.9, chairT),
+          THREE.MathUtils.lerp(0, -1.1, chairT),
+          THREE.MathUtils.lerp(0, -1.3, chairT)
+        );
       }
-
-      // Carpet: 100% stationary and grounded on floor
-      if (carpetMesh) {
-        carpetMesh.position.copy(baseCarpetPos);
-        carpetMesh.rotation.set(0, 0, 0);
-        carpetMesh.scale.set(1, 1, 1);
-        carpetMesh.visible = true;
-      }
-
-      // -------------------------------------------------------------
-      // 4. SMOOTH CYBER PEDESTAL ELEVATION (hOut: 0.32 -> 0.58)
-      // -------------------------------------------------------------
-      // Pedestal at (0, 0, 6) smoothly elevates from below floor to meet the avatar's feet!
-      const pedestalRiseT = Math.min(1, Math.max(0, (hOut - 0.32) / 0.26));
-      const easePedestalRise = pedestalRiseT * pedestalRiseT * (3 - 2 * pedestalRiseT);
-      const pedestalY = THREE.MathUtils.lerp(-1.2, 0.0, easePedestalRise);
-      const pedestalScale = THREE.MathUtils.lerp(0.85, 1.0, easePedestalRise);
-
-      labGroup.position.set(0, pedestalY, 6);
-      labGroup.scale.set(pedestalScale, pedestalScale, pedestalScale);
-      labGroup.visible = hOut >= 0.32 && aOut < 0.99;
-
-      // -------------------------------------------------------------
-      // 5. SMOOTH CINEMATIC DISSOLVE FOR ROOM INTO CYBER WORLD
-      // -------------------------------------------------------------
-      // Room & floor stay grounded in place, then dissolve smoothly between hOut = 0.58 and 0.82
-      const roomFadeT = Math.min(1, Math.max(0, (hOut - 0.58) / 0.24));
-      const roomOpacity = 1.0 - (roomFadeT * roomFadeT * (3 - 2 * roomFadeT));
-
-      roomMaterial.opacity = roomOpacity;
-      roomMaterial.depthWrite = roomOpacity > 0.98;
-      desktopsMaterial.opacity = roomOpacity;
-      desktopsMaterial.depthWrite = roomOpacity > 0.98;
-
-      shadowCatcherOpacityUniform.value = roomOpacity;
-      const isRoomVisible = roomOpacity > 0.005;
-
-      if (shadowCatcherMesh) {
-        shadowCatcherMesh.visible = isRoomVisible;
-      }
-
-      // Floor group (carpet & chair): strictly grounded and stationary
-      floorGroup.position.set(baseRoomX, 0, 0);
-      floorGroup.rotation.set(0, startYaw, 0);
-      floorGroup.scale.set(1, 1, 1);
-      floorGroup.visible = isRoomVisible;
-
-      // Room / Desk group: NEVER leaves its position! Strictly grounded and stationary
-      roomGroup.position.set(baseRoomX, 0, 0);
-      roomGroup.rotation.set(0, startYaw, 0);
-      roomGroup.scale.set(1, 1, 1);
-      roomGroup.visible = isRoomVisible;
 
       // Floating musical notes effect
       if (musicMesh) {
@@ -1394,31 +1058,64 @@ export default function DavidInteractiveExperience3D({
         musicMesh.rotation.z = Math.sin(elapsed * 1.8) * 0.04;
       }
 
-      // Dynamic background color lerp: stays cream/beige (#e8e5e0) while office is active,
-      // then shifts smoothly to cyber dark blue (#001738) as the pedestal activates!
+      // Dynamic background color lerp: #e8e5e0 (Hero) -> #001738 (About) -> #e8e5e0 (Projects)
       const heroBgColor = new THREE.Color("#e8e5e0");
       const aboutBgColor = new THREE.Color("#001738");
       const projectsBgColor = new THREE.Color("#e8e5e0");
 
       const curBg = heroBgColor.clone();
       if (hOut < 1.0) {
-        const bgT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.32));
-        const easeBg = bgT * bgT * (3 - 2 * bgT);
-        curBg.lerp(aboutBgColor, easeBg);
+        curBg.lerp(aboutBgColor, easeHero);
       } else {
         curBg.lerpColors(aboutBgColor, projectsBgColor, aOut);
       }
       renderer.setClearColor(curBg, 1.0);
 
-      // Authentic curved dome grid uniforms & smooth fade-in
+      // Avatar transition from desk to pedestal:
+      if (avatarGroup) {
+        const startAvatarYaw = startYaw + Math.PI / 2;
+        const targetAvatarYaw = -Math.PI;
+
+        // Smooth crossfade: sitting in chair at desk (hOut < 0.05),
+        // standing up smoothly into t-idle as the room starts lifting
+        const standT = Math.min(1, Math.max(0, hOut / 0.45));
+        const easeStand = 1 - (1 - standT) * (1 - standT);
+        if (idleAction && tIdleAction) {
+          idleAction.setEffectiveWeight(1.0 - easeStand);
+          tIdleAction.setEffectiveWeight(easeStand);
+        }
+
+        // Smooth step-forward from desk to pedestal (0, 0, 6)
+        const moveT = Math.min(1, Math.max(0, (hOut - 0.08) / 0.92));
+        const easeMove = 1 - (1 - moveT) * (1 - moveT);
+
+        avatarGroup.position.set(
+          THREE.MathUtils.lerp(baseRoomX, 0, easeMove),
+          0,
+          THREE.MathUtils.lerp(0, 6, easeMove)
+        );
+        avatarGroup.rotation.set(
+          0,
+          THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeMove),
+          0
+        );
+
+        avatarGroup.visible = aOut < 0.99;
+      }
+
+      // Lab pedestal at (0, 0, 6): only visible once room has lifted away (hOut >= 0.82)
+      // This strictly guarantees the light cone NEVER renders under or cuts through the room rug!
+      labGroup.position.set(0, 0, 6);
+      labGroup.visible = hOut >= 0.82 && aOut < 0.99;
+
+      // Authentic curved dome grid uniforms & visibility
       if (gridMesh) {
         gridMesh.position.set(0, -0.4, 6);
-        const gridInT = Math.min(1, Math.max(0, (hOut - 0.55) / 0.25));
-        const easeGridIn = gridInT * gridInT * (3 - 2 * gridInT);
-        gridMesh.visible = gridInT > 0.01 && aOut < 0.99;
+        gridMesh.visible = hOut >= 0.65 && aOut < 0.99;
         gridUniforms.uTime.value = elapsed;
         gridUniforms.uProgress.value = sProg;
-        gridUniforms.uOpacity.value = easeGridIn * (1.0 - aOut);
+        const inGridOpacity = Math.min(1, Math.max(0, (hOut - 0.65) / 0.25));
+        gridUniforms.uOpacity.value = (0.2 + 0.8 * inGridOpacity) * (1.0 - aOut);
       }
 
       // Camera coordinates matching David Heckhoff points:
@@ -1446,7 +1143,7 @@ export default function DavidInteractiveExperience3D({
       cameraGroup.position.x += (targetCamGroupX - cameraGroup.position.x) * 0.06;
       cameraGroup.position.y += (targetCamGroupY - cameraGroup.position.y) * 0.06;
 
-      // Project 3D callout anchor points for HUD cards (debounced to eliminate 60fps React churn)
+      // Project 3D callout anchor points for HUD cards (David Heckhoff 1:1)
       if (onProjectPoints && hOut > 0.05 && aOut < 0.99) {
         const pDetails = new THREE.Vector3(-0.76, 3.6, 6.75).project(camera);
         const pDesc = new THREE.Vector3(-0.9, 2.0, 6.75).project(camera);
@@ -1455,40 +1152,27 @@ export default function DavidInteractiveExperience3D({
         const w = window.innerWidth;
         const h = window.innerHeight;
 
-        const x1 = Math.round((pDetails.x * 0.5 + 0.5) * w);
-        const y1 = Math.round((-(pDetails.y * 0.5) + 0.5) * h);
-        const x2 = Math.round((pDesc.x * 0.5 + 0.5) * w);
-        const y2 = Math.round((-(pDesc.y * 0.5) + 0.5) * h);
-        const x3 = Math.round((pServices.x * 0.5 + 0.5) * w);
-        const y3 = Math.round((-(pServices.y * 0.5) + 0.5) * h);
-
-        if (
-          Math.abs(x1 - lastProj.x1) >= 1.5 ||
-          Math.abs(y1 - lastProj.y1) >= 1.5 ||
-          Math.abs(x2 - lastProj.x2) >= 1.5 ||
-          Math.abs(y2 - lastProj.y2) >= 1.5 ||
-          Math.abs(x3 - lastProj.x3) >= 1.5 ||
-          Math.abs(y3 - lastProj.y3) >= 1.5
-        ) {
-          lastProj.x1 = x1;
-          lastProj.y1 = y1;
-          lastProj.x2 = x2;
-          lastProj.y2 = y2;
-          lastProj.x3 = x3;
-          lastProj.y3 = y3;
-
-          onProjectPoints({
-            details: { x: x1, y: y1 },
-            desc: { x: x2, y: y2 },
-            services: { x: x3, y: y3 },
-          });
-        }
+        onProjectPoints({
+          details: {
+            x: (pDetails.x * 0.5 + 0.5) * w,
+            y: (-(pDetails.y * 0.5) + 0.5) * h,
+          },
+          desc: {
+            x: (pDesc.x * 0.5 + 0.5) * w,
+            y: (-(pDesc.y * 0.5) + 0.5) * h,
+          },
+          services: {
+            x: (pServices.x * 0.5 + 0.5) * w,
+            y: (-(pServices.y * 0.5) + 0.5) * h,
+          },
+        });
       }
 
       renderer.render(scene, camera);
     };
 
     animate();
+
     return () => {
       isDisposed = true;
       cancelAnimationFrame(animationFrameId);
