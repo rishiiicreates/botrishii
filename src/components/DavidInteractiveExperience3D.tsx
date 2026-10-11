@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as CANNON from "cannon-es";
 
 interface DavidInteractiveExperience3DProps {
   heroOut: number; // 0 (Hero active) -> 1 (Hero fully scrolled out)
@@ -241,12 +242,31 @@ export default function DavidInteractiveExperience3D({
     let musicMesh: THREE.Mesh | null = null;
     let baseMusicY = 0;
 
-    // Organic randomized tumbling factors for the chair falling over onto the carpet
-    const chairTumbleSeed = {
-      pitch: -1.33, // physical resting angle onto backrest
-      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.15), // natural angular twist
-      roll: (Math.random() > 0.5 ? 1 : -1) * (0.10 + Math.random() * 0.15), // natural sideways lean
-    };
+    // Real Cannon-es rigid body physics engine for chair topple and floor/carpet collision
+    const physicsWorld = new CANNON.World();
+    physicsWorld.gravity.set(0, -9.82, 0);
+
+    const groundPhysMat = new CANNON.Material("ground");
+    const chairPhysMat = new CANNON.Material("chair");
+    physicsWorld.addContactMaterial(
+      new CANNON.ContactMaterial(groundPhysMat, chairPhysMat, {
+        friction: 0.9,
+        restitution: 0.12,
+      })
+    );
+
+    // Static ground plane aligned with top surface of carpet (0.0575m)
+    const groundBody = new CANNON.Body({
+      type: CANNON.Body.STATIC,
+      shape: new CANNON.Box(new CANNON.Vec3(10, 0.5, 10)),
+      position: new CANNON.Vec3(0, -0.5 + 0.0575 + 0.076, 0),
+      material: groundPhysMat,
+    });
+    physicsWorld.addBody(groundBody);
+
+    const chairOffsetCOM = new THREE.Vector3(0.5, 1.18, 0.05);
+    let chairBody: CANNON.Body | null = null;
+    let chairHasFallen = false;
 
     let avatarGroup: THREE.Group | null = null;
     let mixer: THREE.AnimationMixer | null = null;
@@ -267,6 +287,18 @@ export default function DavidInteractiveExperience3D({
       carpetMesh = roomScene.children.find((c) => c.name === "carpet") as THREE.Mesh;
       if (chairMesh) {
         baseChairPos.copy(chairMesh.position);
+        const initCOM = baseChairPos.clone().add(chairOffsetCOM);
+        chairBody = new CANNON.Body({
+          mass: 7.0,
+          material: chairPhysMat,
+          linearDamping: 0.3,
+          angularDamping: 0.3,
+          position: new CANNON.Vec3(initCOM.x, initCOM.y, initCOM.z),
+        });
+        chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.05, 0.5)), new CANNON.Vec3(0, -0.28, -0.05));
+        chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.45, 0.05)), new CANNON.Vec3(0, 0.52, -0.55));
+        chairBody.addShape(new CANNON.Box(new CANNON.Vec3(0.55, 0.04, 0.55)), new CANNON.Vec3(0, -1.099, -0.05));
+        physicsWorld.addBody(chairBody);
       }
       if (carpetMesh) {
         baseCarpetPos.copy(carpetMesh.position);
@@ -1129,16 +1161,14 @@ export default function DavidInteractiveExperience3D({
       }
 
       // -------------------------------------------------------------
-      // 3. CHAIR FALL (RANDOMIZED) & ROOM DISPERSAL (hOut: 0.48 -> 0.90)
+      // 3. CHAIR FALL (REAL CANNON-ES PHYSICS ENGINE) & 100% STATIC ROOM
       // -------------------------------------------------------------
-      // CARPET DOES NOT MOVE AT ALL: Stays 100% stationary on the floor.
-      // The mannequin is now safely and completely OFF the carpet (Z = 6.2) facing front.
-      // At hOut >= 0.48, the chair topples over onto the carpet behind him with exact physical hinge pivot,
-      // and the desk lifts away into the ceiling with ZERO overlap or collision!
+      // Carpet & all other room furniture NEVER leave their positions!
+      // They stay strictly grounded and stationary on the floor.
 
-      // Ground shadow catcher: only visible while room is grounded, hides when desk lifts
+      // Ground shadow catcher stays visible while room is active
       if (shadowCatcherMesh) {
-        shadowCatcherMesh.visible = hOut < 0.48;
+        shadowCatcherMesh.visible = hOut < 0.88;
       }
 
       // Carpet: DOES NOT MOVE. Stays 100% grounded and completely stationary on the floor
@@ -1149,74 +1179,69 @@ export default function DavidInteractiveExperience3D({
         carpetMesh.visible = true;
       }
 
-      // Chair: stays upright on carpet until avatar is off carpet, then topples over onto carpet
-      if (chairMesh) {
-        if (hOut < 0.02) {
-          // Re-randomize tumble angles for each subsequent scroll run
-          chairTumbleSeed.yaw = (Math.random() > 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.15);
-          chairTumbleSeed.roll = (Math.random() > 0.5 ? 1 : -1) * (0.10 + Math.random() * 0.15);
-        }
+      // Chair simulation via real Cannon-es physics engine
+      if (chairMesh && chairBody) {
+        if (hOut < 0.15) {
+          // Reset chair to upright standing pose at desk
+          chairHasFallen = false;
+          chairBody.velocity.set(0, 0, 0);
+          chairBody.angularVelocity.set(0, 0, 0);
+          const curCOM = baseChairPos.clone().add(new THREE.Vector3(0, 0, chairPush)).add(chairOffsetCOM);
+          chairBody.position.set(curCOM.x, curCOM.y, curCOM.z);
+          chairBody.quaternion.set(0, 0, 0, 1);
 
-        if (hOut < 0.48) {
-          // Standing and walking phase: pushed back, upright, perfectly resting on carpet
           chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
-          chairMesh.rotation.set(0, 0, 0);
+          chairMesh.quaternion.identity();
+          chairMesh.visible = true;
+        } else if (hOut < 0.42) {
+          // Standing and walking phase: pushed back slightly, upright on carpet
+          chairBody.velocity.set(0, 0, 0);
+          chairBody.angularVelocity.set(0, 0, 0);
+          const curCOM = baseChairPos.clone().add(new THREE.Vector3(0, 0, chairPush)).add(chairOffsetCOM);
+          chairBody.position.set(curCOM.x, curCOM.y, curCOM.z);
+          chairBody.quaternion.set(0, 0, 0, 1);
+
+          chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
+          chairMesh.quaternion.identity();
           chairMesh.visible = true;
         } else {
-          // Falling phase: chair topples over onto the carpet with exact physical base pivot
-          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.24));
-          const easeTopple = chairFallT * chairFallT * (3 - 2 * chairFallT);
+          // Avatar has walked completely off carpet onto floor!
+          // Trigger dynamic physics topple:
+          if (!chairHasFallen) {
+            chairHasFallen = true;
+            const randYaw = (Math.random() - 0.5) * 0.8;
+            const randRoll = (Math.random() - 0.5) * 0.4;
+            chairBody.angularVelocity.set(-4.2, randYaw, randRoll);
+            chairBody.applyImpulse(
+              new CANNON.Vec3((Math.random() - 0.5) * 0.3, 0, -3.0),
+              new CANNON.Vec3(chairBody.position.x, chairBody.position.y + 0.6, chairBody.position.z - 0.55)
+            );
+          }
 
-          const pitch = chairTumbleSeed.pitch * easeTopple;
-          const yaw = chairTumbleSeed.yaw * easeTopple;
-          const roll = chairTumbleSeed.roll * easeTopple;
+          // Step physics world in real time:
+          physicsWorld.step(1 / 60, Math.min(delta, 0.1));
 
-          const cx = Math.cos(pitch), sx = Math.sin(pitch);
-          // Pivot around back bottom edge (0, 0.04, -1.16):
-          const ry = 0.04 * cx - (-1.16) * sx;
-          const rz = 0.04 * sx + (-1.16) * cx;
-          const liftComp = 0.115 * easeTopple;
-
-          const toppleY = (0.04 - ry) + liftComp;
-          const toppleZ = (-1.16 - rz) + chairPush;
-          const toppleX = easeTopple * chairTumbleSeed.yaw * 0.4;
-
-          chairMesh.position.set(
-            baseChairPos.x + toppleX,
-            baseChairPos.y + toppleY,
-            baseChairPos.z + toppleZ
-          );
-          chairMesh.rotation.set(pitch, yaw, roll);
+          const q = chairBody.quaternion;
+          const quat = new THREE.Quaternion(q.x, q.y, q.z, q.w);
+          const bodyPos = new THREE.Vector3(chairBody.position.x, chairBody.position.y, chairBody.position.z);
+          const rotatedOffset = chairOffsetCOM.clone().applyQuaternion(quat);
+          chairMesh.position.copy(bodyPos.sub(rotatedOffset));
+          chairMesh.quaternion.copy(quat);
           chairMesh.visible = true;
         }
       }
 
-      // Floor group visibility: active throughout hero scroll, hides when About section begins
+      // Floor group (carpet & chair): strictly grounded and stationary
+      floorGroup.position.set(baseRoomX, 0, 0);
+      floorGroup.rotation.set(0, startYaw, 0);
+      floorGroup.scale.set(1, 1, 1);
       floorGroup.visible = hOut < 0.88;
 
-      // Room / Desk group: stays grounded, then lifts / disperses away once avatar has walked off
-      if (hOut < 0.48) {
-        roomGroup.position.set(baseRoomX, 0, 0);
-        roomGroup.rotation.set(0, startYaw, 0);
-        roomGroup.scale.set(1, 1, 1);
-        roomGroup.visible = true;
-      } else {
-        const deskT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.36));
-        const easeDesk = deskT * deskT;
-        roomGroup.position.set(
-          THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeDesk),
-          THREE.MathUtils.lerp(0, targetRoomY, easeDesk),
-          0
-        );
-        roomGroup.rotation.set(
-          THREE.MathUtils.lerp(0, 0.1, easeDesk),
-          startYaw,
-          THREE.MathUtils.lerp(0, 0.09, easeDesk)
-        );
-        const roomScale = THREE.MathUtils.lerp(1, 0.85, easeDesk);
-        roomGroup.scale.set(roomScale, roomScale, roomScale);
-        roomGroup.visible = hOut < 0.88;
-      }
+      // Room / Desk group: NEVER leaves its position! Strictly grounded and stationary
+      roomGroup.position.set(baseRoomX, 0, 0);
+      roomGroup.rotation.set(0, startYaw, 0);
+      roomGroup.scale.set(1, 1, 1);
+      roomGroup.visible = hOut < 0.88;
 
       // Floating musical notes effect
       if (musicMesh) {
