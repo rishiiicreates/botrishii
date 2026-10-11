@@ -1064,29 +1064,7 @@ export default function DavidInteractiveExperience3D({
       onLoaded?.();
     });
 
-    // 12. Eye Blinking Loop
-    let blinkTimeout: NodeJS.Timeout | null = null;
-    const scheduleNextBlink = () => {
-      const delay = 2600 + Math.random() * 3200;
-      blinkTimeout = setTimeout(() => {
-        if (isDisposed || !faceUniformFrame) return;
-        faceUniformFrame.value = 1;
-        setTimeout(() => {
-          if (isDisposed || !faceUniformFrame) return;
-          faceUniformFrame.value = 2;
-          setTimeout(() => {
-            if (isDisposed || !faceUniformFrame) return;
-            faceUniformFrame.value = 3;
-            setTimeout(() => {
-              if (isDisposed || !faceUniformFrame) return;
-              faceUniformFrame.value = 0;
-              scheduleNextBlink();
-            }, 60);
-          }, 80);
-        }, 60);
-      }, delay);
-    };
-    scheduleNextBlink();
+    // 12. Eye Blinking is driven smoothly & deterministically in 60fps animate() loop
 
     // 13. Interactive Mouse Parallax
     const mousePos = { x: 0, y: 0 };
@@ -1142,6 +1120,25 @@ export default function DavidInteractiveExperience3D({
       const elapsed = (now - startTime) / 1000;
       lastTime = now;
       timeUniform.value = elapsed;
+
+      // Natural organic eye blinking (clean, deterministic, symmetrical closing and reopening)
+      if (faceUniformFrame) {
+        // Natural human blink cycle: once every ~5.4 seconds
+        const blinkTime = elapsed % 5.4;
+        if (blinkTime < 0.05) {
+          faceUniformFrame.value = 1; // start closing
+        } else if (blinkTime < 0.10) {
+          faceUniformFrame.value = 2; // half closed
+        } else if (blinkTime < 0.18) {
+          faceUniformFrame.value = 3; // closed
+        } else if (blinkTime < 0.23) {
+          faceUniformFrame.value = 2; // reopening
+        } else if (blinkTime < 0.27) {
+          faceUniformFrame.value = 1; // almost open
+        } else {
+          faceUniformFrame.value = 0; // open
+        }
+      }
 
       // Smooth progress interpolation
       const tHero = Math.max(0, Math.min(1, targetsRef.current.heroOut));
@@ -1204,9 +1201,9 @@ export default function DavidInteractiveExperience3D({
       floorGroup.rotation.set(0, startYaw, 0);
 
       // -------------------------------------------------------------
-      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.16)
+      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.14)
       // -------------------------------------------------------------
-      const standT = Math.min(1, Math.max(0, hOut / 0.16));
+      const standT = Math.min(1, Math.max(0, hOut / 0.14));
       const easeStand = standT * standT * (3 - 2 * standT);
       if (idleAction && tIdleAction) {
         idleAction.setEffectiveWeight(1.0 - easeStand);
@@ -1218,21 +1215,21 @@ export default function DavidInteractiveExperience3D({
       const chairPush = easeStand * 0.45;
 
       // -------------------------------------------------------------
-      // 2. MANNEQUIN WALKS DIRECTLY TO PEDESTAL (hOut: 0.16 -> 0.48)
+      // 2. MANNEQUIN WALKS DIRECTLY TO PEDESTAL (hOut: 0.14 -> 0.58)
       // -------------------------------------------------------------
-      // Monotonic, continuous forward locomotion directly to pedestal center (0, 0, 6.0)
-      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.16) / 0.32));
+      // Natural, relaxed pacing across 320px of scroll
+      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.14) / 0.44));
       const easeWalkOff = walkOffT * walkOffT * (3 - 2 * walkOffT);
 
       // Natural stylized walking stride envelope: strictly 0 at start and finish!
       const walkEnvelope = Math.sin(walkOffT * Math.PI);
-      const walkCycle = walkOffT * Math.PI * 8.0; // 4 complete, grounded, natural strides
+      const walkCycle = walkOffT * Math.PI * 6.0; // 3 complete, natural, grounded strides
 
       // Layered Procedural Walking Kinematics (Quaternion-based, zero Euler distortion)
       if (walkEnvelope > 0.001) {
         // 1. Thigh flexion / extension (pitch forward & back)
-        const thighSwingL = Math.sin(walkCycle) * 0.46 * walkEnvelope;
-        const thighSwingR = -Math.sin(walkCycle) * 0.46 * walkEnvelope;
+        const thighSwingL = Math.sin(walkCycle) * 0.42 * walkEnvelope;
+        const thighSwingR = -Math.sin(walkCycle) * 0.42 * walkEnvelope;
 
         if (leftUpLegBone) {
           deltaHipLeft.setFromAxisAngle(axisX, thighSwingL);
@@ -1245,8 +1242,8 @@ export default function DavidInteractiveExperience3D({
 
         // 2. Knee flexion (only bends backward during swing phase!)
         // In local bone space, negative angle around local X bends knee backward
-        const kneeFlexL = Math.max(0, -Math.sin(walkCycle + 0.35)) * 0.68 * walkEnvelope;
-        const kneeFlexR = Math.max(0, Math.sin(walkCycle + 0.35)) * 0.68 * walkEnvelope;
+        const kneeFlexL = Math.max(0, -Math.sin(walkCycle + 0.35)) * 0.62 * walkEnvelope;
+        const kneeFlexR = Math.max(0, Math.sin(walkCycle + 0.35)) * 0.62 * walkEnvelope;
 
         if (leftLegBone) {
           deltaKneeLeft.setFromAxisAngle(axisX, -kneeFlexL);
@@ -1258,8 +1255,8 @@ export default function DavidInteractiveExperience3D({
         }
 
         // 3. Foot / Ankle articulation (heel-strike dorsiflexion, toe-off plantarflexion)
-        const footPitchL = (Math.sin(walkCycle) * 0.22 - Math.cos(walkCycle * 2.0) * 0.10) * walkEnvelope;
-        const footPitchR = (-Math.sin(walkCycle) * 0.22 - Math.cos(walkCycle * 2.0) * 0.10) * walkEnvelope;
+        const footPitchL = (Math.sin(walkCycle) * 0.20 - Math.cos(walkCycle * 2.0) * 0.08) * walkEnvelope;
+        const footPitchR = (-Math.sin(walkCycle) * 0.20 - Math.cos(walkCycle * 2.0) * 0.08) * walkEnvelope;
 
         if (leftFootBone) {
           deltaFootLeft.setFromAxisAngle(axisX, footPitchL);
@@ -1271,8 +1268,8 @@ export default function DavidInteractiveExperience3D({
         }
 
         // 4. Arm swing (counter-swing to opposite leg around local X)
-        const armSwingL = Math.sin(walkCycle) * 0.32 * walkEnvelope;
-        const armSwingR = -Math.sin(walkCycle) * 0.32 * walkEnvelope;
+        const armSwingL = Math.sin(walkCycle) * 0.28 * walkEnvelope;
+        const armSwingR = -Math.sin(walkCycle) * 0.28 * walkEnvelope;
         if (leftArmBone) {
           deltaArmLeft.setFromAxisAngle(axisX, armSwingL);
           leftArmBone.quaternion.multiply(deltaArmLeft);
@@ -1283,8 +1280,8 @@ export default function DavidInteractiveExperience3D({
         }
 
         // 5. Elbow bend (forearms flex forward around local X on forward swing)
-        const elbowBendL = Math.max(0, -armSwingL) * 0.45;
-        const elbowBendR = Math.max(0, -armSwingR) * 0.45;
+        const elbowBendL = Math.max(0, -armSwingL) * 0.40;
+        const elbowBendR = Math.max(0, -armSwingR) * 0.40;
         if (leftForeArmBone) {
           deltaForeArmLeft.setFromAxisAngle(axisX, -elbowBendL);
           leftForeArmBone.quaternion.multiply(deltaForeArmLeft);
@@ -1298,11 +1295,11 @@ export default function DavidInteractiveExperience3D({
       }
 
       // Smooth pelvic vertical bounce (2 bounces per full stride, strictly smooth sine)
-      const walkBob = walkEnvelope > 0.001 ? walkEnvelope * Math.sin(walkCycle * 2.0) * 0.032 : 0;
-      const hipSway = walkEnvelope > 0.001 ? Math.sin(walkCycle) * 0.02 * walkEnvelope : 0;
+      const walkBob = walkEnvelope > 0.001 ? walkEnvelope * Math.sin(walkCycle * 2.0) * 0.026 : 0;
+      const hipSway = walkEnvelope > 0.001 ? Math.sin(walkCycle) * 0.016 * walkEnvelope : 0;
 
       // Carpet elevation: steps cleanly down from carpet (0.055m) to bare floor (0.00m)
-      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.55) / 0.25));
+      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.45) / 0.30));
       const easeStepDown = stepDownT * stepDownT * (3 - 2 * stepDownT);
       const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, easeStepDown);
 
@@ -1323,14 +1320,14 @@ export default function DavidInteractiveExperience3D({
       // 3. CHAIR FALL (BAKED CANNON-ES RIGID-BODY TRAJECTORY)
       // -------------------------------------------------------------
       // 100% deterministic, jitter-free, glitch-free physical topple.
-      // Starts once avatar has stepped completely past the carpet boundary (hOut >= 0.42).
+      // Starts once avatar has stepped completely past the carpet boundary (hOut >= 0.46).
       if (chairMesh) {
-        if (hOut < 0.42) {
+        if (hOut < 0.46) {
           chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
           chairMesh.quaternion.identity();
           chairMesh.visible = true;
         } else {
-          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.42) / 0.28));
+          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.46) / 0.26));
           const easeFall = chairFallT * chairFallT * (3 - 2 * chairFallT);
           sampleTrajectory(chairTrajectory, easeFall, sampledChairPos, sampledChairQuat);
           chairMesh.position.copy(sampledChairPos);
@@ -1348,17 +1345,17 @@ export default function DavidInteractiveExperience3D({
       }
 
       // -------------------------------------------------------------
-      // 4. SMOOTH CYBER PEDESTAL ELEVATION (hOut: 0.38 -> 0.70)
+      // 4. SMOOTH CYBER PEDESTAL ELEVATION (hOut: 0.32 -> 0.58)
       // -------------------------------------------------------------
       // Pedestal at (0, 0, 6) smoothly elevates from below floor to meet the avatar's feet!
-      const pedestalRiseT = Math.min(1, Math.max(0, (hOut - 0.38) / 0.28));
+      const pedestalRiseT = Math.min(1, Math.max(0, (hOut - 0.32) / 0.26));
       const easePedestalRise = pedestalRiseT * pedestalRiseT * (3 - 2 * pedestalRiseT);
       const pedestalY = THREE.MathUtils.lerp(-1.2, 0.0, easePedestalRise);
       const pedestalScale = THREE.MathUtils.lerp(0.85, 1.0, easePedestalRise);
 
       labGroup.position.set(0, pedestalY, 6);
       labGroup.scale.set(pedestalScale, pedestalScale, pedestalScale);
-      labGroup.visible = hOut >= 0.38 && aOut < 0.99;
+      labGroup.visible = hOut >= 0.32 && aOut < 0.99;
 
       // -------------------------------------------------------------
       // 5. SMOOTH CINEMATIC DISSOLVE FOR ROOM INTO CYBER WORLD
@@ -1492,11 +1489,9 @@ export default function DavidInteractiveExperience3D({
     };
 
     animate();
-
     return () => {
       isDisposed = true;
       cancelAnimationFrame(animationFrameId);
-      if (blinkTimeout) clearTimeout(blinkTimeout);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
 
