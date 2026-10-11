@@ -243,9 +243,9 @@ export default function DavidInteractiveExperience3D({
 
     // Organic randomized tumbling factors for the chair falling over onto the carpet
     const chairTumbleSeed = {
-      pitch: -1.30 - Math.random() * 0.15, // topple backward onto backrest
-      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.25 + Math.random() * 0.20), // natural angular twist
-      roll: (Math.random() > 0.5 ? 1 : -1) * (0.35 + Math.random() * 0.20), // natural sideways lean
+      pitch: -1.33, // physical resting angle onto backrest
+      yaw: (Math.random() > 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.15), // natural angular twist
+      roll: (Math.random() > 0.5 ? 1 : -1) * (0.10 + Math.random() * 0.15), // natural sideways lean
     };
 
     let avatarGroup: THREE.Group | null = null;
@@ -1075,25 +1075,25 @@ export default function DavidInteractiveExperience3D({
       floorGroup.rotation.set(0, startYaw, 0);
 
       // -------------------------------------------------------------
-      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.16)
+      // 1. MANNEQUIN STAND UP & CHAIR PUSHBACK (hOut: 0.0 -> 0.12)
       // -------------------------------------------------------------
-      const standT = Math.min(1, Math.max(0, hOut / 0.16));
+      const standT = Math.min(1, Math.max(0, hOut / 0.12));
       const easeStand = standT * standT * (3 - 2 * standT);
       if (idleAction && tIdleAction) {
         idleAction.setEffectiveWeight(1.0 - easeStand);
         tIdleAction.setEffectiveWeight(easeStand);
       }
 
-      // Chair pushback: as avatar stands, chair pushes back by 0.55m along local Z
+      // Chair pushback: as avatar stands, chair pushes back by 0.45m along local Z
       // staying upright and flush on top of the carpet so they NEVER collide
-      const chairPush = easeStand * 0.55;
+      const chairPush = easeStand * 0.45;
 
       // -------------------------------------------------------------
-      // 2. MANNEQUIN WALKS COMPLETELY OFF THE CARPET (hOut: 0.16 -> 0.52)
+      // 2. MANNEQUIN WALKS COMPLETELY OFF THE CARPET (hOut: 0.12 -> 0.40)
       // -------------------------------------------------------------
       // The mannequin FIRST steps forward across the carpet and completely
-      // steps OFF the front edge of the carpet (Z = 5.5) before any falling occurs!
-      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.16) / 0.36));
+      // steps OFF the front edge of the carpet (reaching Z = 6.2) well before any falling occurs!
+      const walkOffT = Math.min(1, Math.max(0, (hOut - 0.12) / 0.28));
       const easeWalkOff = walkOffT * walkOffT * (3 - 2 * walkOffT);
 
       // Stride bobbing for natural human locomotion while walking
@@ -1102,19 +1102,23 @@ export default function DavidInteractiveExperience3D({
         : 0;
 
       // Carpet elevation: while walking on carpet, soles rest on carpet surface (0.055m)
-      // Once stepping off the front edge (walkOffT: 0.72 -> 0.90), steps cleanly down to floor (0.00m)
-      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.72) / 0.18));
+      // Once stepping off the front edge (walkOffT: 0.65 -> 0.85), steps cleanly down to floor (0.00m)
+      const stepDownT = Math.min(1, Math.max(0, (walkOffT - 0.65) / 0.20));
       const carpetElev = THREE.MathUtils.lerp(0.055, 0.0, stepDownT);
 
-      // Forward step off the carpet to pedestal center (Z = 6.0, well clear of carpet Corner 1 at Z = 5.24)
+      // Forward step off the carpet onto floor (Z = 6.2, 100% clear of carpet Corner 1 at Z = 5.24)
       const clearX = THREE.MathUtils.lerp(baseRoomX, 0.0, easeWalkOff);
-      const clearZ = THREE.MathUtils.lerp(0, 6.0, easeWalkOff);
+      const clearZ = THREE.MathUtils.lerp(0, 6.2, easeWalkOff);
       const startAvatarYaw = startYaw + Math.PI / 2;
       const targetAvatarYaw = -Math.PI;
       const clearYaw = THREE.MathUtils.lerp(startAvatarYaw, targetAvatarYaw, easeWalkOff);
 
+      // Smooth subtle settle onto exact pedestal center (0, 0, 6.0) as about section approaches
+      const pedestalSettleT = Math.min(1, Math.max(0, (hOut - 0.65) / 0.17));
+      const easePedestalSettle = pedestalSettleT * pedestalSettleT * (3 - 2 * pedestalSettleT);
+      const finalAvatarZ = THREE.MathUtils.lerp(clearZ, 6.0, easePedestalSettle);
+
       const finalAvatarX = clearX;
-      const finalAvatarZ = clearZ;
       const finalAvatarY = carpetElev + walkBob;
       const finalAvatarYaw = clearYaw;
 
@@ -1125,16 +1129,16 @@ export default function DavidInteractiveExperience3D({
       }
 
       // -------------------------------------------------------------
-      // 3. CHAIR FALL (RANDOMIZED) & ROOM DISPERSAL (hOut: 0.52 -> 0.90)
+      // 3. CHAIR FALL (RANDOMIZED) & ROOM DISPERSAL (hOut: 0.48 -> 0.90)
       // -------------------------------------------------------------
       // CARPET DOES NOT MOVE AT ALL: Stays 100% stationary on the floor.
-      // The mannequin is now safely and completely OFF the carpet (Z = 6.0) facing front.
-      // At hOut >= 0.52, the chair topples over onto the carpet behind him with randomized fall physics,
+      // The mannequin is now safely and completely OFF the carpet (Z = 6.2) facing front.
+      // At hOut >= 0.48, the chair topples over onto the carpet behind him with exact physical hinge pivot,
       // and the desk lifts away into the ceiling with ZERO overlap or collision!
 
       // Ground shadow catcher: only visible while room is grounded, hides when desk lifts
       if (shadowCatcherMesh) {
-        shadowCatcherMesh.visible = hOut < 0.52;
+        shadowCatcherMesh.visible = hOut < 0.48;
       }
 
       // Carpet: DOES NOT MOVE. Stays 100% grounded and completely stationary on the floor
@@ -1149,34 +1153,38 @@ export default function DavidInteractiveExperience3D({
       if (chairMesh) {
         if (hOut < 0.02) {
           // Re-randomize tumble angles for each subsequent scroll run
-          chairTumbleSeed.pitch = -1.25 - Math.random() * 0.20;
-          chairTumbleSeed.yaw = (Math.random() > 0.5 ? 1 : -1) * (0.20 + Math.random() * 0.25);
-          chairTumbleSeed.roll = (Math.random() > 0.5 ? 1 : -1) * (0.25 + Math.random() * 0.25);
+          chairTumbleSeed.yaw = (Math.random() > 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.15);
+          chairTumbleSeed.roll = (Math.random() > 0.5 ? 1 : -1) * (0.10 + Math.random() * 0.15);
         }
 
-        if (hOut < 0.52) {
+        if (hOut < 0.48) {
           // Standing and walking phase: pushed back, upright, perfectly resting on carpet
           chairMesh.position.set(baseChairPos.x, baseChairPos.y, baseChairPos.z + chairPush);
           chairMesh.rotation.set(0, 0, 0);
           chairMesh.visible = true;
         } else {
-          // Falling phase: chair topples over onto the carpet (randomized angles)
-          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.28));
+          // Falling phase: chair topples over onto the carpet with exact physical base pivot
+          const chairFallT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.24));
           const easeTopple = chairFallT * chairFallT * (3 - 2 * chairFallT);
 
           const pitch = chairTumbleSeed.pitch * easeTopple;
           const yaw = chairTumbleSeed.yaw * easeTopple;
           const roll = chairTumbleSeed.roll * easeTopple;
 
-          // Lift pivot so chair bottom rests squarely on carpet surface (Y >= 0.04) without penetrating
-          const toppleLiftY = easeTopple * 1.20;
-          const toppleSlideZ = chairPush - easeTopple * 0.35;
-          const toppleSlideX = easeTopple * (chairTumbleSeed.roll > 0 ? 0.15 : -0.15);
+          const cx = Math.cos(pitch), sx = Math.sin(pitch);
+          // Pivot around back bottom edge (0, 0.04, -1.16):
+          const ry = 0.04 * cx - (-1.16) * sx;
+          const rz = 0.04 * sx + (-1.16) * cx;
+          const liftComp = 0.115 * easeTopple;
+
+          const toppleY = (0.04 - ry) + liftComp;
+          const toppleZ = (-1.16 - rz) + chairPush;
+          const toppleX = easeTopple * chairTumbleSeed.yaw * 0.4;
 
           chairMesh.position.set(
-            baseChairPos.x + toppleSlideX,
-            baseChairPos.y + toppleLiftY,
-            baseChairPos.z + toppleSlideZ
+            baseChairPos.x + toppleX,
+            baseChairPos.y + toppleY,
+            baseChairPos.z + toppleZ
           );
           chairMesh.rotation.set(pitch, yaw, roll);
           chairMesh.visible = true;
@@ -1187,13 +1195,13 @@ export default function DavidInteractiveExperience3D({
       floorGroup.visible = hOut < 0.88;
 
       // Room / Desk group: stays grounded, then lifts / disperses away once avatar has walked off
-      if (hOut < 0.52) {
+      if (hOut < 0.48) {
         roomGroup.position.set(baseRoomX, 0, 0);
         roomGroup.rotation.set(0, startYaw, 0);
         roomGroup.scale.set(1, 1, 1);
         roomGroup.visible = true;
       } else {
-        const deskT = Math.min(1, Math.max(0, (hOut - 0.52) / 0.36));
+        const deskT = Math.min(1, Math.max(0, (hOut - 0.48) / 0.36));
         const easeDesk = deskT * deskT;
         roomGroup.position.set(
           THREE.MathUtils.lerp(baseRoomX, targetRoomX, easeDesk),
